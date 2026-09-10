@@ -1,0 +1,23 @@
+items:
+  - slug: one-workflow-shadow
+    kind: playbook
+    title: One-workflow shadow engagement
+    summary: One client, one shared-services process, shadow environment, then a playbook.
+    body: |
+      Partner brings the named client, the process, and humans in the delivery center.
+      Beam brings the platform, an FDE, the agent graph, and evals.
+
+      Sequence:
+      1. Qualify the client and the process.
+      2. Run a 60-minute diagnostic.
+      3. Show a shadow workflow on test data.
+      4. Agree success criteria in writing.
+      5. File a Beam request for the shadow demo if it is not already scheduled.
+
+      Do not open Platform admin, Iris authoring, or a joint-venture workspace. Failure mode is request Beam.
+    contentClass: shared-partner-safe
+    audience: partner-internal
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded, partner-fronted]
+    claimState: approved
+    reviewer: Partner Success

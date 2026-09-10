@@ -1,0 +1,98 @@
+slug: pwc-me
+name: PwC Middle East
+displayName: PwC ME
+primaryHostname: pwc-me.partners.beam.ai
+canonicalPath: /w/pwc-me
+brandMode: co-branded
+brandHeader: PwC × Beam
+homeTitle: Future of AI-Native Companies
+homeHeadline: Take one AI-native workflow live
+homeDescription: Qualify one client outcome, run a focused diagnostic, show a shadow workflow, and agree success criteria. Beam stays the factory; PwC owns the client and the delivery center.
+supportOwner: partner-success@beam.ai
+allowedEmailDomains:
+  - pwc.com
+  - strategyand.pwc.com
+enabledSurfaces:
+  - home
+  - tools
+  - materials
+  - faq
+  - certifications
+  - requests
+tracks:
+  - id: layer
+    title: Future of AI-Native Companies
+    framing: layer
+    summary: Explain how Beam creates an AI-native operating layer alongside the client's existing systems, and shape the account hypothesis.
+    action: Open the competitive FAQ
+    href: /faq
+  - id: beachhead
+    title: First workflow
+    framing: beachhead
+    summary: Name one shared-services process, run a diagnostic, agree success criteria, and request a shadow demo.
+    action: Start a client opportunity
+    href: /requests
+  - id: clearance
+    title: Risk & delivery readiness
+    framing: clearance
+    summary: Use approved deployment and independence proof. Escalate restricted questions to Beam.
+    action: Open risk FAQ
+    href: /faq
+steps:
+  - title: Qualify the client
+    detail: Confirm ICP, urgency, and that this is not a single-module ERP or EPM problem.
+  - title: Run a 60-minute diagnostic
+    detail: Use the operating-diagnostic method with department heads. Beam FDE joins the first two.
+  - title: Show a shadow workflow
+    detail: Request a vertical demo, then a shadow environment on their process with test data.
+  - title: Agree success criteria
+    detail: Write the first fees-at-risk definition with Beam. Do not invent commercial numbers in the room.
+toolSlugs:
+  - partner-cli
+  - partner-faq
+  - competitive-battlecards
+  - gcc-account-qualifier
+  - call-prep
+  - materials-library
+  - iris
+  - operating-diagnostic
+  - discovery
+  - proof-pack
+  - platform-demo
+  - one-workflow-playbook
+  - beam-platform
+  - beam-interfaces
+  - self-learning
+  - success-criteria
+materialSlugs:
+  - where-beam-fits
+  - joint-motion-one-pager
+  - shared-services-packaging
+  - proof-pack-placeholder
+  - beam-partner-executive-overview
+  - beam-discovery-sales-deck
+faqSlugs:
+  - why-not-sap
+  - vs-epm
+  - data-integration
+  - first-process-fit
+  - when-to-walk-away
+  - human-approval
+  - deployment-ksa-kuwait
+  - not-another-ai-tool
+  - partner-vs-beam
+  - brand-shapes
+  - how-we-make-money
+  - pricing-and-packaging
+  - deal-registration
+  - first-engagement
+  - measuring-success
+  - audit-independence
+  - working-agent
+  - security-review-pack
+  - access-and-sandbox
+  - support-and-escalation
+  - accuracy
+  - leadership-pack
+playbookSlugs:
+  - one-workflow-shadow

@@ -1,0 +1,1175 @@
+{
+  "workspaces": [
+    {
+      "slug": "partner-demo",
+      "name": "Beam Partner Demo",
+      "displayName": "Partner Demo",
+      "primaryHostname": "demo.partners.beam.ai",
+      "canonicalPath": "/w/partner-demo",
+      "brandMode": "beam-standard",
+      "brandHeader": "Beam Partner",
+      "homeTitle": "Future of AI-Native Companies",
+      "homeHeadline": "Take one client process from discovery to production",
+      "homeDescription": "Qualify a client outcome, map one process, show a governed shadow workflow, and agree success criteria. The partner owns the client relationship; Beam owns the platform and agent factory.",
+      "supportOwner": "partner-success@beam.ai",
+      "allowedEmailDomains": [
+        "partner.example"
+      ],
+      "enabledSurfaces": [
+        "home",
+        "tools",
+        "materials",
+        "faq",
+        "certifications",
+        "requests"
+      ],
+      "tracks": [
+        {
+          "id": "layer",
+          "title": "Position the opportunity",
+          "framing": "layer",
+          "summary": "Explain where Beam fits alongside the client's existing systems and turn the business outcome into an account hypothesis.",
+          "action": "Open the competitive FAQ",
+          "href": "/faq"
+        },
+        {
+          "id": "beachhead",
+          "title": "Select the first workflow",
+          "framing": "beachhead",
+          "summary": "Name one exception-heavy process, run a diagnostic, agree success criteria, and request a shadow demo.",
+          "action": "Start a client opportunity",
+          "href": "/requests"
+        },
+        {
+          "id": "clearance",
+          "title": "Clear delivery readiness",
+          "framing": "clearance",
+          "summary": "Use approved deployment and governance answers, and route restricted questions to Beam.",
+          "action": "Open the delivery FAQ",
+          "href": "/faq"
+        }
+      ],
+      "steps": [
+        {
+          "title": "Qualify the client",
+          "detail": "Confirm the outcome, urgency, stakeholders, and why the process needs an agentic operating layer."
+        },
+        {
+          "title": "Map the workflow",
+          "detail": "Use the operating diagnostic to find handoffs, exceptions, and the systems involved."
+        },
+        {
+          "title": "Show a shadow workflow",
+          "detail": "Request a Beam-run demo, then validate the client process safely with representative test data."
+        },
+        {
+          "title": "Agree success criteria",
+          "detail": "Define the first production outcome, evaluation plan, and expansion path with Beam."
+        }
+      ],
+      "toolSlugs": [
+        "partner-cli",
+        "partner-faq",
+        "competitive-battlecards",
+        "call-prep",
+        "materials-library",
+        "iris",
+        "operating-diagnostic",
+        "discovery",
+        "proof-pack",
+        "platform-demo",
+        "one-workflow-playbook",
+        "beam-platform",
+        "beam-interfaces",
+        "self-learning",
+        "success-criteria"
+      ],
+      "materialSlugs": [
+        "where-beam-fits",
+        "joint-motion-one-pager",
+        "proof-pack-placeholder",
+        "beam-partner-executive-overview",
+        "beam-discovery-sales-deck"
+      ],
+      "faqSlugs": [
+        "why-not-sap",
+        "vs-epm",
+        "data-integration",
+        "first-process-fit",
+        "when-to-walk-away",
+        "human-approval",
+        "not-another-ai-tool",
+        "partner-vs-beam",
+        "brand-shapes",
+        "how-we-make-money",
+        "pricing-and-packaging",
+        "deal-registration",
+        "first-engagement",
+        "measuring-success",
+        "working-agent",
+        "security-review-pack",
+        "access-and-sandbox",
+        "support-and-escalation",
+        "accuracy",
+        "leadership-pack"
+      ],
+      "playbookSlugs": [
+        "one-workflow-shadow"
+      ]
+    },
+    {
+      "slug": "pwc-me",
+      "name": "PwC Middle East",
+      "displayName": "PwC ME",
+      "primaryHostname": "pwc-me.partners.beam.ai",
+      "canonicalPath": "/w/pwc-me",
+      "brandMode": "co-branded",
+      "brandHeader": "PwC × Beam",
+      "homeTitle": "Future of AI-Native Companies",
+      "homeHeadline": "Take one AI-native workflow live",
+      "homeDescription": "Qualify one client outcome, run a focused diagnostic, show a shadow workflow, and agree success criteria. Beam stays the factory; PwC owns the client and the delivery center.",
+      "supportOwner": "partner-success@beam.ai",
+      "allowedEmailDomains": [
+        "pwc.com",
+        "strategyand.pwc.com"
+      ],
+      "enabledSurfaces": [
+        "home",
+        "tools",
+        "materials",
+        "faq",
+        "certifications",
+        "requests"
+      ],
+      "tracks": [
+        {
+          "id": "layer",
+          "title": "Future of AI-Native Companies",
+          "framing": "layer",
+          "summary": "Explain how Beam creates an AI-native operating layer alongside the client's existing systems, and shape the account hypothesis.",
+          "action": "Open the competitive FAQ",
+          "href": "/faq"
+        },
+        {
+          "id": "beachhead",
+          "title": "First workflow",
+          "framing": "beachhead",
+          "summary": "Name one shared-services process, run a diagnostic, agree success criteria, and request a shadow demo.",
+          "action": "Start a client opportunity",
+          "href": "/requests"
+        },
+        {
+          "id": "clearance",
+          "title": "Risk & delivery readiness",
+          "framing": "clearance",
+          "summary": "Use approved deployment and independence proof. Escalate restricted questions to Beam.",
+          "action": "Open risk FAQ",
+          "href": "/faq"
+        }
+      ],
+      "steps": [
+        {
+          "title": "Qualify the client",
+          "detail": "Confirm ICP, urgency, and that this is not a single-module ERP or EPM problem."
+        },
+        {
+          "title": "Run a 60-minute diagnostic",
+          "detail": "Use the operating-diagnostic method with department heads. Beam FDE joins the first two."
+        },
+        {
+          "title": "Show a shadow workflow",
+          "detail": "Request a vertical demo, then a shadow environment on their process with test data."
+        },
+        {
+          "title": "Agree success criteria",
+          "detail": "Write the first fees-at-risk definition with Beam. Do not invent commercial numbers in the room."
+        }
+      ],
+      "toolSlugs": [
+        "partner-cli",
+        "partner-faq",
+        "competitive-battlecards",
+        "gcc-account-qualifier",
+        "call-prep",
+        "materials-library",
+        "iris",
+        "operating-diagnostic",
+        "discovery",
+        "proof-pack",
+        "platform-demo",
+        "one-workflow-playbook",
+        "beam-platform",
+        "beam-interfaces",
+        "self-learning",
+        "success-criteria"
+      ],
+      "materialSlugs": [
+        "where-beam-fits",
+        "joint-motion-one-pager",
+        "shared-services-packaging",
+        "proof-pack-placeholder",
+        "beam-partner-executive-overview",
+        "beam-discovery-sales-deck"
+      ],
+      "faqSlugs": [
+        "why-not-sap",
+        "vs-epm",
+        "data-integration",
+        "first-process-fit",
+        "when-to-walk-away",
+        "human-approval",
+        "deployment-ksa-kuwait",
+        "not-another-ai-tool",
+        "partner-vs-beam",
+        "brand-shapes",
+        "how-we-make-money",
+        "pricing-and-packaging",
+        "deal-registration",
+        "first-engagement",
+        "measuring-success",
+        "audit-independence",
+        "working-agent",
+        "security-review-pack",
+        "access-and-sandbox",
+        "support-and-escalation",
+        "accuracy",
+        "leadership-pack"
+      ],
+      "playbookSlugs": [
+        "one-workflow-shadow"
+      ]
+    },
+    {
+      "slug": "roboyo",
+      "name": "Roboyo",
+      "displayName": "Roboyo",
+      "primaryHostname": "roboyo.partners.beam.ai",
+      "canonicalPath": "/w/roboyo",
+      "brandMode": "co-branded",
+      "brandHeader": "Roboyo × Beam",
+      "homeTitle": "Intelligent automation with Beam",
+      "homeHeadline": "Land one high-volume process, then expand",
+      "homeDescription": "Use the shared Partner shell with Roboyo-approved copy, tools, and materials. Security, invitations, and the Beam request path remain consistent.",
+      "supportOwner": "partner-success@beam.ai",
+      "allowedEmailDomains": [
+        "roboyo.com"
+      ],
+      "enabledSurfaces": [
+        "home",
+        "tools",
+        "materials",
+        "faq",
+        "certifications",
+        "requests"
+      ],
+      "tracks": [
+        {
+          "id": "layer",
+          "title": "Operating layer",
+          "framing": "layer",
+          "summary": "Position Beam as the intelligence layer across the client's existing stack, not a competing RPA or ERP module.",
+          "action": "Open the competitive FAQ",
+          "href": "/faq"
+        },
+        {
+          "id": "beachhead",
+          "title": "First workflow",
+          "framing": "beachhead",
+          "summary": "Pick one exception-heavy process, run a diagnostic, and request a shadow demo.",
+          "action": "Start a client opportunity",
+          "href": "/requests"
+        },
+        {
+          "id": "clearance",
+          "title": "Risk & delivery readiness",
+          "framing": "clearance",
+          "summary": "Use approved deployment answers only. Restricted regional or pricing claims route to Beam.",
+          "action": "Open risk FAQ",
+          "href": "/faq"
+        }
+      ],
+      "steps": [
+        {
+          "title": "Qualify the process",
+          "detail": "Walk away from clean single-module ERP work the incumbent already does well."
+        },
+        {
+          "title": "Map exceptions",
+          "detail": "Show where humans still close the loop across systems."
+        },
+        {
+          "title": "Shadow the workflow",
+          "detail": "Request a Beam-run demo on a named vertical, then a client-specific shadow."
+        },
+        {
+          "title": "Agree the expansion path",
+          "detail": "One process in production with evals before a broader rollout story."
+        }
+      ],
+      "toolSlugs": [
+        "partner-cli",
+        "partner-faq",
+        "competitive-battlecards",
+        "call-prep",
+        "materials-library",
+        "iris",
+        "operating-diagnostic",
+        "discovery",
+        "proof-pack",
+        "platform-demo",
+        "one-workflow-playbook",
+        "beam-platform",
+        "beam-interfaces",
+        "self-learning",
+        "success-criteria"
+      ],
+      "materialSlugs": [
+        "where-beam-fits",
+        "joint-motion-one-pager",
+        "proof-pack-placeholder",
+        "beam-partner-executive-overview",
+        "beam-discovery-sales-deck"
+      ],
+      "faqSlugs": [
+        "why-not-sap",
+        "vs-epm",
+        "data-integration",
+        "first-process-fit",
+        "when-to-walk-away",
+        "human-approval",
+        "deployment-ksa-kuwait",
+        "not-another-ai-tool",
+        "partner-vs-beam",
+        "brand-shapes",
+        "how-we-make-money",
+        "pricing-and-packaging",
+        "deal-registration",
+        "first-engagement",
+        "measuring-success",
+        "working-agent",
+        "security-review-pack",
+        "access-and-sandbox",
+        "support-and-escalation",
+        "accuracy",
+        "leadership-pack"
+      ],
+      "playbookSlugs": [
+        "one-workflow-shadow"
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "slug": "partner-cli",
+      "kind": "tool",
+      "title": "Partner CLI",
+      "group": "Start",
+      "summary": "Start partner-safe work from Codex, Claude, or Beam Prism.",
+      "body": "Copy the workspace prompt into your preferred agent. The Partner CLI keeps discovery inside reviewed tools, materials, and requests for this workspace.",
+      "contentClass": "shared-partner-safe",
+      "audience": "technical",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "partner-faq",
+      "kind": "tool",
+      "title": "Partner FAQ",
+      "group": "Sell",
+      "summary": "Answers for SAP, Oracle, ServiceNow, Anaplan, brand, and roles.",
+      "body": "Read, search, and copy into an internal email. Partners cannot publish answers.",
+      "href": "/faq",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request Beam to publish or change an answer."
+    },
+    {
+      "slug": "competitive-battlecards",
+      "kind": "tool",
+      "title": "Competitive battlecards",
+      "group": "Sell",
+      "summary": "Incumbent vs Beam, and when to walk away.",
+      "body": "Use before the internal \"why this crew\" meeting. Do not pick a fight inside a clean single-module S/4 workflow.",
+      "href": "/faq",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "gcc-account-qualifier",
+      "kind": "tool",
+      "title": "GCC account qualifier",
+      "group": "Sell",
+      "summary": "ICP rules, hard exclusions, and lanes for a target list.",
+      "body": "Paste a target list into the documented gcc-account-qualifier workflow. Beam staff or an approved partner user runs the skill. Partners do not get GTM Core folders.",
+      "href": "https://core.beam.ai/skills/gcc-account-qualifier",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request Beam to run the qualifier on a list."
+    },
+    {
+      "slug": "call-prep",
+      "kind": "tool",
+      "title": "Call prep (partner mode)",
+      "group": "Sell",
+      "summary": "Joint RACI and complementary capabilities for the next meeting.",
+      "body": "Follow the call-prep skill in partner mode. Optional Beam-run.",
+      "href": "https://core.beam.ai/skills/call-prep",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "materials-library",
+      "kind": "tool",
+      "title": "Materials library",
+      "group": "Sell",
+      "summary": "Intro deck, one-pager, and proof pack with audience tags.",
+      "body": "Download only reviewed records. Request new materials instead of forwarding drafts.",
+      "href": "/materials",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "iris",
+      "kind": "tool",
+      "title": "Iris",
+      "group": "Prove",
+      "summary": "Outside-in company view and interviewable report.",
+      "body": "Show a staff-prepared share link. Do not promise a same-day custom report without Beam.",
+      "href": "https://iris.beam.ai",
+      "contentClass": "shared-partner-safe",
+      "audience": "technical",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request a same-day custom Iris report."
+    },
+    {
+      "slug": "operating-diagnostic",
+      "kind": "tool",
+      "title": "Operating diagnostic",
+      "group": "Scope",
+      "summary": "Process bank and value-versus-effort graph.",
+      "body": "Workshop method and templates. Beam FDE joins the first two workshops.",
+      "href": "https://core.beam.ai/skills/operating-diagnostic",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "discovery",
+      "kind": "tool",
+      "title": "Discovery",
+      "group": "Scope",
+      "summary": "Faster process capture and ranking.",
+      "body": "This is how we stop six-month as-is work. Beam demos Discovery. Partners do not get admin.",
+      "href": "https://discovery.beam.ai",
+      "contentClass": "shared-partner-safe",
+      "audience": "technical",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request a Discovery demo."
+    },
+    {
+      "slug": "proof-pack",
+      "kind": "tool",
+      "title": "Proof pack",
+      "group": "Prove",
+      "summary": "Architecture-depth cases for a technical or bake-off buyer.",
+      "body": "Use only the approved pack for this workspace and sector.",
+      "href": "https://core.beam.ai/skills/proof-pack",
+      "contentClass": "shared-partner-safe",
+      "audience": "technical",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "platform-demo",
+      "kind": "tool",
+      "title": "Platform demo path",
+      "group": "Prove",
+      "summary": "Graph, evals, exceptions, and audit log on a vertical.",
+      "body": "Request a vertical demo such as order-to-cash, AP, or screening. Beam SE runs the demo.",
+      "href": "/requests",
+      "contentClass": "shared-partner-safe",
+      "audience": "technical",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request a Platform demo."
+    },
+    {
+      "slug": "one-workflow-playbook",
+      "kind": "tool",
+      "title": "One-workflow playbook",
+      "group": "Scope",
+      "summary": "Shadow environment, success criteria, and who does what.",
+      "body": "Follow the in-app playbook for the first joint client.",
+      "href": "/materials/one-workflow-shadow",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "beam-platform",
+      "kind": "tool",
+      "title": "Beam Platform",
+      "group": "Scope",
+      "summary": "Where the agent will live after the first workflow.",
+      "body": "Guided tour of nodes, evals, HITL, and integrations. Provisioned demo workspaces come later.",
+      "href": "https://app.beam.ai",
+      "contentClass": "shared-partner-safe",
+      "audience": "technical",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request a guided Platform tour."
+    },
+    {
+      "slug": "beam-interfaces",
+      "kind": "tool",
+      "title": "Beam Interfaces",
+      "group": "Prove",
+      "summary": "Custom UI in front of an agent.",
+      "body": "Use when the leave-behind should look like an ATS or dashboard, not a chat.",
+      "href": "https://core.beam.ai/skills/beam-interface-master",
+      "contentClass": "shared-partner-safe",
+      "audience": "technical",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request a custom interface build."
+    },
+    {
+      "slug": "self-learning",
+      "kind": "tool",
+      "title": "Self-learning explainer",
+      "group": "Scope",
+      "summary": "Why accuracy holds in production.",
+      "body": "Pair with the FAQ answer on evals, clustered training, and regression tests.",
+      "href": "/faq",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "success-criteria",
+      "kind": "tool",
+      "title": "Success-criteria kit",
+      "group": "Scope",
+      "summary": "How fees-at-risk is set without inventing numbers.",
+      "body": "Template and method only. Beam writes the first one for a joint client.",
+      "href": "https://core.beam.ai/skills/generate-success-criteria",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request Beam to write the first success-criteria pack."
+    }
+  ],
+  "materials": [
+    {
+      "slug": "where-beam-fits",
+      "kind": "material",
+      "title": "Where Beam fits",
+      "format": "one-pager",
+      "summary": "Two-page note covering FAQ 1–3 for internal sponsors.",
+      "body": "Beam is the intelligence layer across systems. It does not replace a clean ERP module or an EPM planning model. Forward only in the approved brand mode for this workspace.",
+      "status": "pending",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "joint-motion-one-pager",
+      "kind": "material",
+      "title": "Joint-motion one-pager",
+      "format": "one-pager",
+      "summary": "Roles, brand shapes, and the first trade of one client / one workflow.",
+      "body": "Partner owns the client, operating model, and delivery-center humans. Beam owns the platform, agent factory, and production eval loop. Not a JV.",
+      "status": "pending",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "shared-services-packaging",
+      "kind": "material",
+      "title": "AI-native company packaging note",
+      "format": "note",
+      "summary": "Partner-fronted Future of AI-Native Companies packaging for transformation and managed services.",
+      "body": "Title the Layer conversation Future of AI-Native Companies. Beam remains visible in the trust and legal context as the factory. Do not invent a fourth brand shape.",
+      "status": "pending",
+      "contentClass": "workspace-only",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "proof-pack-placeholder",
+      "kind": "material",
+      "title": "Proof pack",
+      "format": "pack",
+      "summary": "Reviewed placeholder until a sector-matched pack is attached.",
+      "body": "Customer stories stay hidden until a human marks them partner-safe. Request Beam for a sector-matched pack rather than forwarding an internal case.",
+      "status": "pending",
+      "contentClass": "shared-partner-safe",
+      "audience": "technical",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request a sector-matched proof pack."
+    },
+    {
+      "slug": "beam-partner-executive-overview",
+      "kind": "material",
+      "title": "Beam Partner Executive Overview",
+      "format": "deck",
+      "summary": "Executive partner deck from rising client AI demand through discovery, governed production, joint delivery, and account expansion.",
+      "body": "Use this deck to introduce the Beam partner motion, align on the discovery-to-production path, and frame how Beam and the partner deliver and expand accounts together.",
+      "shareUrl": "https://shares.beam.ai/s/5MJ21Et5Hgb0jQuW",
+      "contentClass": "shared-partner-safe",
+      "audience": "client-forwardable",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "beam-discovery-sales-deck",
+      "kind": "material",
+      "title": "Beam Discovery | Process Discovery Sales Deck",
+      "format": "deck",
+      "summary": "Reusable executive sales deck for mapping operational work, ranking AI opportunities, and moving selected agents into production.",
+      "body": "Use this deck to run the process-discovery conversation, compare opportunities consistently, and move the strongest candidate into a governed production path.",
+      "shareUrl": "https://shares.beam.ai/s/6IyI_AIcNUxrSw75",
+      "contentClass": "shared-partner-safe",
+      "audience": "client-forwardable",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    }
+  ],
+  "faq": [
+    {
+      "slug": "why-not-sap",
+      "kind": "faq",
+      "title": "Why would a client buy Beam instead of SAP / Oracle / ServiceNow / Workday AI?",
+      "summary": "Those products automate work inside their own object model.",
+      "body": "Those products automate work inside their own object model. Clients still have email, shared drives, legacy ERPs, SMS, country-specific portals, and exceptions the incumbent assistant cannot close. Beam is the intelligence layer that runs the process across systems, with a graph that must start and finish, evals on the steps that matter, and an audit log. The user stays in the screen they already live in. Beam writes back. Use this when the process spans two or more systems, is exception-heavy, or sits on a 15–30 year ERP the client will not rip out. Do not pick a fight inside a clean, single-module S/4 workflow the ERP already does well.",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "vs-epm",
+      "kind": "faq",
+      "title": "How is this different from Anaplan / OneStream / other EPM?",
+      "summary": "EPM is a planning layer. Beam is not that database.",
+      "body": "EPM is a planning and data-model layer. If the client’s actual problem is \"we have no planning model\", that is an EPM deal. If the problem is \"70 people in a room judging invoices because the ERP’s three-way match dies on exceptions\", that is a Beam deal. They can coexist. Beam pulls what it needs, acts, and does not keep a second warehouse by default.",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "data-integration",
+      "kind": "faq",
+      "title": "You do not store the data. So how do you work?",
+      "summary": "We integrate, pull what is actionable, act, and discard the rest.",
+      "body": "We integrate through a custom integration builder and an out-of-the-box catalog. We pull, decide if it is actionable, act, and discard what we do not need. We are not a process-mining suite and not a data-lake vendor. If the client has no API and no export path, say so early.",
+      "contentClass": "shared-partner-safe",
+      "audience": "technical",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "first-process-fit",
+      "kind": "faq",
+      "title": "What makes a strong first workflow?",
+      "summary": "Start with repeatable, exception-heavy work that crosses systems and has a measurable outcome.",
+      "body": "A strong first workflow is frequent enough to matter, contains manual handoffs or re-keying, crosses two or more systems, and has exceptions that prevent simple rules-based automation. It also needs a named process owner, a usable API or export path, representative test data, and a baseline the client agrees to measure. Start with one narrow beachhead rather than an end-to-end transformation promise.",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "when-to-walk-away",
+      "kind": "faq",
+      "title": "When should we not pursue an opportunity?",
+      "summary": "Walk away when the problem is already solved by one module, cannot be accessed, or has no accountable owner.",
+      "body": "Do not force a Beam deal when a clean single-module ERP or EPM workflow already solves the problem well. Pause when there is no API or export path, no accountable process owner, no representative test data, or no measurable operational outcome. Also escalate expectations of unsupervised high-risk action. A vague innovation brief is not yet a qualified first workflow.",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "human-approval",
+      "kind": "faq",
+      "title": "Where does human approval sit?",
+      "summary": "Beam can prepare and recommend; accountable people retain high-risk approvals.",
+      "body": "Start read-first and recommend-first. The agent can gather evidence, prepare a decision, and propose an action while an accountable person approves high-risk steps such as payments, regulated decisions, or material client communications. The exact approval point is a workflow design decision. Put it into the audit trail and evaluate both the recommendation and the handoff.",
+      "contentClass": "shared-partner-safe",
+      "audience": "technical",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "deployment-ksa-kuwait",
+      "kind": "faq",
+      "title": "What does deployment look like in Saudi Arabia or Kuwait?",
+      "summary": "Restricted. Do not state residency or on-prem as a generic promise.",
+      "body": "Do not state regional residency, on-prem, private-networking, or government readiness as a generic promise.",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "restricted",
+      "restrictedReason": "Regional deployment and sovereignty claims need commercial and security approval.",
+      "requestBeamLabel": "Request Beam for a deployment review.",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "not-another-ai-tool",
+      "kind": "faq",
+      "title": "Every GM already bought a small AI tool. Why will this not be another one?",
+      "summary": "We pick one high-volume chain and put it into production with evals.",
+      "body": "We do not sprinkle assistants on unchanged processes. We pick one high-volume back-office chain, agree success criteria, put it into production with evals and exception paths, and only then expand. Local tool sprawl with zero upside is the default. The counter is a process-bank, a ranked first wave, and fees that can wait on proof.",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "partner-vs-beam",
+      "kind": "faq",
+      "title": "Why Beam instead of building this ourselves?",
+      "summary": "Partner owns the client and delivery center. Beam owns the factory.",
+      "body": "Priorities, not talent, are why in-house platform attempts stall. Beam’s job is the platform, the agent factory, and the production eval loop. The partner’s job is the client, the operating model, the humans in the delivery center, and the transformation story. We are not a rent-a-brand, and Beam is not staff-aug hiding in a partner logo.",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "brand-shapes",
+      "kind": "faq",
+      "title": "Do we expose the Beam brand?",
+      "summary": "Three legal shapes only.",
+      "body": "Partner-fronted / powered by Beam for brand-sensitive managed services. Joint when the client wants the technology vendor in the room. Beam-fronted, partner-introduced for a technical buyer. Do not invent a fourth shape on the call.",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "how-we-make-money",
+      "kind": "faq",
+      "title": "How do we make money?",
+      "summary": "High-level shapes only. Numbers stay in a staff annex.",
+      "body": "Typical shapes are co-sell, reseller / white-label, co-delivery with Beam FDEs, outcome-tied client fees, then license. JV-on-the-core-product is how conversations die.",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request Beam for the staff-approved commercial annex. Do not quote unpublished pricing."
+    },
+    {
+      "slug": "pricing-and-packaging",
+      "kind": "faq",
+      "title": "How are the first workflow, platform, and partner margin priced?",
+      "summary": "Pending. Pricing, discount, and margin guidance is not yet published for partners.",
+      "body": "This answer is pending commercial approval. Do not quote a package, discount, referral fee, partner margin, or outcome commitment until Beam publishes the approved commercial annex.",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "status": "pending",
+      "requestBeamLabel": "Request Beam for current deal-specific pricing guidance.",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "deal-registration",
+      "kind": "faq",
+      "title": "How do we register and protect a partner-sourced opportunity?",
+      "summary": "Pending. Deal-registration ownership and protection rules are being finalized.",
+      "body": "This answer is pending commercial approval. Do not promise opportunity protection, exclusivity, referral credit, or a registration window before Beam confirms the deal-specific motion.",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "status": "pending",
+      "requestBeamLabel": "Request Beam to confirm ownership before making a commitment.",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "first-engagement",
+      "kind": "faq",
+      "title": "What does the first engagement look like?",
+      "summary": "Qualify, diagnose, shadow, produce, then expand.",
+      "body": "Qualify the account and walk away when it is EPM or a single-module ERP assistant. Take an outside-in view and process interviews. Rank a first wave and agree success criteria. Shadow one process with test data. Produce with evals, exception paths, and an audit log. Expand along the value chain. License after value is visible.",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "measuring-success",
+      "kind": "faq",
+      "title": "How do we define and measure success?",
+      "summary": "Agree the baseline, operational outcome, guardrails, and evaluation method before production.",
+      "body": "Define success for the named process before production. Capture the current baseline, select an operational outcome such as cycle time, throughput, exception resolution, or quality, document the human approval points, and agree how the workflow will be evaluated. Do not invent a universal ROI percentage. Beam and the partner should write the first success criteria together and use the result to decide whether to expand.",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "audit-independence",
+      "kind": "faq",
+      "title": "What if we are an audit firm and independence is messy?",
+      "summary": "Flag early. Beam does not give legal advice.",
+      "body": "Use the checklist: named client, service line, whether Beam would be in the attest perimeter, who contracts, who hosts data, and whether white-label reduces conflict optics. Beam does not give legal advice. PwC risk must clear the motion.",
+      "contentClass": "workspace-only",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "restricted",
+      "restrictedReason": "Independence is a risk conversation, not a published legal answer.",
+      "requestBeamLabel": "Request Beam and loop partner risk. Do not treat this FAQ as legal advice.",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "working-agent",
+      "kind": "faq",
+      "title": "Can we see a working agent, not a slide?",
+      "summary": "Yes. Request a vertical demo, then a shadow on their process.",
+      "body": "Request a vertical demo (order-to-cash, invoice exceptions, screening) and, for the first joint client, a shadow workflow on their process. Do not promise a same-day custom demo on an unscoped process.",
+      "contentClass": "shared-partner-safe",
+      "audience": "technical",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request a vertical demo or shadow workflow."
+    },
+    {
+      "slug": "security-review-pack",
+      "kind": "faq",
+      "title": "What security, privacy, and architecture evidence can we give a client?",
+      "summary": "Pending. Use only the reviewed evidence pack for the named deployment.",
+      "body": "This answer is pending security review. Do not improvise claims about hosting, residency, private networking, certifications, retention, or regulated-industry readiness. The approved evidence must match the client and deployment under discussion.",
+      "contentClass": "shared-partner-safe",
+      "audience": "technical",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "status": "pending",
+      "requestBeamLabel": "Request Beam for the reviewed security and architecture pack.",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "access-and-sandbox",
+      "kind": "faq",
+      "title": "How do partner demo, sandbox, and production access work?",
+      "summary": "Pending. Access is provisioned by role and workspace; certification does not grant it automatically.",
+      "body": "This answer is pending the final access model. Do not assume that portal membership, a certification, or participation in a cohort creates demo, sandbox, client-data, or production permissions.",
+      "contentClass": "shared-partner-safe",
+      "audience": "technical",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "status": "pending",
+      "requestBeamLabel": "Request Beam for the access plan for this opportunity.",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "support-and-escalation",
+      "kind": "faq",
+      "title": "Who supports the client after go-live, and what are the escalation paths?",
+      "summary": "Pending. Delivery ownership and support coverage must be agreed for each partner motion.",
+      "body": "This answer is pending the final support model. Do not promise response times, support coverage, production ownership, or an escalation path until Beam and the partner have assigned the operating roles for the engagement.",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "status": "pending",
+      "requestBeamLabel": "Request Beam to define the delivery and support RACI.",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "accuracy",
+      "kind": "faq",
+      "title": "How do you keep accuracy from decaying?",
+      "summary": "Production feedback becomes clustered training data.",
+      "body": "Production feedback (thumbs, failed code nodes, low evals) becomes training data. Problems are clustered. One cluster is trained at a time, then regression-tested against the others.",
+      "contentClass": "shared-partner-safe",
+      "audience": "technical",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "leadership-pack",
+      "kind": "faq",
+      "title": "What should I send my leadership tomorrow?",
+      "summary": "Four artifacts, in this order.",
+      "body": "Two-page where Beam fits. Joint-motion one-pager. One approved proof pack, sector-matched. The one-workflow playbook with a named candidate process if you have one. Not a 40-slide follow-up, and not an internal Iris admin screenshot.",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    }
+  ],
+  "playbooks": [
+    {
+      "slug": "one-workflow-shadow",
+      "kind": "playbook",
+      "title": "One-workflow shadow engagement",
+      "summary": "One client, one shared-services process, shadow environment, then a playbook.",
+      "body": "Partner brings the named client, the process, and humans in the delivery center.\nBeam brings the platform, an FDE, the agent graph, and evals.\n\nSequence:\n1. Qualify the client and the process.\n2. Run a 60-minute diagnostic.\n3. Show a shadow workflow on test data.\n4. Agree success criteria in writing.\n5. File a Beam request for the shadow demo if it is not already scheduled.\n\nDo not open Platform admin, Iris authoring, or a joint-venture workspace. Failure mode is request Beam.\n",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    }
+  ]
+}

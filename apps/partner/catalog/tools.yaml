@@ -1,0 +1,216 @@
+items:
+  - slug: partner-cli
+    kind: tool
+    title: Partner CLI
+    group: Start
+    summary: Start partner-safe work from Codex, Claude, or Beam Prism.
+    body: Copy the workspace prompt into your preferred agent. The Partner CLI keeps discovery inside reviewed tools, materials, and requests for this workspace.
+    contentClass: shared-partner-safe
+    audience: technical
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded, partner-fronted]
+    claimState: approved
+    reviewer: Partner Success
+  - slug: partner-faq
+    kind: tool
+    title: Partner FAQ
+    group: Sell
+    summary: Answers for SAP, Oracle, ServiceNow, Anaplan, brand, and roles.
+    body: Read, search, and copy into an internal email. Partners cannot publish answers.
+    href: /faq
+    contentClass: shared-partner-safe
+    audience: partner-internal
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded, partner-fronted]
+    claimState: approved
+    reviewer: Partner Success
+    requestBeamLabel: Request Beam to publish or change an answer.
+  - slug: competitive-battlecards
+    kind: tool
+    title: Competitive battlecards
+    group: Sell
+    summary: Incumbent vs Beam, and when to walk away.
+    body: Use before the internal "why this crew" meeting. Do not pick a fight inside a clean single-module S/4 workflow.
+    href: /faq
+    contentClass: shared-partner-safe
+    audience: partner-internal
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded]
+    claimState: approved
+    reviewer: Partner Success
+  - slug: gcc-account-qualifier
+    kind: tool
+    title: GCC account qualifier
+    group: Sell
+    summary: ICP rules, hard exclusions, and lanes for a target list.
+    body: Paste a target list into the documented gcc-account-qualifier workflow. Beam staff or an approved partner user runs the skill. Partners do not get GTM Core folders.
+    href: https://core.beam.ai/skills/gcc-account-qualifier
+    contentClass: shared-partner-safe
+    audience: partner-internal
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded]
+    claimState: approved
+    reviewer: Partner Success
+    requestBeamLabel: Request Beam to run the qualifier on a list.
+  - slug: call-prep
+    kind: tool
+    title: Call prep (partner mode)
+    group: Sell
+    summary: Joint RACI and complementary capabilities for the next meeting.
+    body: Follow the call-prep skill in partner mode. Optional Beam-run.
+    href: https://core.beam.ai/skills/call-prep
+    contentClass: shared-partner-safe
+    audience: partner-internal
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded, partner-fronted]
+    claimState: approved
+    reviewer: Partner Success
+  - slug: materials-library
+    kind: tool
+    title: Materials library
+    group: Sell
+    summary: Intro deck, one-pager, and proof pack with audience tags.
+    body: Download only reviewed records. Request new materials instead of forwarding drafts.
+    href: /materials
+    contentClass: shared-partner-safe
+    audience: partner-internal
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded, partner-fronted]
+    claimState: approved
+    reviewer: Partner Success
+  - slug: iris
+    kind: tool
+    title: Iris
+    group: Prove
+    summary: Outside-in company view and interviewable report.
+    body: Show a staff-prepared share link. Do not promise a same-day custom report without Beam.
+    href: https://iris.beam.ai
+    contentClass: shared-partner-safe
+    audience: technical
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded]
+    claimState: approved
+    reviewer: Partner Success
+    requestBeamLabel: Request a same-day custom Iris report.
+  - slug: operating-diagnostic
+    kind: tool
+    title: Operating diagnostic
+    group: Scope
+    summary: Process bank and value-versus-effort graph.
+    body: Workshop method and templates. Beam FDE joins the first two workshops.
+    href: https://core.beam.ai/skills/operating-diagnostic
+    contentClass: shared-partner-safe
+    audience: partner-internal
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded]
+    claimState: approved
+    reviewer: Partner Success
+  - slug: discovery
+    kind: tool
+    title: Discovery
+    group: Scope
+    summary: Faster process capture and ranking.
+    body: This is how we stop six-month as-is work. Beam demos Discovery. Partners do not get admin.
+    href: https://discovery.beam.ai
+    contentClass: shared-partner-safe
+    audience: technical
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded]
+    claimState: approved
+    reviewer: Partner Success
+    requestBeamLabel: Request a Discovery demo.
+  - slug: proof-pack
+    kind: tool
+    title: Proof pack
+    group: Prove
+    summary: Architecture-depth cases for a technical or bake-off buyer.
+    body: Use only the approved pack for this workspace and sector.
+    href: https://core.beam.ai/skills/proof-pack
+    contentClass: shared-partner-safe
+    audience: technical
+    forwardable: true
+    allowedBrandModes: [beam-standard, co-branded]
+    claimState: approved
+    reviewer: Partner Success
+  - slug: platform-demo
+    kind: tool
+    title: Platform demo path
+    group: Prove
+    summary: Graph, evals, exceptions, and audit log on a vertical.
+    body: Request a vertical demo such as order-to-cash, AP, or screening. Beam SE runs the demo.
+    href: /requests
+    contentClass: shared-partner-safe
+    audience: technical
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded, partner-fronted]
+    claimState: approved
+    reviewer: Partner Success
+    requestBeamLabel: Request a Platform demo.
+  - slug: one-workflow-playbook
+    kind: tool
+    title: One-workflow playbook
+    group: Scope
+    summary: Shadow environment, success criteria, and who does what.
+    body: Follow the in-app playbook for the first joint client.
+    href: /materials/one-workflow-shadow
+    contentClass: shared-partner-safe
+    audience: partner-internal
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded, partner-fronted]
+    claimState: approved
+    reviewer: Partner Success
+  - slug: beam-platform
+    kind: tool
+    title: Beam Platform
+    group: Scope
+    summary: Where the agent will live after the first workflow.
+    body: Guided tour of nodes, evals, HITL, and integrations. Provisioned demo workspaces come later.
+    href: https://app.beam.ai
+    contentClass: shared-partner-safe
+    audience: technical
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded]
+    claimState: approved
+    reviewer: Partner Success
+    requestBeamLabel: Request a guided Platform tour.
+  - slug: beam-interfaces
+    kind: tool
+    title: Beam Interfaces
+    group: Prove
+    summary: Custom UI in front of an agent.
+    body: Use when the leave-behind should look like an ATS or dashboard, not a chat.
+    href: https://core.beam.ai/skills/beam-interface-master
+    contentClass: shared-partner-safe
+    audience: technical
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded, partner-fronted]
+    claimState: approved
+    reviewer: Partner Success
+    requestBeamLabel: Request a custom interface build.
+  - slug: self-learning
+    kind: tool
+    title: Self-learning explainer
+    group: Scope
+    summary: Why accuracy holds in production.
+    body: Pair with the FAQ answer on evals, clustered training, and regression tests.
+    href: /faq
+    contentClass: shared-partner-safe
+    audience: partner-internal
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded]
+    claimState: approved
+    reviewer: Partner Success
+  - slug: success-criteria
+    kind: tool
+    title: Success-criteria kit
+    group: Scope
+    summary: How fees-at-risk is set without inventing numbers.
+    body: Template and method only. Beam writes the first one for a joint client.
+    href: https://core.beam.ai/skills/generate-success-criteria
+    contentClass: shared-partner-safe
+    audience: partner-internal
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded]
+    claimState: approved
+    reviewer: Partner Success
+    requestBeamLabel: Request Beam to write the first success-criteria pack.

@@ -1,0 +1,80 @@
+items:
+  - slug: where-beam-fits
+    kind: material
+    title: Where Beam fits
+    format: one-pager
+    summary: Two-page note covering FAQ 1–3 for internal sponsors.
+    body: Beam is the intelligence layer across systems. It does not replace a clean ERP module or an EPM planning model. Forward only in the approved brand mode for this workspace.
+    status: pending
+    contentClass: shared-partner-safe
+    audience: partner-internal
+    forwardable: true
+    allowedBrandModes: [beam-standard, co-branded]
+    claimState: approved
+    reviewer: Partner Success
+  - slug: joint-motion-one-pager
+    kind: material
+    title: Joint-motion one-pager
+    format: one-pager
+    summary: Roles, brand shapes, and the first trade of one client / one workflow.
+    body: Partner owns the client, operating model, and delivery-center humans. Beam owns the platform, agent factory, and production eval loop. Not a JV.
+    status: pending
+    contentClass: shared-partner-safe
+    audience: partner-internal
+    forwardable: true
+    allowedBrandModes: [co-branded, partner-fronted]
+    claimState: approved
+    reviewer: Partner Success
+  - slug: shared-services-packaging
+    kind: material
+    title: AI-native company packaging note
+    format: note
+    summary: Partner-fronted Future of AI-Native Companies packaging for transformation and managed services.
+    body: Title the Layer conversation Future of AI-Native Companies. Beam remains visible in the trust and legal context as the factory. Do not invent a fourth brand shape.
+    status: pending
+    contentClass: workspace-only
+    audience: partner-internal
+    forwardable: false
+    allowedBrandModes: [co-branded, partner-fronted]
+    claimState: approved
+    reviewer: Partner Success
+  - slug: proof-pack-placeholder
+    kind: material
+    title: Proof pack
+    format: pack
+    summary: Reviewed placeholder until a sector-matched pack is attached.
+    body: Customer stories stay hidden until a human marks them partner-safe. Request Beam for a sector-matched pack rather than forwarding an internal case.
+    status: pending
+    contentClass: shared-partner-safe
+    audience: technical
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded]
+    claimState: approved
+    reviewer: Partner Success
+    requestBeamLabel: Request a sector-matched proof pack.
+  - slug: beam-partner-executive-overview
+    kind: material
+    title: Beam Partner Executive Overview
+    format: deck
+    summary: Executive partner deck from rising client AI demand through discovery, governed production, joint delivery, and account expansion.
+    body: Use this deck to introduce the Beam partner motion, align on the discovery-to-production path, and frame how Beam and the partner deliver and expand accounts together.
+    shareUrl: https://shares.beam.ai/s/5MJ21Et5Hgb0jQuW
+    contentClass: shared-partner-safe
+    audience: client-forwardable
+    forwardable: true
+    allowedBrandModes: [beam-standard, co-branded]
+    claimState: approved
+    reviewer: Partner Success
+  - slug: beam-discovery-sales-deck
+    kind: material
+    title: Beam Discovery | Process Discovery Sales Deck
+    format: deck
+    summary: Reusable executive sales deck for mapping operational work, ranking AI opportunities, and moving selected agents into production.
+    body: Use this deck to run the process-discovery conversation, compare opportunities consistently, and move the strongest candidate into a governed production path.
+    shareUrl: https://shares.beam.ai/s/6IyI_AIcNUxrSw75
+    contentClass: shared-partner-safe
+    audience: client-forwardable
+    forwardable: true
+    allowedBrandModes: [beam-standard, co-branded]
+    claimState: approved
+    reviewer: Partner Success

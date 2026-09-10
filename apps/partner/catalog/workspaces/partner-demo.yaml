@@ -1,0 +1,93 @@
+slug: partner-demo
+name: Beam Partner Demo
+displayName: Partner Demo
+primaryHostname: demo.partners.beam.ai
+canonicalPath: /w/partner-demo
+brandMode: beam-standard
+brandHeader: Beam Partner
+homeTitle: Future of AI-Native Companies
+homeHeadline: Take one client process from discovery to production
+homeDescription: Qualify a client outcome, map one process, show a governed shadow workflow, and agree success criteria. The partner owns the client relationship; Beam owns the platform and agent factory.
+supportOwner: partner-success@beam.ai
+allowedEmailDomains:
+  - partner.example
+enabledSurfaces:
+  - home
+  - tools
+  - materials
+  - faq
+  - certifications
+  - requests
+tracks:
+  - id: layer
+    title: Position the opportunity
+    framing: layer
+    summary: Explain where Beam fits alongside the client's existing systems and turn the business outcome into an account hypothesis.
+    action: Open the competitive FAQ
+    href: /faq
+  - id: beachhead
+    title: Select the first workflow
+    framing: beachhead
+    summary: Name one exception-heavy process, run a diagnostic, agree success criteria, and request a shadow demo.
+    action: Start a client opportunity
+    href: /requests
+  - id: clearance
+    title: Clear delivery readiness
+    framing: clearance
+    summary: Use approved deployment and governance answers, and route restricted questions to Beam.
+    action: Open the delivery FAQ
+    href: /faq
+steps:
+  - title: Qualify the client
+    detail: Confirm the outcome, urgency, stakeholders, and why the process needs an agentic operating layer.
+  - title: Map the workflow
+    detail: Use the operating diagnostic to find handoffs, exceptions, and the systems involved.
+  - title: Show a shadow workflow
+    detail: Request a Beam-run demo, then validate the client process safely with representative test data.
+  - title: Agree success criteria
+    detail: Define the first production outcome, evaluation plan, and expansion path with Beam.
+toolSlugs:
+  - partner-cli
+  - partner-faq
+  - competitive-battlecards
+  - call-prep
+  - materials-library
+  - iris
+  - operating-diagnostic
+  - discovery
+  - proof-pack
+  - platform-demo
+  - one-workflow-playbook
+  - beam-platform
+  - beam-interfaces
+  - self-learning
+  - success-criteria
+materialSlugs:
+  - where-beam-fits
+  - joint-motion-one-pager
+  - proof-pack-placeholder
+  - beam-partner-executive-overview
+  - beam-discovery-sales-deck
+faqSlugs:
+  - why-not-sap
+  - vs-epm
+  - data-integration
+  - first-process-fit
+  - when-to-walk-away
+  - human-approval
+  - not-another-ai-tool
+  - partner-vs-beam
+  - brand-shapes
+  - how-we-make-money
+  - pricing-and-packaging
+  - deal-registration
+  - first-engagement
+  - measuring-success
+  - working-agent
+  - security-review-pack
+  - access-and-sandbox
+  - support-and-escalation
+  - accuracy
+  - leadership-pack
+playbookSlugs:
+  - one-workflow-shadow
