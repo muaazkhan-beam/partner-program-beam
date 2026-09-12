@@ -70,7 +70,7 @@ Both require a Fathom login and cannot be fetched programmatically. The summary 
 | Asad Raza | Support |
 | Jonas Diezun | Built the v1 shell |
 | Jack Li | Kicked off the project |
-| Daria, Fred | Common partner requests; source for a citable deployment outcome |
+| Derya, Fred | Common partner requests; source for a citable deployment outcome |
 | Zhichao Li | Interactive agent-building prototype (Phase 2) |
 | Yunus | Original dashboard repo |
 

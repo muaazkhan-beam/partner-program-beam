@@ -176,7 +176,7 @@ it, tiers are decorative.
 ## Stage 3 — Land it (Mon 29 – Wed 30 Sep)
 
 1. Full check: `pnpm catalog:compile && pnpm typecheck && pnpm test && pnpm test:e2e`
-2. Review with Daria and Fred — claim review on every new use case before publish
+2. Review with Derya and Fred — claim review on every new use case before publish
 3. Anything without provenance ships `pending`, not invented
 4. Decide deployment (open decision #8) — this repo has no Vercel or Convex project
 5. Write up what is worth contributing back to `beam-library`

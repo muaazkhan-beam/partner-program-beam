@@ -270,7 +270,7 @@ Three cheap decisions now that avoid a rewrite later:
 ### 7.8 Answer the pricing question
 
 Pricing is marked `pending` in the FAQ, and it is the thing partners most need. This is a
-content and policy blocker, not an engineering one — it needs Daria, Fred, and whoever owns
+content and policy blocker, not an engineering one — it needs Derya, Fred, and whoever owns
 commercial terms. Raise it now; it will not resolve itself in three weeks.
 
 ---

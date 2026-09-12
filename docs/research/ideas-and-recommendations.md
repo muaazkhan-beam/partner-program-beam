@@ -99,7 +99,7 @@ A **Commercials** surface should carry:
 - branding rules — when partner-fronted, joint, or Beam-fronted is permitted
 - what a partner may say publicly about the relationship
 
-**This is blocked on policy, not engineering.** It needs Daria, Fred, and whoever owns
+**This is blocked on policy, not engineering.** It needs Derya, Fred, and whoever owns
 commercial terms. It will not resolve itself inside the three-week window, so it should be
 raised in the first sync, not at the end.
 

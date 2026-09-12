@@ -83,7 +83,22 @@ Two fields are non-negotiable:
   volume. A partner who repeats those to a client gets asked *"based on what?"*, and if
   they can't answer they quietly stop using the numbers.
 
-**Depth in two verticals — finance and BPO/customer service — beats breadth across ten.**
+**Depth in two verticals — finance and BPO/RPO — beats breadth across ten.** Confirmed by
+Derya, who also named **automotive manufacturing** as a third winning industry.
+
+The seed list is no longer guesswork. These are live, not pitched:
+
+| Department | Use cases |
+| --- | --- |
+| Finance | Invoice processing · expense management · debt collection · reporting |
+| Procurement | Sales order processing · supplier communication · supplier FAQs |
+| HR | CV screening · voice interviews |
+| Customer support | Support tickets (hospitality) |
+
+Derya's diagnosis is the case for this deliverable, stated by the business rather than
+inferred from research: *"If we don't know, they don't know… if we are specific on what we
+can do, they think about us when they have a certain challenge. So far that has been all
+relationship-based."*
 
 *Cheaper than the first draft assumed:* `listContent(workspaceId, kind)` is generic, so a
 new `use-case` kind inherits the queries, the workspace grants and the isolation
@@ -190,7 +205,7 @@ Detailed steps: [`../plan/build-plan.md`](../plan/build-plan.md).
 | **Fri 11 – Sun 14 Sep** | Use case schema through the whole pipeline; 3 use cases end to end | A use case renders in the portal, isolated per workspace, test passing |
 | **Week 1 · 15–19 Sep** | Catalog to 12–15 entries; tracks; compliance library | Content complete; a BPO and an SI see different home screens |
 | **Week 2 · 22–26 Sep** | Certification progress; firm tiers; scorecard | A partner can see their tier and what moves them up |
-| **Week 3 · 29–30 Sep** | Polish, review with Daria and Fred, deploy | Live |
+| **Week 3 · 29–30 Sep** | Polish, review with Derya and Fred, deploy | Live |
 
 **Content is the critical path, not code.** Writing 12–15 use cases with real provenance
 and assembling the compliance library will take longer than building the surfaces that
@@ -202,7 +217,7 @@ display them. It needs a named owner who is not Muaaz.
 
 | Risk | Severity | Mitigation |
 | --- | --- | --- |
-| **No citable customer outcome** | High | Catalog falls back to published benchmarks, which partners discount. Need one named, approved deployment from Daria/Fred. |
+| **No citable customer outcome** | High | Catalog falls back to published benchmarks, which partners discount. Need one named, approved deployment from Derya/Fred. |
 | **Content has no owner** | High | 12–15 use cases is the bulk of the work. Name an owner this week. |
 | **Pricing stays `pending`** | High | Policy, not engineering. See §8. |
 | **Certification tracks conflict** | Medium | Two specs disagree — see §8. Resolve before building progress tracking against the wrong ladder. |
@@ -211,33 +226,50 @@ display them. It needs a named owner who is not Muaaz.
 
 ---
 
-## 8. Open decisions
+## 8. Decisions
 
-Carried forward, plus new ones from reading the specs.
+Updated after the [Derya Firat meeting](../reference/derya-meeting-notes.md), 11 September.
 
-1. **Is there a deployment with a measured outcome we may cite by name?** Still the top
-   blocker on catalog credibility.
-2. **Which two verticals get depth?** Finance and BPO/customer service recommended.
-3. **Who owns content?**
-4. **Which certification ladder is correct?** `partner-portal.md` lists "Sell
-   certification" as v1.1, but four certifications are already shipped — and
-   `partner-enablement-mvp.md` proposes a *different* track (Foundations → Business Case &
-   Qualification → Agent Builder Beam Run → Agent Builder Platform) than the implemented
-   one (Foundations → Discovery Lead → Builder → Solution Architect). We cannot build
-   progress tracking until this is settled.
-5. **Pricing — reframed.** The benchmark found partner margin has moved from resale to
-   services: profitability now comes from data preparation, integration, training,
-   optimization and run-support, while outcome-based pricing erodes resale margin. So the
-   question is not only *"what is my markup"* but **"how do I price a delivery
-   engagement."** That may be more answerable, sooner, than a licence markup.
-6. **Which tenants are real?** The spec says Roboyo and Alloyed; the catalog ships PwC ME
-   and Roboyo; the skill names PwC, Roboyo, BIT, Roland Berger and Strategy&.
-7. **Hostname.** Spec says `partner.beam.ai`, the code and catalog say `partners.beam.ai`.
+### Resolved
+
+| Decision | Answer |
+| --- | --- |
+| **Which verticals?** | **Financial services, BPO/RPO, and automotive manufacturing** are where Beam is winning. Finance and BPO/RPO confirmed as the two for depth; automotive is new and unaccounted for in earlier research |
+| **Does content need tier-gating?** | **No.** Approved partners see everything. Access is approval-gated at the door, not tiered inside — which matches the existing invite-only implementation. Tiers should gate *program benefits*, not content |
+| **Pricing** | **General agent pricing now exists** (since ~8 Sep) and should be published. Resellers get a discount. But **how a partner makes money is a 1:1 conversation, explicitly not for the portal** — so the FAQ's current routing of `how-we-make-money` to Beam is correct policy, not a gap |
+| **Which tenants are real?** | The authoritative list is Derya's Google Sheet — partner · GTM status · region · industry · type of partnership. Not the spec, catalog or skill, which disagree with each other |
+
+### Still open
+
+1. **Is there a deployment with a measured outcome we may cite by name?** Raised with Derya
+   and **not answered** — it did not come up. Still the top blocker on catalog credibility.
+   **Laurin and Kalina** are the likely source.
+2. **Who owns content?** Unchanged, and the largest schedule risk.
+3. **Which certification ladder is correct?** `partner-portal.md` lists "Sell certification"
+   as v1.1, but four certifications are already shipped — and `partner-enablement-mvp.md`
+   proposes a *different* track (Foundations → Business Case & Qualification → Agent Builder
+   Beam Run → Agent Builder Platform) than the implemented one (Foundations → Discovery Lead
+   → Builder → Solution Architect). We cannot build progress tracking until this is settled.
+4. **Hostname.** Spec says `partner.beam.ai`, the code and catalog say `partners.beam.ai`.
    The spec flags this and requires resolver, catalog hostnames, OAuth redirects, docs and
    tests migrate together at DNS cutover.
-8. **Do we deploy anything?** This repo has no Vercel or Convex project. If Phase 1 must be
+5. **Do we deploy anything?** This repo has no Vercel or Convex project. If Phase 1 must be
    demoable on a URL, that needs provisioning — and a decision about whether it is our own
    preview or a merge back upstream.
+
+### New requirements from Derya
+
+Not in the scope above, and they need a decision on where they land.
+
+- **Custom demo creation.** *"Demos are a very, very big factor. Being able to create
+  customized demos very fast themselves."* Related to the Phase 2 agent builder, but Derya
+  is describing a need partners have **now**.
+- **Platform limitations, documented.** Partners ask what Beam *cannot* do. Saying so builds
+  more trust than another feature list.
+- **ICP and pitch decks** — one general deck on the technology, plus vertical-specific ones.
+  A content gap we had not identified.
+- **A self-serve agent-building guide**, a portal access/onboarding guide, and a
+  support/troubleshooting guide — all assigned to Muaaz as action items from the call.
 
 ---
 
