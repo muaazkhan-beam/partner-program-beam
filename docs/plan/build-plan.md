@@ -35,7 +35,7 @@ takes only a slug.
 
 ---
 
-## Stage 0 — Foundations (Fri 11 – Sun 14 Sep)
+## Stage 0 — Foundations (Mon 15 – Tue 16 Sep)
 
 **Goal: one use case renders in the portal, isolated per workspace, with a passing test.**
 Getting the full chain working for *one* record de-risks everything after it.
@@ -93,7 +93,7 @@ they are not granted to, isolation test green.
 
 ---
 
-## Stage 1 — Content and tracks (Mon 15 – Fri 19 Sep)
+## Stage 1 — Content and tracks (Wed 17 – Fri 19 Sep)
 
 ### 1.1 Use case catalog to 12–15 entries — *critical path*
 

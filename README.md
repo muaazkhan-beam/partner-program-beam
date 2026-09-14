@@ -3,6 +3,9 @@
 Working repository for the Beam partner program dashboard. Spec, plan, research and
 build all live here.
 
+> **New here? Read [`docs/OVERVIEW.md`](docs/OVERVIEW.md).** It explains the partner program,
+> what this repo is, what we found, and the Phase 1 plan — and links to everything else.
+
 ## What this repo is
 
 `apps/partner/` is a **copy of the Beam Partner v1 shell** built by Jonas, taken from

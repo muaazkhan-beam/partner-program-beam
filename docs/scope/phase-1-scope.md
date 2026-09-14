@@ -202,10 +202,12 @@ Detailed steps: [`../plan/build-plan.md`](../plan/build-plan.md).
 
 | Window | Focus | Exit condition |
 | --- | --- | --- |
-| **Fri 11 – Sun 14 Sep** | Use case schema through the whole pipeline; 3 use cases end to end | A use case renders in the portal, isolated per workspace, test passing |
-| **Week 1 · 15–19 Sep** | Catalog to 12–15 entries; tracks; compliance library | Content complete; a BPO and an SI see different home screens |
-| **Week 2 · 22–26 Sep** | Certification progress; firm tiers; scorecard | A partner can see their tier and what moves them up |
-| **Week 3 · 29–30 Sep** | Polish, review with Derya and Fred, deploy | Live |
+| **Stage 0 · 15–16 Sep** | Use case schema through the whole pipeline; 3 use cases end to end | A use case renders in the portal, isolated per workspace, test passing |
+| **Stage 1 · 17–19 Sep** | Catalog to 12–15 entries; tracks; compliance library | Content complete; a BPO and an SI see different home screens |
+| **Stage 2 · 22–26 Sep** | Certification progress; firm tiers; scorecard | A partner can see their tier and what moves them up |
+| **Stage 3 · 29–30 Sep** | Polish, claim review with Derya and Fred, deploy | Live |
+
+**Twelve working days.**
 
 **Content is the critical path, not code.** Writing 12–15 use cases with real provenance
 and assembling the compliance library will take longer than building the surfaces that
