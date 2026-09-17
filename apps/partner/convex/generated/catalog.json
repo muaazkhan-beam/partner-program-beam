@@ -17,6 +17,7 @@
       ],
       "enabledSurfaces": [
         "home",
+        "journey",
         "agents",
         "tools",
         "materials",
