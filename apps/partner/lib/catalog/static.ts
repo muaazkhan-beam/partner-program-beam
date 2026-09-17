@@ -24,6 +24,7 @@ function allItems() {
     ...catalog.materials,
     ...catalog.faq,
     ...catalog.playbooks,
+    ...catalog.useCases,
   ]
 }
 
@@ -37,7 +38,9 @@ export function listWorkspaceItems(slug: string, kind: ContentKind) {
         ? workspace.materialSlugs
         : kind === "faq"
           ? workspace.faqSlugs
-          : workspace.playbookSlugs
+          : kind === "use-case"
+            ? (workspace.useCaseSlugs ?? [])
+            : workspace.playbookSlugs
   return allItems().filter(
     (item) =>
       item.kind === kind &&

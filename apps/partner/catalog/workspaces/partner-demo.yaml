@@ -13,6 +13,7 @@ allowedEmailDomains:
   - partner.example
 enabledSurfaces:
   - home
+  - use-cases
   - agents
   - tools
   - materials
@@ -92,3 +93,7 @@ faqSlugs:
   - leadership-pack
 playbookSlugs:
   - one-workflow-shadow
+useCaseSlugs:
+  - invoice-exception-handling
+  - supplier-communication
+  - cv-screening

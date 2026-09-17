@@ -14,6 +14,7 @@ import {
   requestStatusValidator,
   requestSupportTypeValidator,
   trackFramingValidator,
+  useCaseDetailValidator,
 } from "./lib/validators"
 
 export default defineSchema({
@@ -106,6 +107,8 @@ export default defineSchema({
     reviewer: v.optional(v.string()),
     reviewedAt: v.optional(v.number()),
     revalidateAt: v.optional(v.number()),
+    // Present only when kind is "use-case".
+    useCase: v.optional(useCaseDetailValidator),
     createdAt: v.number(),
   })
     .index("by_kind", ["kind"])

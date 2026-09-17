@@ -29,8 +29,35 @@ export const contentKindValidator = v.union(
   v.literal("tool"),
   v.literal("material"),
   v.literal("faq"),
-  v.literal("playbook")
+  v.literal("playbook"),
+  v.literal("use-case")
 )
+
+export const useCaseComplexityValidator = v.union(
+  v.literal("starter"),
+  v.literal("standard"),
+  v.literal("complex")
+)
+
+/**
+ * The structured half of a use case. `humanInLoop` is required because every
+ * use case must name the step that keeps a human approver; `outcome` carries
+ * its source so no number reaches a partner without provenance.
+ */
+export const useCaseDetailValidator = v.object({
+  vertical: v.string(),
+  department: v.string(),
+  systems: v.array(v.string()),
+  trigger: v.string(),
+  before: v.string(),
+  after: v.string(),
+  humanInLoop: v.string(),
+  outcome: v.optional(
+    v.object({ metric: v.string(), value: v.string(), source: v.string() })
+  ),
+  timeToProduction: v.optional(v.string()),
+  complexity: v.optional(useCaseComplexityValidator),
+})
 
 export const contentClassValidator = v.union(
   v.literal("shared-partner-safe"),

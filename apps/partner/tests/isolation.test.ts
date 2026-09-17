@@ -387,3 +387,57 @@ test("preview seed loads the demo and reviewed partner workspaces without staff 
   assert.equal(roboyo?.slug, "roboyo")
   assert.equal(rolandBerger?.slug, "roland-berger")
 })
+
+test("use cases are granted per workspace and carry their guardrails", async () => {
+  const t = await seeded()
+  const pwc = await memberAs(t, "paul@pwc.com", "pwc-me")
+  const roboyo = await memberAs(t, "alex@roboyo.com", "roboyo")
+  const pwcWorkspace = await t.query(api.partner.resolveWorkspace, {
+    slug: "pwc-me",
+  })
+  const roboyoWorkspace = await t.query(api.partner.resolveWorkspace, {
+    slug: "roboyo",
+  })
+  assert.ok(pwcWorkspace && roboyoWorkspace)
+
+  const pwcUseCases = await pwc.query(api.partner.listContent, {
+    workspaceId: pwcWorkspace._id,
+    kind: "use-case",
+  })
+  const roboyoUseCases = await roboyo.query(api.partner.listContent, {
+    workspaceId: roboyoWorkspace._id,
+    kind: "use-case",
+  })
+
+  // Both advisory and BPO partners sell finance exceptions.
+  assert.ok(
+    pwcUseCases.some((item) => item.slug === "invoice-exception-handling"),
+  )
+  // CV screening is granted to the BPO workspace only.
+  assert.ok(roboyoUseCases.some((item) => item.slug === "cv-screening"))
+  assert.ok(!pwcUseCases.some((item) => item.slug === "cv-screening"))
+
+  // A workspace cannot read another's use cases even with a valid session.
+  await assert.rejects(
+    pwc.query(api.partner.listContent, {
+      workspaceId: roboyoWorkspace._id,
+      kind: "use-case",
+    }),
+  )
+
+  // Every use case names the step that keeps a human approver, and no number
+  // reaches a partner without a source.
+  for (const item of [...pwcUseCases, ...roboyoUseCases]) {
+    assert.ok(
+      item.useCase?.humanInLoop,
+      `${item.slug} must name its human-in-the-loop step`,
+    )
+    assert.ok(item.useCase.systems.length > 0)
+    if (item.useCase.outcome) {
+      assert.ok(
+        item.useCase.outcome.source,
+        `${item.slug} claims an outcome without a source`,
+      )
+    }
+  }
+})

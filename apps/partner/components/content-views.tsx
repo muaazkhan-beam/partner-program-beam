@@ -23,17 +23,18 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useWorkspace } from "@/components/workspace-context"
 import { authBypass } from "@/components/providers"
+import type { ContentKind, UseCaseDetail } from "@/convex/catalogTypes"
 import { getWorkspaceItem, listWorkspaceItems } from "@/lib/catalog/static"
 import { workspacePath } from "@/lib/workspace-resolver"
 import { api } from "@partner/convex/_generated/api"
 import { useQuery } from "convex/react"
 
-type ContentKind = "tool" | "material" | "faq" | "playbook"
 
 function contentSurface(kind: ContentKind) {
   if (kind === "faq") return "faq"
   if (kind === "tool") return "tools"
   if (kind === "material") return "materials"
+  if (kind === "use-case") return "use-cases"
   return "playbooks"
 }
 
@@ -53,6 +54,152 @@ type ContentCard = {
   embedUrl?: string
   href?: string
   status?: "pending"
+  useCase?: UseCaseDetail
+}
+
+
+const COMPLEXITY_LABEL: Record<string, string> = {
+  starter: "Starter",
+  standard: "Standard",
+  complex: "Complex",
+}
+
+/**
+ * Use cases are structured records, not documents, so they get their own
+ * renderer rather than the share-preview one. The systems and the
+ * human-approval step are what a partner is actually scanning for.
+ */
+function UseCaseCatalog({ items }: { items: ContentCard[] }) {
+  const workspace = useWorkspace()
+  const grouped = new Map<string, ContentCard[]>()
+  for (const item of items) {
+    const key = item.group ?? "Other"
+    grouped.set(key, [...(grouped.get(key) ?? []), item])
+  }
+
+  return (
+    <div className="space-y-10">
+      {[...grouped.entries()].map(([department, groupItems]) => (
+        <section key={department} className="space-y-4">
+          <h2 className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+            {department}
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            {groupItems.map((item) => {
+              const detail = item.useCase
+              return (
+                <Link
+                  key={item.slug}
+                  href={workspacePath(workspace.slug, `/use-cases/${item.slug}`)}
+                  className="group flex flex-col gap-3 rounded-2xl border bg-card p-5 transition-colors hover:border-primary/40"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    {detail?.complexity ? (
+                      <Badge variant="outline">
+                        {COMPLEXITY_LABEL[detail.complexity] ?? detail.complexity}
+                      </Badge>
+                    ) : null}
+                    {detail?.timeToProduction ? (
+                      <Badge variant="outline">{detail.timeToProduction}</Badge>
+                    ) : null}
+                    <Badge variant="outline">
+                      {item.forwardable ? "Client-forwardable" : "Partner-internal"}
+                    </Badge>
+                  </div>
+                  <h3 className="text-lg font-medium tracking-tight">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground">{item.summary}</p>
+                  {detail?.systems?.length ? (
+                    <p className="font-mono text-[11px] text-muted-foreground">
+                      {detail.systems.join(" · ")}
+                    </p>
+                  ) : null}
+                  <span className="mt-auto inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+                    {detail?.outcome ? detail.outcome.value : "Outcome pending"}
+                    <RiArrowRightLine className="size-4" />
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
+        </section>
+      ))}
+    </div>
+  )
+}
+
+function UseCaseRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-1 border-t py-4 sm:grid-cols-[160px_1fr] sm:gap-6">
+      <dt className="font-mono text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
+        {label}
+      </dt>
+      <dd className="text-sm leading-6">{children}</dd>
+    </div>
+  )
+}
+
+function UseCaseDetailView({
+  item,
+  detail,
+}: {
+  item: ContentCard
+  detail: UseCaseDetail
+}) {
+  return (
+    <article className="max-w-3xl space-y-5">
+      <div className="flex flex-wrap gap-2">
+        <Badge variant="outline">{tagLabel(item.audience)}</Badge>
+        <Badge variant="outline">
+          {item.status === "pending" ? "Pending" : tagLabel(item.claimState)}
+        </Badge>
+        {detail.complexity ? (
+          <Badge variant="outline">
+            {COMPLEXITY_LABEL[detail.complexity] ?? detail.complexity}
+          </Badge>
+        ) : null}
+      </div>
+
+      <h2 className="text-3xl font-medium tracking-tight">{item.title}</h2>
+      <p className="text-muted-foreground">{item.summary}</p>
+      <p className="text-sm leading-7">{item.body}</p>
+
+      <dl className="mt-2">
+        <UseCaseRow label="Trigger">{detail.trigger}</UseCaseRow>
+        <UseCaseRow label="Today">{detail.before}</UseCaseRow>
+        <UseCaseRow label="With the agent">{detail.after}</UseCaseRow>
+        <UseCaseRow label="Systems">
+          <span className="font-mono text-[13px]">{detail.systems.join(" · ")}</span>
+        </UseCaseRow>
+        {detail.timeToProduction ? (
+          <UseCaseRow label="To production">{detail.timeToProduction}</UseCaseRow>
+        ) : null}
+        <UseCaseRow label="Outcome">
+          {detail.outcome ? (
+            <>
+              <span className="font-medium">
+                {detail.outcome.metric}: {detail.outcome.value}
+              </span>
+              <span className="block text-muted-foreground">
+                Source: {detail.outcome.source}
+              </span>
+            </>
+          ) : (
+            <span className="text-muted-foreground">
+              No measured outcome cleared for partner use yet. Do not quote a number
+              for this use case.
+            </span>
+          )}
+        </UseCaseRow>
+      </dl>
+
+      <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+        <p className="font-mono text-[11px] tracking-[0.14em] text-primary uppercase">
+          Human in the loop
+        </p>
+        <p className="mt-1.5 text-sm leading-6">{detail.humanInLoop}</p>
+      </div>
+    </article>
+  )
 }
 
 function tagLabel(value: string) {
@@ -173,6 +320,9 @@ function ContentGridBody({
   }
   if (kind === "faq") {
     return <FaqRows items={items} />
+  }
+  if (kind === "use-case") {
+    return <UseCaseCatalog items={items} />
   }
   return <PreviewCatalog kind={kind} items={items} />
 }
@@ -622,6 +772,9 @@ function ContentDetailBody({
   }
   if (kind === "material" || kind === "playbook") {
     return <SharePreviewDetail item={item} kind={kind} />
+  }
+  if (kind === "use-case" && item.useCase) {
+    return <UseCaseDetailView item={item} detail={item.useCase} />
   }
   return (
     <article className="max-w-3xl space-y-4">
