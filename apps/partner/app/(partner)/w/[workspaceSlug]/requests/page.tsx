@@ -13,6 +13,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useWorkspace } from "@/components/workspace-context"
 import { getCertification } from "@/lib/certifications"
+import {
+  describeRequestSubject,
+  isRequestSupportType,
+  type RequestSubject,
+} from "@/lib/request-links"
 
 const stages = ["qualify", "diagnostic", "shadow", "success-criteria"] as const
 const supportTypes = [
@@ -102,6 +107,8 @@ function RequestsForm({
   onCreate: (input: RequestInput) => Promise<string>
   requests?: ReactNode
 }) {
+  const workspace = useWorkspace()
+  const [subject, setSubject] = useState<RequestSubject | null>(null)
   const [accountName, setAccountName] = useState("")
   const [candidateProcess, setCandidateProcess] = useState("")
   const [stage, setStage] = useState<(typeof stages)[number]>("qualify")
@@ -112,24 +119,33 @@ function RequestsForm({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const certificationSlug = new URLSearchParams(window.location.search).get(
-      "certification"
-    )
-    const certification = getCertification(certificationSlug ?? "")
-    if (!certification) return
+    const params = new URLSearchParams(window.location.search)
+    const certification = getCertification(params.get("certification") ?? "")
+    const about = describeRequestSubject(workspace.slug, params.get("about"))
+    const support = params.get("support")
+    if (!certification && !about && !isRequestSupportType(support)) return
 
     const prefill = window.setTimeout(() => {
-      setCandidateProcess(`Partner certification — ${certification.name}`)
-      setSupportType("other")
-      setProblemStatement(
-        certification.active
-          ? `Please add me to the next ${certification.name} certification cohort.`
-          : `Please review my readiness for the ${certification.name} certification.`
-      )
+      if (certification) {
+        setCandidateProcess(`Partner certification — ${certification.name}`)
+        setSupportType("other")
+        setProblemStatement(
+          certification.active
+            ? `Please add me to the next ${certification.name} certification cohort.`
+            : `Please review my readiness for the ${certification.name} certification.`
+        )
+        return
+      }
+      if (about) {
+        setSubject(about)
+        if (about.kind === "use-case") setCandidateProcess(about.label)
+        setProblemStatement(`Stuck on: ${about.label}.\n\n`)
+      }
+      if (isRequestSupportType(support)) setSupportType(support)
     }, 0)
 
     return () => window.clearTimeout(prefill)
-  }, [])
+  }, [workspace.slug])
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -165,6 +181,12 @@ function RequestsForm({
       <Card>
         <CardHeader>
           <h2 className="text-lg font-medium">Request Beam support</h2>
+          {subject ? (
+            <p className="text-sm text-muted-foreground">
+              About:{" "}
+              <span className="font-medium text-foreground">{subject.label}</span>
+            </p>
+          ) : null}
         </CardHeader>
         <CardContent>
           <form className="grid gap-4" onSubmit={onSubmit}>

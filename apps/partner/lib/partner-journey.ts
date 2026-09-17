@@ -1,4 +1,9 @@
-export type JourneyResourceKind = "tool" | "material" | "faq" | "playbook"
+export type JourneyResourceKind =
+  | "tool"
+  | "material"
+  | "faq"
+  | "playbook"
+  | "use-case"
 
 export type JourneyResource = {
   kind: JourneyResourceKind
@@ -21,6 +26,7 @@ export type JourneyPhase = {
   deliverables: JourneyDeliverable[]
   resources: JourneyResource[]
   requestLabel: string
+  requestSupport: "shadow-demo" | "deployment-review" | "faq-escalation" | "other"
 }
 
 // Progress through the phases is gated; content is not. Every resource stays
@@ -34,6 +40,12 @@ export const journeyPhases: JourneyPhase[] = [
     goal: "Qualify one client process and agree what success means before anything is built.",
     exit: "A named process with an accountable owner, a measured baseline, and success criteria agreed in writing.",
     deliverables: [
+      {
+        id: "use-case",
+        title: "Pick a live use case",
+        detail:
+          "Start from a process Beam already runs in production. Each catalog record states the trigger, the systems touched and the step that keeps a human approver.",
+      },
       {
         id: "qualify",
         title: "Qualify the client and the process",
@@ -60,6 +72,9 @@ export const journeyPhases: JourneyPhase[] = [
       },
     ],
     resources: [
+      { kind: "use-case", slug: "invoice-exception-handling" },
+      { kind: "use-case", slug: "supplier-communication" },
+      { kind: "use-case", slug: "cv-screening" },
       { kind: "faq", slug: "first-process-fit" },
       { kind: "faq", slug: "when-to-walk-away" },
       { kind: "tool", slug: "operating-diagnostic" },
@@ -68,6 +83,7 @@ export const journeyPhases: JourneyPhase[] = [
       { kind: "faq", slug: "measuring-success" },
     ],
     requestLabel: "Request Beam support",
+    requestSupport: "other",
   },
   {
     slug: "build",
@@ -111,6 +127,7 @@ export const journeyPhases: JourneyPhase[] = [
       { kind: "faq", slug: "human-approval" },
     ],
     requestLabel: "Request a shadow demo",
+    requestSupport: "shadow-demo",
   },
   {
     slug: "deploy",
@@ -152,6 +169,7 @@ export const journeyPhases: JourneyPhase[] = [
       { kind: "faq", slug: "brand-shapes" },
     ],
     requestLabel: "Request a deployment review",
+    requestSupport: "deployment-review",
   },
   {
     slug: "monitor",
@@ -187,6 +205,7 @@ export const journeyPhases: JourneyPhase[] = [
       { kind: "faq", slug: "human-approval" },
     ],
     requestLabel: "Escalate a question to Beam",
+    requestSupport: "faq-escalation",
   },
   {
     slug: "deliver",
@@ -222,5 +241,6 @@ export const journeyPhases: JourneyPhase[] = [
       { kind: "material", slug: "beam-partner-executive-overview" },
     ],
     requestLabel: "Ask Beam about support coverage",
+    requestSupport: "faq-escalation",
   },
 ]

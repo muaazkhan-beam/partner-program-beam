@@ -176,6 +176,18 @@ test("scoped preview bypass opens every demo partner surface and interaction", a
     page.getByText("Production feedback (thumbs, failed code nodes"),
   ).toBeVisible()
 
+  await page.goto("/w/partner-demo/faq")
+  await page.getByRole("button", { name: "Pending", exact: true }).click()
+  await expect(
+    page.locator('a[href*="/requests?about=faq%3A"]')
+  ).not.toHaveCount(0)
+
+  await page.goto(
+    "/w/partner-demo/requests?about=faq%3Apricing-and-packaging&support=faq-escalation"
+  )
+  await expect(page.getByText("About:")).toBeVisible()
+  await expect(page.locator("select").nth(1)).toHaveValue("faq-escalation")
+
   await page.goto("/w/partner-demo/requests")
   await expect(
     page.getByRole("heading", { name: "Start a client opportunity" }),

@@ -25,6 +25,7 @@ import { useWorkspace } from "@/components/workspace-context"
 import { authBypass } from "@/components/providers"
 import type { ContentKind, UseCaseDetail } from "@/convex/catalogTypes"
 import { getWorkspaceItem, listWorkspaceItems } from "@/lib/catalog/static"
+import { requestHref, supportForKind } from "@/lib/request-links"
 import { workspacePath } from "@/lib/workspace-resolver"
 import { api } from "@partner/convex/_generated/api"
 import { useQuery } from "convex/react"
@@ -557,6 +558,17 @@ function FaqRows({ items }: { items: ContentCard[] }) {
                       "Request Beam for an approved answer.")
                     : item.body}
               </p>
+              {item.status === "pending" || item.claimState === "restricted" ? (
+                <Link
+                  className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                  href={requestHref(workspace.slug, {
+                    about: `faq:${item.slug}`,
+                    support: "faq-escalation",
+                  })}
+                >
+                  Ask Beam about this <RiArrowRightLine className="size-4" />
+                </Link>
+              ) : null}
               <Link
                 className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
                 href={workspacePath(workspace.slug, `/faq/${item.slug}`)}
@@ -806,9 +818,16 @@ function ContentDetailBody({
         </Link>
       ) : null}
       {item.claimState === "restricted" || item.requestBeamLabel ? (
-        <p className="rounded-lg border p-3 text-sm">
-          {item.requestBeamLabel ?? "Request Beam"}
-        </p>
+        <Link
+          className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm transition-colors hover:bg-muted/40"
+          href={requestHref(workspace.slug, {
+            about: `${item.kind}:${item.slug}`,
+            support: supportForKind(item.kind),
+          })}
+        >
+          <span>{item.requestBeamLabel ?? "Request Beam"}</span>
+          <RiArrowRightLine className="size-4 shrink-0 text-muted-foreground" />
+        </Link>
       ) : null}
     </article>
   )

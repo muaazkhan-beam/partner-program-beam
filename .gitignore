@@ -36,3 +36,12 @@ yarn-error.log*
 .pnpm-debug.log*
 __pycache__/
 *.pyc
+
+# private working notes and local tooling — never commit
+.notes/
+skills/
+skills-lock.json
+.claude/
+
+# compliance PDFs live outside the repo (../Beam-Compliance-Policies); guard in case copied back
+Beam-Compliance-Policies/

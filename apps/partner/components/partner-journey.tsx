@@ -23,6 +23,7 @@ import {
   type JourneyPhase,
   type JourneyResourceKind,
 } from "@/lib/partner-journey"
+import { requestHref } from "@/lib/request-links"
 import { cn } from "@/lib/utils"
 import { workspacePath } from "@/lib/workspace-resolver"
 import { api } from "@partner/convex/_generated/api"
@@ -43,6 +44,7 @@ const kindLabel: Record<JourneyResourceKind, string> = {
   material: "Material",
   faq: "FAQ",
   playbook: "Playbook",
+  "use-case": "Use case",
 }
 
 const totalDeliverables = journeyPhases.reduce(
@@ -105,6 +107,9 @@ function resourceHref(workspaceSlug: string, item: JourneyItem) {
   if (item.kind === "tool") {
     return workspacePath(workspaceSlug, `/tools/${item.slug}`)
   }
+  if (item.kind === "use-case") {
+    return workspacePath(workspaceSlug, `/use-cases/${item.slug}`)
+  }
   return workspacePath(workspaceSlug, `/materials/${item.slug}`)
 }
 
@@ -115,7 +120,9 @@ export function PartnerJourney() {
 
 function BypassPartnerJourney() {
   const workspace = useWorkspace()
-  const items = (["tool", "material", "faq", "playbook"] as const).flatMap(
+  const items = (
+    ["tool", "material", "faq", "playbook", "use-case"] as const
+  ).flatMap(
     (kind) => listWorkspaceItems(workspace.slug, kind) as JourneyItem[]
   )
   return <JourneyBody items={items} />
@@ -134,9 +141,19 @@ function LivePartnerJourney() {
     workspaceId,
     kind: "playbook",
   })
+  const useCases = useQuery(api.partner.listContent, {
+    workspaceId,
+    kind: "use-case",
+  })
   const items =
-    tools && materials && faq && playbooks
-      ? ([...tools, ...materials, ...faq, ...playbooks] as JourneyItem[])
+    tools && materials && faq && playbooks && useCases
+      ? ([
+          ...tools,
+          ...materials,
+          ...faq,
+          ...playbooks,
+          ...useCases,
+        ] as JourneyItem[])
       : undefined
   return <JourneyBody items={items} />
 }
@@ -423,7 +440,10 @@ function JourneyBody({ items }: { items: JourneyItem[] | undefined }) {
           )}
           <Link
             className={cn(buttonVariants({ variant: "outline" }), "mt-auto w-full")}
-            href={workspacePath(workspace.slug, "/requests")}
+            href={requestHref(workspace.slug, {
+              about: `journey:${phase.slug}`,
+              support: phase.requestSupport,
+            })}
           >
             <RiSendPlaneLine /> {phase.requestLabel}
           </Link>
