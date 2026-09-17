@@ -6,7 +6,7 @@ const CONTROL_CHARACTER = /[\u0000-\u001f\u007f]/
 
 export function getSafeAuthReturnPath(
   value: unknown,
-  fallback = DEFAULT_AUTH_RETURN_PATH
+  fallback = DEFAULT_AUTH_RETURN_PATH,
 ) {
   if (typeof value !== "string") return fallback
 
@@ -37,4 +37,26 @@ export function getLoginPath(returnPath: unknown) {
   const safeReturnPath = getSafeAuthReturnPath(returnPath)
   const query = new URLSearchParams({ from: safeReturnPath })
   return `/login?${query.toString()}`
+}
+
+export function shouldRedirectPartnerLogin({
+  convexLoading,
+  convexRefreshing,
+  convexAuthenticated,
+  sessionPending,
+  hasSession,
+}: {
+  convexLoading: boolean
+  convexRefreshing: boolean
+  convexAuthenticated: boolean
+  sessionPending: boolean
+  hasSession: boolean
+}) {
+  return !(
+    convexLoading ||
+    convexRefreshing ||
+    convexAuthenticated ||
+    sessionPending ||
+    hasSession
+  )
 }

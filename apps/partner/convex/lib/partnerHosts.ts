@@ -1,6 +1,9 @@
-export const CANONICAL_PARTNER_HOST = "partners.beam.ai"
+// This is deliberately singular. The first implementation used the
+// provisional `partners.beam.ai` hostname; do not keep it in the auth
+// allowlist after DNS cutover because it would become a second login origin.
+export const CANONICAL_PARTNER_HOST = "partner.beam.ai"
 export const CANONICAL_PARTNER_ORIGIN = `https://${CANONICAL_PARTNER_HOST}`
-export const PARTNER_HOST_SUFFIX = ".partners.beam.ai"
+export const PARTNER_HOST_SUFFIX = ".partner.beam.ai"
 export const VERCEL_PREVIEW_SUFFIX = ".vercel.app"
 
 const APEX_HOSTS = new Set([CANONICAL_PARTNER_HOST, "localhost", "127.0.0.1"])
@@ -27,7 +30,7 @@ function isVercelPreviewHost(hostname: string) {
 }
 
 export function classifyPartnerHost(
-  hostHeader: string
+  hostHeader: string,
 ): PartnerHostClassification {
   const hostname = hostnameOf(hostHeader)
   if (!hostname) return { ok: false }
@@ -63,6 +66,10 @@ export function partnerAuthAllowedHosts(extraHosts?: string) {
 export function canonicalSiteUrl(siteUrl?: string) {
   const configured = siteUrl?.trim()
   return configured || CANONICAL_PARTNER_ORIGIN
+}
+
+export function primaryHostnameForWorkspace(slug: string) {
+  return `${slug}${PARTNER_HOST_SUFFIX}`
 }
 
 export function isLocalSiteUrl(siteUrl?: string) {

@@ -5,7 +5,9 @@ import { isServerAuthBypass } from "@/lib/auth-bypass"
 import { getLoginPath, getSafeAuthReturnPath } from "@/lib/auth-redirect"
 import {
   isPublicPath,
+  isPartnerLoginEntryPath,
   resolveWorkspaceSlug,
+  rewritePartnerEntryPath,
   rewriteSubdomainPath,
 } from "@/lib/workspace-resolver"
 
@@ -20,14 +22,20 @@ export function proxy(request: NextRequest) {
     return new NextResponse("Unknown partner workspace", { status: 404 })
   }
 
-  if (resolution.source === "host" && resolution.slug) {
-    const rewritten = rewriteSubdomainPath(pathname, resolution.slug)
-    if (rewritten !== pathname) {
-      const url = request.nextUrl.clone()
-      url.pathname = rewritten
-      return NextResponse.rewrite(url)
-    }
+  // Staff administration is an apex-only surface. A tenant hostname must never
+  // turn /admin into a workspace route or become another staff login origin.
+  if (pathname === "/admin" && resolution.source === "host") {
+    return new NextResponse("Not found", { status: 404 })
   }
+
+  const isPartnerLoginEntry = isPartnerLoginEntryPath(pathname)
+  const rewrittenPath = resolution.slug
+    ? resolution.source === "host"
+      ? rewriteSubdomainPath(pathname, resolution.slug)
+      : resolution.source === "entry" && !isPartnerLoginEntry
+        ? rewritePartnerEntryPath(pathname, resolution.slug)
+        : pathname
+    : pathname
 
   if (isServerAuthBypass()) return NextResponse.next()
   if (pathname.startsWith("/api/auth")) return NextResponse.next()
@@ -35,16 +43,27 @@ export function proxy(request: NextRequest) {
   const session = getSessionCookie(request)
   if (pathname === "/login" && session) {
     const returnPath = getSafeAuthReturnPath(
-      request.nextUrl.searchParams.get("from")
+      request.nextUrl.searchParams.get("from"),
     )
     return NextResponse.redirect(new URL(returnPath, request.url))
   }
-  if (isPublicPath(pathname) || session) return NextResponse.next()
+  if (isPublicPath(pathname)) return NextResponse.next()
 
-  const requestedPath = `${pathname}${request.nextUrl.search}`
-  return NextResponse.redirect(
-    new URL(getLoginPath(requestedPath), request.url)
-  )
+  if (!session) {
+    const requestedPath = `${pathname}${request.nextUrl.search}`
+    const loginUrl = new URL(getLoginPath(requestedPath), request.url)
+    if (resolution.source === "entry" && resolution.slug) {
+      loginUrl.searchParams.set("workspace", resolution.slug)
+    }
+    return NextResponse.redirect(loginUrl)
+  }
+
+  if (rewrittenPath !== pathname) {
+    const url = request.nextUrl.clone()
+    url.pathname = rewrittenPath
+    return NextResponse.rewrite(url)
+  }
+  return NextResponse.next()
 }
 
 export const config = {

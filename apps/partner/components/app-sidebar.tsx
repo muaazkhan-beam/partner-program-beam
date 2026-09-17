@@ -9,6 +9,7 @@ import {
   RiQuestionLine,
   RiSendPlaneLine,
   RiShieldUserLine,
+  RiAiAgentLine,
   RiToolsLine,
 } from "@remixicon/react"
 
@@ -33,6 +34,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const surfaces = new Set(workspace.enabledSurfaces)
   const navigation = [
     { title: "Home", url: workspacePath(workspace.slug, "/home"), icon: RiHome5Line, surface: "home" },
+    { title: "Agents", url: workspacePath(workspace.slug, "/agents"), icon: RiAiAgentLine, surface: "agents", badge: "New" },
     { title: "Tools", url: workspacePath(workspace.slug, "/tools"), icon: RiToolsLine, surface: "tools" },
     { title: "Materials", url: workspacePath(workspace.slug, "/materials"), icon: RiFileTextLine, surface: "materials" },
     { title: "FAQ", url: workspacePath(workspace.slug, "/faq"), icon: RiQuestionLine, surface: "faq" },

@@ -16,8 +16,33 @@ export function slugFromPath(pathname: string) {
   return match?.[1] ?? null
 }
 
+// These are intentionally small, reviewed entry routes for the first named
+// partners. Every other workspace uses /w/<slug>; do not turn arbitrary
+// top-level paths into tenant routing.
+export const PARTNER_ENTRY_ROUTES = {
+  "/pwc": "pwc-me",
+  "/roland-berger": "roland-berger",
+} as const
+
+export function slugFromPartnerEntryPath(pathname: string) {
+  for (const [entryPath, slug] of Object.entries(PARTNER_ENTRY_ROUTES)) {
+    if (pathname === entryPath || pathname.startsWith(`${entryPath}/`)) {
+      return slug
+    }
+  }
+  return null
+}
+
+export function isPartnerLoginEntryPath(pathname: string) {
+  return Object.hasOwn(PARTNER_ENTRY_ROUTES, pathname)
+}
+
 export type WorkspaceResolution =
-  | { ok: true; slug: string | null; source: "host" | "path" | "apex" }
+  | {
+      ok: true
+      slug: string | null
+      source: "host" | "path" | "entry" | "apex"
+    }
   | { ok: false; reason: "unknown-host" | "host-path-mismatch" }
 
 export function resolveWorkspaceSlug(input: {
@@ -38,6 +63,10 @@ export function resolveWorkspaceSlug(input: {
   if (fromPath) {
     return { ok: true, slug: fromPath, source: "path" }
   }
+  const fromEntry = slugFromPartnerEntryPath(input.pathname)
+  if (fromEntry) {
+    return { ok: true, slug: fromEntry, source: "entry" }
+  }
   return { ok: true, slug: null, source: "apex" }
 }
 
@@ -54,11 +83,24 @@ export function rewriteSubdomainPath(pathname: string, slug: string) {
   return `/w/${slug}${pathname}`
 }
 
-export const PUBLIC_PATHS = new Set(["/login", "/invite"])
+export function rewritePartnerEntryPath(pathname: string, slug: string) {
+  const entryPath = Object.entries(PARTNER_ENTRY_ROUTES).find(
+    ([path, entrySlug]) =>
+      entrySlug === slug &&
+      (pathname === path || pathname.startsWith(`${path}/`)),
+  )?.[0]
+  if (!entryPath) return pathname
+  const remainder = pathname.slice(entryPath.length)
+  if (!remainder || remainder === "/") return `/w/${slug}/home`
+  return `/w/${slug}${remainder}`
+}
+
+export const PUBLIC_PATHS = new Set(["/", "/login", "/invite", "/admin"])
 
 export function isPublicPath(pathname: string) {
   return (
     PUBLIC_PATHS.has(pathname) ||
+    isPartnerLoginEntryPath(pathname) ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/invite")
   )

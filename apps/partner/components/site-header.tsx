@@ -21,6 +21,8 @@ const titles: Record<string, string> = {
   tools: "Tools",
   materials: "Materials",
   faq: "FAQ",
+  certifications: "Certifications",
+  agents: "Agents",
   requests: "Requests",
   admin: "Admin",
 }

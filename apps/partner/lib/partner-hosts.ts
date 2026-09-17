@@ -10,5 +10,6 @@ export {
   hostnameOf,
   isLocalSiteUrl,
   partnerAuthAllowedHosts,
+  primaryHostnameForWorkspace,
   type PartnerHostClassification,
 } from "../convex/lib/partnerHosts"

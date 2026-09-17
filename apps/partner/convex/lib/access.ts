@@ -36,25 +36,34 @@ export async function requireActor(ctx: DbCtx) {
 }
 
 export async function requireStaffActor(ctx: DbCtx) {
-  const user = await requireActor(ctx)
+  const email = await getIdentityEmail(ctx)
   if (
-    !user.isStaff ||
-    !isStaffEmail(user.email, process.env.STAFF_EMAIL_DOMAIN)
+    !isStaffEmail(
+      email,
+      process.env.STAFF_EMAIL_DOMAINS ?? process.env.STAFF_EMAIL_DOMAIN,
+    )
   ) {
     throw new PartnerAccessError("Unauthorized: staff only")
+  }
+  const user = await ctx.db
+    .query("partnerUsers")
+    .withIndex("by_email", (q) => q.eq("email", email!))
+    .unique()
+  if (!user?.isStaff) {
+    throw new PartnerAccessError("Unauthorized: staff session not initialized")
   }
   return user
 }
 
 export async function requireMembership(
   ctx: DbCtx,
-  workspaceId: Id<"workspaces">
+  workspaceId: Id<"workspaces">,
 ) {
   const actor = await requireActor(ctx)
   const membership = await ctx.db
     .query("memberships")
     .withIndex("by_workspace_and_user", (q) =>
-      q.eq("workspaceId", workspaceId).eq("userId", actor._id)
+      q.eq("workspaceId", workspaceId).eq("userId", actor._id),
     )
     .unique()
 
@@ -67,9 +76,12 @@ export async function requireMembership(
 
 export function isVisibleToPartner(
   item: Doc<"contentItems">,
-  actorIsStaff: boolean
+  actorIsStaff: boolean,
 ) {
-  if (item.claimState === "staff-draft" || item.contentClass === "staff-draft") {
+  if (
+    item.claimState === "staff-draft" ||
+    item.contentClass === "staff-draft"
+  ) {
     return actorIsStaff
   }
   return true

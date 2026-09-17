@@ -11,7 +11,12 @@ import {
   requireMembership,
   requireStaffActor,
 } from "./lib/access"
-import { isStaffEmail, normalizeEmail } from "./lib/authPolicy"
+import {
+  isAllowedPartnerDomain,
+  isStaffEmail,
+  normalizeEmail,
+} from "./lib/authPolicy"
+import { primaryHostnameForWorkspace } from "./lib/partnerHosts"
 import {
   claimStateValidator,
   contentKindValidator,
@@ -32,7 +37,7 @@ const workspacePublicValidator = v.object({
   brandMode: v.union(
     v.literal("beam-standard"),
     v.literal("co-branded"),
-    v.literal("partner-fronted")
+    v.literal("partner-fronted"),
   ),
   brandHeader: v.string(),
   homeTitle: v.string(),
@@ -45,18 +50,18 @@ const workspacePublicValidator = v.object({
       framing: v.union(
         v.literal("layer"),
         v.literal("beachhead"),
-        v.literal("clearance")
+        v.literal("clearance"),
       ),
       summary: v.string(),
       action: v.string(),
       href: v.string(),
-    })
+    }),
   ),
   steps: v.array(
     v.object({
       title: v.string(),
       detail: v.string(),
-    })
+    }),
   ),
   enabledSurfaces: v.array(v.string()),
   supportOwner: v.string(),
@@ -134,7 +139,7 @@ export const getWorkspaceSession = query({
     try {
       const { actor, membership } = await requireMembership(
         ctx,
-        args.workspaceId
+        args.workspaceId,
       )
       const workspace = await ctx.db.get(args.workspaceId)
       if (!workspace) return null
@@ -167,7 +172,7 @@ export const listMyMemberships = query({
       slug: v.string(),
       name: v.string(),
       role: membershipRoleValidator,
-    })
+    }),
   ),
   handler: async (ctx) => {
     const actor = await requireActor(ctx)
@@ -206,12 +211,12 @@ const contentCardValidator = v.object({
   contentClass: v.union(
     v.literal("shared-partner-safe"),
     v.literal("workspace-only"),
-    v.literal("staff-draft")
+    v.literal("staff-draft"),
   ),
   audience: v.union(
     v.literal("partner-internal"),
     v.literal("client-forwardable"),
-    v.literal("technical")
+    v.literal("technical"),
   ),
   forwardable: v.boolean(),
   claimState: claimStateValidator,
@@ -257,7 +262,7 @@ function toContentCard(item: Doc<"contentItems">) {
 async function listGrantedContent(
   ctx: Parameters<typeof requireMembership>[0],
   workspaceId: Id<"workspaces">,
-  kind: Doc<"contentItems">["kind"]
+  kind: Doc<"contentItems">["kind"],
 ) {
   const { actor } = await requireMembership(ctx, workspaceId)
   const grants = await ctx.db
@@ -296,14 +301,14 @@ export const getContent = query({
     const item = await ctx.db
       .query("contentItems")
       .withIndex("by_kind_and_slug", (q) =>
-        q.eq("kind", args.kind).eq("slug", args.slug)
+        q.eq("kind", args.kind).eq("slug", args.slug),
       )
       .unique()
     if (!item) return null
     const grant = await ctx.db
       .query("contentGrants")
       .withIndex("by_workspace_and_content", (q) =>
-        q.eq("workspaceId", args.workspaceId).eq("contentId", item._id)
+        q.eq("workspaceId", args.workspaceId).eq("contentId", item._id),
       )
       .unique()
     if (!grant) return null
@@ -330,7 +335,7 @@ export const listRequests = query({
         status: requestStatusValidator,
         owner: v.optional(v.string()),
         createdAt: v.number(),
-      })
+      }),
     ),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -340,7 +345,7 @@ export const listRequests = query({
     const result = await ctx.db
       .query("requests")
       .withIndex("by_workspace_and_created", (q) =>
-        q.eq("workspaceId", args.workspaceId)
+        q.eq("workspaceId", args.workspaceId),
       )
       .order("desc")
       .paginate(args.paginationOpts)
@@ -387,7 +392,7 @@ export const createRequest = mutation({
     }
     if (args.problemStatement.trim().length < 12) {
       throw new PartnerAccessError(
-        "Describe the problem in one short paragraph"
+        "Describe the problem in one short paragraph",
       )
     }
     const existing = await ctx.db
@@ -433,8 +438,13 @@ export const ensureSession = mutation({
     if (identityEmail?.email && normalizeEmail(identityEmail.email) !== email) {
       throw new PartnerAccessError("Session email mismatch")
     }
+    const workspace = await ctx.db.get(args.workspaceId)
+    if (!workspace) throw new PartnerAccessError("Workspace not found")
 
-    const staff = isStaffEmail(email, process.env.STAFF_EMAIL_DOMAIN)
+    const staff = isStaffEmail(
+      email,
+      process.env.STAFF_EMAIL_DOMAINS ?? process.env.STAFF_EMAIL_DOMAIN,
+    )
     let user = await ctx.db
       .query("partnerUsers")
       .withIndex("by_email", (q) => q.eq("email", email))
@@ -457,7 +467,7 @@ export const ensureSession = mutation({
     let membership = await ctx.db
       .query("memberships")
       .withIndex("by_workspace_and_user", (q) =>
-        q.eq("workspaceId", args.workspaceId).eq("userId", user._id)
+        q.eq("workspaceId", args.workspaceId).eq("userId", user._id),
       )
       .unique()
 
@@ -466,12 +476,16 @@ export const ensureSession = mutation({
         await ctx.db
           .query("invitations")
           .withIndex("by_email_and_workspace", (q) =>
-            q.eq("email", email).eq("workspaceId", args.workspaceId)
+            q.eq("email", email).eq("workspaceId", args.workspaceId),
           )
           .take(5)
       ).find((row) => row.consumedAt === undefined && row.expiresAt > args.now)
 
-      if (!invite && !staff) {
+      if (
+        !staff &&
+        (!invite ||
+          !isAllowedPartnerDomain(email, workspace.allowedEmailDomains))
+      ) {
         throw new PartnerAccessError("No invitation for this workspace")
       }
 
@@ -490,9 +504,6 @@ export const ensureSession = mutation({
         throw new PartnerAccessError("Unable to grant membership")
     }
 
-    const workspace = await ctx.db.get(args.workspaceId)
-    if (!workspace) throw new PartnerAccessError("Workspace not found")
-
     return {
       user: {
         _id: user._id,
@@ -510,6 +521,39 @@ export const ensureSession = mutation({
   },
 })
 
+export const ensureStaffSession = mutation({
+  args: { name: v.optional(v.string()), now: v.number() },
+  returns: v.object({ email: v.string(), name: v.string() }),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    const email = normalizeEmail(identity?.email)
+    if (
+      !isStaffEmail(
+        email,
+        process.env.STAFF_EMAIL_DOMAINS ?? process.env.STAFF_EMAIL_DOMAIN,
+      )
+    ) {
+      throw new PartnerAccessError("Unauthorized: staff only")
+    }
+    const existing = await ctx.db
+      .query("partnerUsers")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .unique()
+    if (existing) {
+      if (!existing.isStaff) await ctx.db.patch(existing._id, { isStaff: true })
+      return { email: existing.email, name: existing.name }
+    }
+    const name = args.name?.trim() || identity?.name || email
+    await ctx.db.insert("partnerUsers", {
+      email,
+      name,
+      isStaff: true,
+      createdAt: args.now,
+    })
+    return { email, name }
+  },
+})
+
 export const createInvitation = mutation({
   args: {
     workspaceId: v.id("workspaces"),
@@ -523,8 +567,10 @@ export const createInvitation = mutation({
     const workspace = await ctx.db.get(args.workspaceId)
     if (!workspace) throw new PartnerAccessError("Workspace not found")
     const email = normalizeEmail(args.email)
-    if (!email.includes("@")) {
-      throw new PartnerAccessError("Invalid invite email")
+    if (!isAllowedPartnerDomain(email, workspace.allowedEmailDomains)) {
+      throw new PartnerAccessError(
+        "Invite email must match an allowed workspace domain",
+      )
     }
     return await ctx.db.insert("invitations", {
       email,
@@ -534,6 +580,178 @@ export const createInvitation = mutation({
       createdAt: Date.now(),
       createdBy: staff._id,
     })
+  },
+})
+
+const workspaceConfigurationValidator = v.object({
+  workspaceId: v.id("workspaces"),
+  displayName: v.string(),
+  brandMode: v.union(
+    v.literal("beam-standard"),
+    v.literal("co-branded"),
+    v.literal("partner-fronted"),
+  ),
+  brandHeader: v.string(),
+  homeTitle: v.string(),
+  homeHeadline: v.string(),
+  homeDescription: v.string(),
+  supportOwner: v.string(),
+  allowedEmailDomains: v.array(v.string()),
+})
+
+function normalizedPartnerDomains(domains: readonly string[]) {
+  const result = [
+    ...new Set(
+      domains
+        .map((domain) => domain.trim().toLowerCase().replace(/^@/, ""))
+        .filter((domain) =>
+          /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/.test(
+            domain,
+          ),
+        ),
+    ),
+  ]
+  if (!result.length)
+    throw new PartnerAccessError("Add at least one valid partner email domain")
+  return result
+}
+
+function defaultWorkspaceJourney() {
+  return {
+    tracks: [
+      {
+        id: "layer",
+        title: "Future of AI-Native Companies",
+        framing: "layer" as const,
+        summary:
+          "Position Beam alongside the client stack and shape the account hypothesis.",
+        action: "Open the competitive FAQ",
+        href: "/faq",
+      },
+      {
+        id: "beachhead",
+        title: "First workflow",
+        framing: "beachhead" as const,
+        summary:
+          "Choose one process, run a diagnostic, and request a shadow demo.",
+        action: "Start a client opportunity",
+        href: "/requests",
+      },
+      {
+        id: "clearance",
+        title: "Risk & delivery readiness",
+        framing: "clearance" as const,
+        summary:
+          "Use reviewed material and route restricted questions to Beam.",
+        action: "Open risk FAQ",
+        href: "/faq",
+      },
+    ],
+    steps: [
+      {
+        title: "Qualify the client",
+        detail: "Confirm the outcome, urgency, and stakeholders.",
+      },
+      {
+        title: "Run a diagnostic",
+        detail: "Map the exception-heavy workflow and systems involved.",
+      },
+      {
+        title: "Show a shadow workflow",
+        detail: "Validate the process safely with representative test data.",
+      },
+      {
+        title: "Agree success criteria",
+        detail: "Define the first production outcome and evaluation plan.",
+      },
+    ],
+  }
+}
+
+export const createWorkspace = mutation({
+  args: v.object({
+    slug: v.string(),
+    name: v.string(),
+    displayName: v.string(),
+    brandMode: v.union(
+      v.literal("beam-standard"),
+      v.literal("co-branded"),
+      v.literal("partner-fronted"),
+    ),
+    brandHeader: v.string(),
+    homeHeadline: v.string(),
+    homeDescription: v.string(),
+    supportOwner: v.string(),
+    allowedEmailDomains: v.array(v.string()),
+  }),
+  returns: v.id("workspaces"),
+  handler: async (ctx, args) => {
+    await requireStaffActor(ctx)
+    const slug = args.slug.trim().toLowerCase()
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      throw new PartnerAccessError(
+        "Workspace slug must use lowercase letters, numbers, and hyphens",
+      )
+    }
+    if (
+      await ctx.db
+        .query("workspaces")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .unique()
+    ) {
+      throw new PartnerAccessError("A workspace with this slug already exists")
+    }
+    const journey = defaultWorkspaceJourney()
+    const now = Date.now()
+    return await ctx.db.insert("workspaces", {
+      slug,
+      name: args.name.trim(),
+      displayName: args.displayName.trim(),
+      primaryHostname: primaryHostnameForWorkspace(slug),
+      canonicalPath: `/w/${slug}`,
+      brandMode: args.brandMode,
+      brandHeader: args.brandHeader.trim(),
+      homeTitle: "Future of AI-Native Companies",
+      homeHeadline: args.homeHeadline.trim(),
+      homeDescription: args.homeDescription.trim(),
+      tracks: journey.tracks,
+      steps: journey.steps,
+      enabledSurfaces: [
+        "home",
+        "tools",
+        "materials",
+        "faq",
+        "certifications",
+        "requests",
+      ],
+      supportOwner: args.supportOwner.trim(),
+      allowedEmailDomains: normalizedPartnerDomains(args.allowedEmailDomains),
+      customDomainStatus: "none",
+      createdAt: now,
+      updatedAt: now,
+    })
+  },
+})
+
+export const updateWorkspaceConfiguration = mutation({
+  args: workspaceConfigurationValidator,
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await requireStaffActor(ctx)
+    const workspace = await ctx.db.get(args.workspaceId)
+    if (!workspace) throw new PartnerAccessError("Workspace not found")
+    await ctx.db.patch(args.workspaceId, {
+      displayName: args.displayName.trim(),
+      brandMode: args.brandMode,
+      brandHeader: args.brandHeader.trim(),
+      homeTitle: args.homeTitle.trim(),
+      homeHeadline: args.homeHeadline.trim(),
+      homeDescription: args.homeDescription.trim(),
+      supportOwner: args.supportOwner.trim(),
+      allowedEmailDomains: normalizedPartnerDomains(args.allowedEmailDomains),
+      updatedAt: Date.now(),
+    })
+    return null
   },
 })
 
@@ -575,7 +793,7 @@ export const attachContent = mutation({
     const existing = await ctx.db
       .query("contentGrants")
       .withIndex("by_workspace_and_content", (q) =>
-        q.eq("workspaceId", args.workspaceId).eq("contentId", args.contentId)
+        q.eq("workspaceId", args.workspaceId).eq("contentId", args.contentId),
       )
       .unique()
     if (existing) return existing._id
@@ -624,6 +842,66 @@ export const listWorkspacesForStaff = query({
   },
 })
 
+export const listWorkspaceSummariesForStaff = query({
+  args: {},
+  returns: v.array(
+    v.object({
+      workspace: workspacePublicValidator,
+      memberCount: v.number(),
+      openInvitationCount: v.number(),
+      contentCount: v.number(),
+      requestCount: v.number(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+  ),
+  handler: async (ctx) => {
+    await requireStaffActor(ctx)
+    const workspaces = await ctx.db.query("workspaces").take(50)
+    const summaries = []
+    for (const workspace of workspaces) {
+      const [memberships, invitations, grants, requests] = await Promise.all([
+        ctx.db
+          .query("memberships")
+          .withIndex("by_workspace", (q) => q.eq("workspaceId", workspace._id))
+          .take(100),
+        ctx.db
+          .query("invitations")
+          .withIndex("by_workspace", (q) => q.eq("workspaceId", workspace._id))
+          .take(100),
+        ctx.db
+          .query("contentGrants")
+          .withIndex("by_workspace", (q) => q.eq("workspaceId", workspace._id))
+          .take(300),
+        ctx.db
+          .query("requests")
+          .withIndex("by_workspace", (q) => q.eq("workspaceId", workspace._id))
+          .take(100),
+      ])
+      let memberCount = 0
+      for (const membership of memberships) {
+        const user = await ctx.db.get(membership.userId)
+        if (user && !user.isStaff) memberCount += 1
+      }
+      summaries.push({
+        workspace: toPublicWorkspace(workspace),
+        memberCount,
+        openInvitationCount: invitations.filter(
+          (invite) =>
+            invite.consumedAt === undefined && invite.expiresAt > Date.now(),
+        ).length,
+        contentCount: grants.length,
+        requestCount: requests.length,
+        createdAt: workspace.createdAt,
+        updatedAt: workspace.updatedAt,
+      })
+    }
+    return summaries.sort((a, b) =>
+      a.workspace.displayName.localeCompare(b.workspace.displayName),
+    )
+  },
+})
+
 export const listInvitations = query({
   args: { workspaceId: v.id("workspaces") },
   returns: v.array(
@@ -633,7 +911,7 @@ export const listInvitations = query({
       role: partnerInvitationRoleValidator,
       expiresAt: v.number(),
       consumedAt: v.optional(v.number()),
-    })
+    }),
   ),
   handler: async (ctx, args) => {
     await requireStaffActor(ctx)
@@ -661,13 +939,42 @@ export const listAllContentForStaff = query({
   },
 })
 
+export const listContentForStaff = query({
+  args: { workspaceId: v.id("workspaces") },
+  returns: v.array(
+    v.object({
+      content: contentCardValidator,
+      attached: v.boolean(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    await requireStaffActor(ctx)
+    const [items, grants] = await Promise.all([
+      ctx.db.query("contentItems").take(300),
+      ctx.db
+        .query("contentGrants")
+        .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
+        .take(300),
+    ])
+    const attached = new Set(grants.map((grant) => String(grant.contentId)))
+    return items.map((item) => ({
+      content: toContentCard(item),
+      attached: attached.has(String(item._id)),
+    }))
+  },
+})
+
 export const listMembershipsForStaff = query({
   args: { workspaceId: v.id("workspaces") },
   returns: v.array(
     v.object({
+      userId: v.id("partnerUsers"),
+      name: v.string(),
       email: v.string(),
       role: membershipRoleValidator,
-    })
+      isStaff: v.boolean(),
+      joinedAt: v.number(),
+    }),
   ),
   handler: async (ctx, args) => {
     await requireStaffActor(ctx)
@@ -675,13 +982,66 @@ export const listMembershipsForStaff = query({
       .query("memberships")
       .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
       .take(100)
-    const result: Array<{ email: string; role: Doc<"memberships">["role"] }> =
-      []
+    const result: Array<{
+      userId: Id<"partnerUsers">
+      name: string
+      email: string
+      role: Doc<"memberships">["role"]
+      isStaff: boolean
+      joinedAt: number
+    }> = []
     for (const membership of memberships) {
       const user = await ctx.db.get(membership.userId)
       if (!user) continue
-      result.push({ email: user.email, role: membership.role })
+      result.push({
+        userId: user._id,
+        name: user.name,
+        email: user.email,
+        role: membership.role,
+        isStaff: user.isStaff,
+        joinedAt: membership.createdAt,
+      })
     }
     return result
+  },
+})
+
+export const listRequestsForStaff = query({
+  args: { workspaceId: v.id("workspaces") },
+  returns: v.array(
+    v.object({
+      _id: v.id("requests"),
+      requestKey: v.string(),
+      accountName: v.optional(v.string()),
+      candidateProcess: v.string(),
+      stage: requestStageValidator,
+      supportType: requestSupportTypeValidator,
+      problemStatement: v.string(),
+      status: requestStatusValidator,
+      owner: v.optional(v.string()),
+      createdAt: v.number(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    await requireStaffActor(ctx)
+    const requests = await ctx.db
+      .query("requests")
+      .withIndex("by_workspace_and_created", (q) =>
+        q.eq("workspaceId", args.workspaceId),
+      )
+      .order("desc")
+      .take(100)
+    return requests.map((request) => ({
+      _id: request._id,
+      requestKey: request.requestKey,
+      accountName: request.accountName,
+      candidateProcess: request.candidateProcess,
+      stage: request.stage,
+      supportType: request.supportType,
+      problemStatement: request.problemStatement,
+      status: request.status,
+      owner: request.owner,
+      createdAt: request.createdAt,
+    }))
   },
 })

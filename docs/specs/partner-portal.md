@@ -15,9 +15,8 @@ Vercel must use a production Convex deploy key on Production and a preview
 deploy key on Preview. Do not set a static production `NEXT_PUBLIC_CONVEX_URL`
 for both. Preview backends run `internal.seed.seedPreview` once. The target
 Better Auth allowlist is `partner.beam.ai`, `*.partner.beam.ai`, and
-`*.vercel.app`. The current implementation still carries the provisional
-plural hostname; migrate the resolver, catalog hostnames, OAuth redirects,
-documentation, and tests together during the DNS cutover. Setup steps:
+`*.vercel.app`. Resolver, catalog hostnames, OAuth redirects, documentation,
+and tests use the singular production hostname. Setup steps:
 [`apps/partner/README.md`](../../apps/partner/README.md).
 
 Related: [`skills/general/partner-portal/SKILL.md`](../../skills/general/partner-portal/SKILL.md)
@@ -25,7 +24,7 @@ Related: [`skills/general/partner-portal/SKILL.md`](../../skills/general/partner
 Enablement MVP: [`partner-enablement-mvp.md`](partner-enablement-mvp.md)
 
 Current rollout target: one multi-tenant app at `partner.beam.ai`, beginning
-with Roboyo and Alloyed workspaces. Both use the same application and shared
+with PwC and Roland Berger workspaces. Both use the same application and shared
 catalog, with workspace-specific access, branding, and content grants.
 
 Do not reuse `https://core.beam.ai` for partner users.
@@ -94,8 +93,8 @@ for the partner-facing experience:
 
 | Use | URL shape | Example |
 | --- | --- | --- |
-| Canonical workspace route | `https://partner.beam.ai/w/{workspaceSlug}` | `https://partner.beam.ai/w/roboyo` |
-| Partner primary URL | `https://{partnerSlug}.partner.beam.ai` | `https://roboyo.partner.beam.ai` |
+| Canonical workspace route | `https://partner.beam.ai/w/{workspaceSlug}` | `https://partner.beam.ai/w/roland-berger` |
+| Partner primary URL | `https://{partnerSlug}.partner.beam.ai` | `https://roland-berger.partner.beam.ai` |
 | Later custom domain | verified partner-owned domain | `https://beam.partner-example.com` |
 
 Both canonical and primary URLs resolve to the same `workspaceId`; the host is

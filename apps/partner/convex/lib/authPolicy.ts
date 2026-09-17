@@ -6,17 +6,35 @@ export function normalizeStaffEmailDomain(value: string | undefined | null) {
   return DOMAIN_PATTERN.test(domain) ? domain : null
 }
 
+export function normalizeStaffEmailDomains(
+  value: string | undefined | null,
+) {
+  return [
+    ...new Set(
+      (value ?? "")
+        .split(",")
+        .map((domain) => normalizeStaffEmailDomain(domain))
+        .filter((domain): domain is string => Boolean(domain)),
+    ),
+  ]
+}
+
 export function isStaffEmail(
   email: string | undefined | null,
-  configuredDomain: string | undefined | null
+  configuredDomains: string | undefined | null,
 ) {
-  const domain = normalizeStaffEmailDomain(configuredDomain)
+  const domains = normalizeStaffEmailDomains(configuredDomains)
   const normalizedEmail = email?.trim().toLowerCase()
 
-  if (!domain || !normalizedEmail) return false
+  if (domains.length === 0 || !normalizedEmail) return false
 
   const [localPart, emailDomain, extraPart] = normalizedEmail.split("@")
-  return Boolean(localPart && emailDomain === domain && extraPart === undefined)
+  return Boolean(
+    localPart &&
+      emailDomain &&
+      domains.includes(emailDomain) &&
+      extraPart === undefined,
+  )
 }
 
 export function normalizeEmail(email: string | undefined | null) {

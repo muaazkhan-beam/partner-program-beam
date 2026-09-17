@@ -17,14 +17,11 @@ import authConfig from "./auth.config"
 import {
   isStaffEmail,
   normalizeEmail,
-  normalizeStaffEmailDomain,
+  normalizeStaffEmailDomains,
 } from "./lib/authPolicy"
 
-function staffEmailDomain() {
-  return (
-    normalizeStaffEmailDomain(process.env.STAFF_EMAIL_DOMAIN) ??
-    "auth-not-configured.invalid"
-  )
+function staffEmailConfiguration() {
+  return process.env.STAFF_EMAIL_DOMAINS ?? process.env.STAFF_EMAIL_DOMAIN
 }
 
 export const authComponent = createClient<DataModel>(components.betterAuth)
@@ -50,7 +47,7 @@ async function hasOpenInvitation(
 
 export const createAuth = (ctx: GenericCtx<DataModel>) => {
   const fallbackSiteUrl = canonicalSiteUrl(process.env.SITE_URL)
-  const staffDomain = staffEmailDomain()
+  const staffDomains = normalizeStaffEmailDomains(staffEmailConfiguration())
 
   return betterAuth({
     baseURL: {
@@ -69,7 +66,7 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
       google: {
         clientId: process.env.GOOGLE_CLIENT_ID as string,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-        hd: staffDomain,
+        ...(staffDomains.length === 1 ? { hd: staffDomains[0] } : {}),
         prompt: "select_account",
       },
     },
@@ -77,7 +74,7 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
       magicLink({
         sendMagicLink: async ({ email, url }) => {
           const normalized = normalizeEmail(email)
-          const staff = isStaffEmail(normalized, process.env.STAFF_EMAIL_DOMAIN)
+          const staff = isStaffEmail(normalized, staffEmailConfiguration())
           if (!staff && !(await hasOpenInvitation(ctx, normalized))) {
             throw new Error("No invitation for this email")
           }

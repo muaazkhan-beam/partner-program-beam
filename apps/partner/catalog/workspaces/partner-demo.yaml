@@ -1,7 +1,7 @@
 slug: partner-demo
 name: Beam Partner Demo
 displayName: Partner Demo
-primaryHostname: demo.partners.beam.ai
+primaryHostname: demo.partner.beam.ai
 canonicalPath: /w/partner-demo
 brandMode: beam-standard
 brandHeader: Beam Partner
@@ -13,6 +13,7 @@ allowedEmailDomains:
   - partner.example
 enabledSurfaces:
   - home
+  - agents
   - tools
   - materials
   - faq

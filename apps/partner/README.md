@@ -14,7 +14,7 @@ Partner into its own repository, and do not reuse Core's Vercel or Convex.
 | Layer | Use | Do not use |
 | --- | --- | --- |
 | GitHub | `beam-ai-team/beam-library`, app at `apps/partner/` | A new `beam-partner` repo, or a fork per firm |
-| Vercel | New project, root directory `apps/partner`, later `partners.beam.ai` | Existing `beam-core` project (`apps/web` → `core.beam.ai`) |
+| Vercel | New project, root directory `apps/partner`, `partner.beam.ai` | Existing `beam-core` project (`apps/web` → `core.beam.ai`) |
 | Convex | New project whose functions live in `apps/partner/convex/` | Core's root `convex/` deployment |
 
 The GitHub Vercel check on Partner PRs currently reports the existing
@@ -70,9 +70,9 @@ is ready to merge.
    default** Convex env so previews inherit it:
 
    ```bash
-   pnpm exec convex env set SITE_URL https://partners.beam.ai
+   pnpm exec convex env set SITE_URL https://partner.beam.ai
    pnpm exec convex env set BETTER_AUTH_SECRET '<secret>'
-   pnpm exec convex env set STAFF_EMAIL_DOMAIN beam.ai
+   pnpm exec convex env set STAFF_EMAIL_DOMAINS beam.ai,beam.so
    pnpm exec convex env set GOOGLE_CLIENT_ID '<id>'
    pnpm exec convex env set GOOGLE_CLIENT_SECRET '<secret>'
    pnpm exec convex env set RESEND_API_KEY '<key>'
@@ -80,7 +80,7 @@ is ready to merge.
    ```
 
    `SITE_URL` is the Better Auth **fallback** only. Allowed request hosts are
-   `partners.beam.ai`, `*.partners.beam.ai`, localhost, and `*.vercel.app`.
+   `partner.beam.ai`, `*.partner.beam.ai`, localhost, and `*.vercel.app`.
 4. Generate two deploy keys:
 
    | Key | Vercel environment |
@@ -105,8 +105,8 @@ is ready to merge.
    | Include files outside Root Directory | On |
    | Framework | Next.js (from `vercel.json`) |
    | Install / Build / Ignore | From `apps/partner/vercel.json` |
-   | Production domain | `partners.beam.ai` |
-   | Wildcard | `*.partners.beam.ai` |
+   | Production domain | `partner.beam.ai` |
+   | Wildcard | `*.partner.beam.ai` (optional; canonical paths are sufficient for the first rollout) |
 
    The build command deploys Convex, then builds Next, and on **new preview
    backends only** runs `internal.seed.seedPreview`.
@@ -136,9 +136,9 @@ is ready to merge.
 Reuse Beam's existing Google OAuth client if it is staff-only with `hd=beam.ai`.
 Add exact redirect URIs (Google does not allow wildcards):
 
-- `https://partners.beam.ai/api/auth/callback/google`
-- `https://pwc-me.partners.beam.ai/api/auth/callback/google`
-- `https://roboyo.partners.beam.ai/api/auth/callback/google`
+- `https://partner.beam.ai/api/auth/callback/google`
+- `https://pwc-me.partner.beam.ai/api/auth/callback/google` (only if subdomains are enabled)
+- `https://roboyo.partner.beam.ai/api/auth/callback/google` (only if subdomains are enabled)
 - `http://127.0.0.1:3001/api/auth/callback/google`
 
 Vercel preview Google sign-in will not work until each preview URL is added.
@@ -147,8 +147,8 @@ request host.
 
 Point DNS at the new Vercel project:
 
-- `partners.beam.ai`
-- `*.partners.beam.ai`
+- `partner.beam.ai`
+- `*.partner.beam.ai` (only if subdomains are enabled)
 
 ### 4. After the first production deploy
 
@@ -161,10 +161,12 @@ membership is not enough.
 
 Set these on the Partner Convex deployment (not Core):
 
-- `SITE_URL` — fallback origin (`https://partners.beam.ai` in production)
+- `SITE_URL` — fallback origin (`https://partner.beam.ai` in production)
 - `BETTER_AUTH_SECRET`
-- `STAFF_EMAIL_DOMAIN=beam.ai`
-- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — staff Google, `hd=beam.ai`
+- `STAFF_EMAIL_DOMAINS=beam.ai,beam.so` — comma-separated Beam staff domains;
+  `STAFF_EMAIL_DOMAIN` remains supported as a single-domain fallback
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — staff Google OAuth; the account
+  domain is checked against `STAFF_EMAIL_DOMAINS` after sign-in
 - `RESEND_API_KEY` — production magic links; without it, links are stored in
   `magicLinkOutbox` and may be logged only when `ALLOW_MAGIC_LINK_LOG=true` or
   `SITE_URL` is localhost
@@ -181,8 +183,10 @@ Vercel:
 
 | Use | Example |
 | --- | --- |
-| Canonical | `https://partners.beam.ai/w/pwc-me` |
-| Partner host | `https://pwc-me.partners.beam.ai` |
+| Generic login | `https://partner.beam.ai/` |
+| Named partner login | `https://partner.beam.ai/pwc` or `https://partner.beam.ai/roland-berger` |
+| Canonical workspace | `https://partner.beam.ai/w/pwc-me` |
+| Partner host | `https://pwc-me.partner.beam.ai` (optional) |
 | Vercel preview | `https://<preview>.vercel.app/w/pwc-me` |
 
 Custom partner-owned domains are not v1. Unknown hosts fail closed. A slug in
@@ -190,7 +194,7 @@ the browser is never authorization.
 
 ## Seed
 
-Staff admin can load the reviewed catalog (PwC ME + Roboyo) with **Seed
+Staff admin can load the reviewed catalog (PwC ME + Roland Berger + Roboyo) with **Seed
 reviewed catalog**. Preview Convex backends call `internal.seed.seedPreview`
 once when created. Tests call `seedFromCatalog` / `seedPreview`.
 

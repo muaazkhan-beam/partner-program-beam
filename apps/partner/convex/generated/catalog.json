@@ -4,7 +4,7 @@
       "slug": "partner-demo",
       "name": "Beam Partner Demo",
       "displayName": "Partner Demo",
-      "primaryHostname": "demo.partners.beam.ai",
+      "primaryHostname": "demo.partner.beam.ai",
       "canonicalPath": "/w/partner-demo",
       "brandMode": "beam-standard",
       "brandHeader": "Beam Partner",
@@ -17,6 +17,7 @@
       ],
       "enabledSurfaces": [
         "home",
+        "agents",
         "tools",
         "materials",
         "faq",
@@ -121,7 +122,7 @@
       "slug": "pwc-me",
       "name": "PwC Middle East",
       "displayName": "PwC ME",
-      "primaryHostname": "pwc-me.partners.beam.ai",
+      "primaryHostname": "pwc-me.partner.beam.ai",
       "canonicalPath": "/w/pwc-me",
       "brandMode": "co-branded",
       "brandHeader": "PwC × Beam",
@@ -135,6 +136,7 @@
       ],
       "enabledSurfaces": [
         "home",
+        "agents",
         "tools",
         "materials",
         "faq",
@@ -243,7 +245,7 @@
       "slug": "roboyo",
       "name": "Roboyo",
       "displayName": "Roboyo",
-      "primaryHostname": "roboyo.partners.beam.ai",
+      "primaryHostname": "roboyo.partner.beam.ai",
       "canonicalPath": "/w/roboyo",
       "brandMode": "co-branded",
       "brandHeader": "Roboyo × Beam",
@@ -256,6 +258,7 @@
       ],
       "enabledSurfaces": [
         "home",
+        "agents",
         "tools",
         "materials",
         "faq",
@@ -347,6 +350,120 @@
         "first-engagement",
         "measuring-success",
         "working-agent",
+        "security-review-pack",
+        "access-and-sandbox",
+        "support-and-escalation",
+        "accuracy",
+        "leadership-pack"
+      ],
+      "playbookSlugs": [
+        "one-workflow-shadow"
+      ]
+    },
+    {
+      "slug": "roland-berger",
+      "name": "Roland Berger",
+      "displayName": "Roland Berger",
+      "primaryHostname": "roland-berger.partner.beam.ai",
+      "canonicalPath": "/w/roland-berger",
+      "brandMode": "co-branded",
+      "brandHeader": "Roland Berger × Beam",
+      "homeTitle": "Future of AI-Native Companies",
+      "homeHeadline": "Turn one client process into a governed AI-native workflow",
+      "homeDescription": "Shape a focused client hypothesis, qualify the first process, and bring Beam in for a reviewed shadow workflow. Roland Berger owns the client relationship; Beam owns the platform and agent factory.",
+      "supportOwner": "partner-success@beam.ai",
+      "allowedEmailDomains": [
+        "rolandberger.com"
+      ],
+      "enabledSurfaces": [
+        "home",
+        "agents",
+        "tools",
+        "materials",
+        "faq",
+        "certifications",
+        "requests"
+      ],
+      "tracks": [
+        {
+          "id": "layer",
+          "title": "Future of AI-Native Companies",
+          "framing": "layer",
+          "summary": "Position Beam as the AI-native operating layer alongside the client's existing systems and shape the account hypothesis.",
+          "action": "Open the competitive FAQ",
+          "href": "/faq"
+        },
+        {
+          "id": "beachhead",
+          "title": "First workflow",
+          "framing": "beachhead",
+          "summary": "Select an exception-heavy process, run a diagnostic, agree success criteria, and request a shadow demo.",
+          "action": "Start a client opportunity",
+          "href": "/requests"
+        },
+        {
+          "id": "clearance",
+          "title": "Risk & delivery readiness",
+          "framing": "clearance",
+          "summary": "Use approved deployment and independence material. Route restricted questions to Beam.",
+          "action": "Open risk FAQ",
+          "href": "/faq"
+        }
+      ],
+      "steps": [
+        {
+          "title": "Qualify the client",
+          "detail": "Confirm the outcome, urgency, stakeholders, and the limits of the current operating model."
+        },
+        {
+          "title": "Run a diagnostic",
+          "detail": "Map the handoffs, exceptions, systems, and measurable outcome for one workflow."
+        },
+        {
+          "title": "Show a shadow workflow",
+          "detail": "Request a Beam-run demonstration, then validate the client process with representative test data."
+        },
+        {
+          "title": "Agree success criteria",
+          "detail": "Define the first production outcome, evaluation plan, and expansion path with Beam."
+        }
+      ],
+      "toolSlugs": [
+        "partner-cli",
+        "partner-faq",
+        "competitive-battlecards",
+        "call-prep",
+        "materials-library",
+        "operating-diagnostic",
+        "discovery",
+        "proof-pack",
+        "platform-demo",
+        "one-workflow-playbook",
+        "beam-platform",
+        "beam-interfaces",
+        "success-criteria"
+      ],
+      "materialSlugs": [
+        "where-beam-fits",
+        "joint-motion-one-pager",
+        "proof-pack-placeholder",
+        "beam-partner-executive-overview",
+        "beam-discovery-sales-deck"
+      ],
+      "faqSlugs": [
+        "why-not-sap",
+        "vs-epm",
+        "data-integration",
+        "first-process-fit",
+        "when-to-walk-away",
+        "human-approval",
+        "deployment-ksa-kuwait",
+        "not-another-ai-tool",
+        "partner-vs-beam",
+        "brand-shapes",
+        "deal-registration",
+        "first-engagement",
+        "measuring-success",
         "security-review-pack",
         "access-and-sandbox",
         "support-and-escalation",

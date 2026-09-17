@@ -1,7 +1,7 @@
 slug: roboyo
 name: Roboyo
 displayName: Roboyo
-primaryHostname: roboyo.partners.beam.ai
+primaryHostname: roboyo.partner.beam.ai
 canonicalPath: /w/roboyo
 brandMode: co-branded
 brandHeader: Roboyo × Beam
@@ -13,6 +13,7 @@ allowedEmailDomains:
   - roboyo.com
 enabledSurfaces:
   - home
+  - agents
   - tools
   - materials
   - faq
