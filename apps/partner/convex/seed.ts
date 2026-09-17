@@ -66,6 +66,10 @@ async function upsertContent(
       q.eq("kind", item.kind).eq("slug", item.slug)
     )
     .unique()
+  // Bug 1: a re-seed used to replace content wholesale from the catalog, which
+  // silently reverted any claim decision staff had made in the admin panel.
+  // The catalog stays the source of truth for the text; a reviewed claim wins.
+  const reviewed = existing?.claimReviewedAt !== undefined
   const fields = {
     kind: item.kind,
     slug: item.slug,
@@ -73,11 +77,9 @@ async function upsertContent(
     summary: item.summary,
     body: item.body,
     group: item.group,
-    contentClass: item.contentClass,
     audience: item.audience,
     forwardable: item.forwardable,
     allowedBrandModes: item.allowedBrandModes,
-    claimState: item.claimState,
     restrictedReason: item.restrictedReason,
     requestBeamLabel: item.requestBeamLabel,
     href: item.href,
@@ -85,13 +87,18 @@ async function upsertContent(
     shareUrl: item.shareUrl,
     embedUrl: item.embedUrl,
     status: item.status,
-    reviewer: item.reviewer,
     // Bug 8: these were synthesised from `now` on every seed, so the review
     // clock reset each time and content never fell due for revalidation. The
     // catalog now states the dates; the 90-day default applies only when it
     // does not, and is anchored to the review date rather than to the seed.
-    reviewedAt: reviewedAtFor(item, now),
-    revalidateAt: revalidateAtFor(item, now),
+    claimState: reviewed ? existing.claimState : item.claimState,
+    contentClass: reviewed ? existing.contentClass : item.contentClass,
+    reviewer: reviewed ? existing.reviewer : item.reviewer,
+    reviewedAt: reviewed ? existing.reviewedAt : reviewedAtFor(item, now),
+    revalidateAt: reviewed
+      ? existing.revalidateAt
+      : revalidateAtFor(item, now),
+    claimReviewedAt: existing?.claimReviewedAt,
     createdAt: existing?.createdAt ?? now,
   }
   if (existing) {
@@ -130,23 +137,37 @@ async function seedCatalogData(ctx: MutationCtx, now: number) {
       .query("workspaces")
       .withIndex("by_slug", (q) => q.eq("slug", workspace.slug))
       .unique()
+    // Bug 1: the catalog stays the source of truth for structure — routing,
+    // the three tracks, the four steps. But once staff have configured a
+    // workspace in the admin panel, their presentation and access choices win,
+    // so a re-seed cannot silently revert them.
+    const configured = existing?.configuredAt !== undefined
     const fields = {
       slug: workspace.slug,
       name: workspace.name,
-      displayName: workspace.displayName,
       primaryHostname: workspace.primaryHostname,
       canonicalPath: workspace.canonicalPath,
-      brandMode: workspace.brandMode,
-      brandHeader: workspace.brandHeader,
-      homeTitle: workspace.homeTitle,
-      homeHeadline: workspace.homeHeadline,
-      homeDescription: workspace.homeDescription,
       tracks: workspace.tracks,
       steps: workspace.steps,
-      enabledSurfaces: workspace.enabledSurfaces,
-      supportOwner: workspace.supportOwner,
-      allowedEmailDomains: workspace.allowedEmailDomains,
       customDomainStatus: "none" as const,
+      displayName: configured ? existing.displayName : workspace.displayName,
+      brandMode: configured ? existing.brandMode : workspace.brandMode,
+      brandHeader: configured ? existing.brandHeader : workspace.brandHeader,
+      homeTitle: configured ? existing.homeTitle : workspace.homeTitle,
+      homeHeadline: configured
+        ? existing.homeHeadline
+        : workspace.homeHeadline,
+      homeDescription: configured
+        ? existing.homeDescription
+        : workspace.homeDescription,
+      enabledSurfaces: configured
+        ? existing.enabledSurfaces
+        : workspace.enabledSurfaces,
+      supportOwner: configured ? existing.supportOwner : workspace.supportOwner,
+      allowedEmailDomains: configured
+        ? existing.allowedEmailDomains
+        : workspace.allowedEmailDomains,
+      configuredAt: existing?.configuredAt,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     }

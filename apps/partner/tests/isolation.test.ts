@@ -589,3 +589,100 @@ test("a workspace created by staff gets every default surface (bug 4)", async ()
   const updated = await t.run(async (ctx) => ctx.db.get(workspaceId))
   assert.deepEqual(updated?.enabledSurfaces, ["home", "tools", "faq"])
 })
+
+test("re-seeding preserves staff decisions but still refreshes content (bug 1)", async () => {
+  const t = await seeded()
+  const staff = await memberAs(t, "ops@beam.ai", "roboyo", "staff")
+  const workspace = await t.query(api.partner.resolveWorkspace, {
+    slug: "roboyo",
+  })
+  assert.ok(workspace)
+
+  // Staff reconfigure the workspace and review a claim.
+  await staff.mutation(api.partner.updateWorkspaceConfiguration, {
+    workspaceId: workspace._id,
+    displayName: "Roboyo Middle East",
+    brandMode: "partner-fronted",
+    brandHeader: "Roboyo, powered by Beam",
+    homeTitle: "Future of AI-Native Companies",
+    homeHeadline: "Land one process",
+    homeDescription: "Configured by staff.",
+    supportOwner: "me@beam.ai",
+    allowedEmailDomains: ["roboyo.com"],
+    enabledSurfaces: ["home", "tools", "faq"],
+  })
+  const restricted = await t.run(async (ctx) => {
+    const item = await ctx.db
+      .query("contentItems")
+      .withIndex("by_kind_and_slug", (q) =>
+        q.eq("kind", "faq").eq("slug", "why-not-sap"),
+      )
+      .unique()
+    assert.ok(item)
+    return item._id
+  })
+  await staff.mutation(api.partner.approveClaim, {
+    contentId: restricted,
+    claimState: "restricted",
+    reviewer: "Legal",
+    reviewedAt: now,
+    revalidateAt: now + 1_000,
+  })
+
+  // Someone clicks "Seed reviewed catalog" again.
+  await t.mutation(internal.seed.seedFromCatalog, { now: now + 5_000 })
+
+  const after = await t.run(async (ctx) => ctx.db.get(workspace._id))
+  assert.ok(after)
+  assert.equal(after.displayName, "Roboyo Middle East", "config must survive")
+  assert.equal(after.brandMode, "partner-fronted")
+  assert.equal(after.supportOwner, "me@beam.ai")
+  assert.deepEqual(after.enabledSurfaces, ["home", "tools", "faq"])
+
+  const claim = await t.run(async (ctx) => ctx.db.get(restricted))
+  assert.equal(claim?.claimState, "restricted", "claim review must survive")
+  assert.equal(claim?.reviewer, "Legal")
+
+  // But the catalog is still the source of truth for structure and text.
+  assert.equal(after.canonicalPath, "/w/roboyo")
+  assert.ok(after.tracks.length > 0)
+  const untouched = await t.run(async (ctx) =>
+    ctx.db
+      .query("contentItems")
+      .withIndex("by_kind_and_slug", (q) =>
+        q.eq("kind", "faq").eq("slug", "how-we-make-money"),
+      )
+      .unique(),
+  )
+  assert.equal(untouched?.claimState, "approved")
+})
+
+test("a request notifies Slack instead of landing silently (bug 9)", async () => {
+  const t = await seeded()
+  const roboyo = await memberAs(t, "alex@roboyo.com", "roboyo")
+  const workspace = await t.query(api.partner.resolveWorkspace, {
+    slug: "roboyo",
+  })
+  assert.ok(workspace)
+
+  const created = await roboyo.mutation(api.partner.createRequest, {
+    workspaceId: workspace._id,
+    accountName: "Acme Logistics",
+    candidateProcess: "Invoice exception handling",
+    stage: "diagnostic",
+    supportType: "shadow-demo",
+    problemStatement: "Two thousand exceptions a month across three entities.",
+  })
+
+  const staff = await memberAs(t, "ops@beam.ai", "roboyo", "staff")
+  const outbox = await staff.query(api.partner.listSlackOutbox, {
+    workspaceId: workspace._id,
+  })
+  assert.equal(outbox.length, 1)
+  const message = outbox[0]
+  assert.equal(message.requestKey, created.requestKey)
+  assert.ok(message.channel.startsWith("#"))
+  assert.ok(message.text.includes(created.requestKey))
+  assert.ok(message.text.includes("Invoice exception handling"))
+  assert.ok(message.text.includes(created.owner), "the owner must be named")
+})

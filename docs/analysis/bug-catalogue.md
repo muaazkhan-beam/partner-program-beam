@@ -17,23 +17,52 @@ that seems likely — worth asking before changing.
 
 ---
 
-## Summary
+## Status
 
-| # | Severity | Issue | Area |
+**Twelve of thirteen fixed** on `work/muaaz`. 26 tests pass, up from 20.
+
+| # | Severity | Issue | Status |
 | --- | --- | --- | --- |
-| 1 | **High** | Re-seeding silently reverts every admin edit | Admin / seed |
-| 2 | **High** | Access cannot be revoked — no way to remove a member or cancel an invite | Access |
-| 3 | **High** | No audit trail, though the spec requires one | Governance |
-| 4 | Medium | Admin-created workspaces are missing the Agents surface | Admin |
-| 5 | Medium | `enabledSurfaces` cannot be changed after creation | Admin |
-| 6 | Medium | Content can be attached to a workspace but never detached | Admin |
-| 7 | Medium | `allowedBrandModes` is stored but never enforced | Governance |
-| 8 | Medium | Review and revalidation dates cannot be set from the catalog | Governance |
-| 9 | Medium | Requests notify nobody | Requests |
-| 10 | Medium | Restricted claims redact only the body | Governance |
-| 11 | Low | An unknown workspace renders a shell instead of 404 | Routing |
-| 12 | Low | Validation failures are thrown as access errors | Requests |
-| 13 | Low | Invitation expiry is client-supplied, and duplicates are allowed | Access |
+| 1 | **High** | Re-seeding silently reverts every admin edit | ✅ Fixed |
+| 2 | **High** | Access cannot be revoked | ✅ Fixed |
+| 3 | **High** | No audit trail, though the spec requires one | ✅ Fixed |
+| 4 | Medium | Admin-created workspaces are missing the Agents surface | ✅ Fixed |
+| 5 | Medium | `enabledSurfaces` cannot be changed after creation | ✅ Fixed |
+| 6 | Medium | Content can be attached but never detached | ✅ Fixed |
+| 7 | Medium | `allowedBrandModes` is stored but never enforced | ✅ Fixed |
+| 8 | Medium | Review dates cannot be set from the catalog | ✅ Fixed |
+| 9 | Medium | Requests notify nobody | ✅ Fixed — Slack, mocked |
+| 10 | Medium | Restricted claims redact only the body | ✅ Fixed |
+| 11 | Low | An unknown workspace renders a shell instead of 404 | ⏸️ **Accepted, not fixed** |
+| 12 | Low | Validation failures are thrown as access errors | ✅ Fixed |
+| 13 | Low | Invitation expiry is client-supplied; duplicates allowed | ✅ Fixed |
+
+### Two decisions worth recording
+
+**Bug 1 — the source of truth.** Fixed by splitting ownership rather than
+changing which side wins outright. The catalog remains authoritative for content
+text and workspace structure — routing, the three tracks, the four steps. Staff
+decisions win for what staff own: a workspace carrying `configuredAt` keeps its
+presentation and access settings, and a content item carrying `claimReviewedAt`
+keeps its claim decision. So a re-seed still ships new and corrected content, but
+can no longer revert a reviewed claim or a configured workspace.
+
+*Worth putting to Jonas* — this is a design decision taken on our branch, and he
+may prefer a different split.
+
+**Bug 11 — accepted, not fixed.** The app already fails closed: `PartnerGate`
+rejects an unknown workspace and shows a clear message, and the bypass path
+refuses a slug it is not scoped to. The only defect is the HTTP status: the
+response is 200 where it should be 404, which matters to crawlers, uptime checks
+and link checkers rather than to a user.
+
+Making it a true 404 needs server-side workspace resolution in the route layout.
+The catalog cannot be used for that check, because admin-created workspaces are
+not in it and would 404 incorrectly. A bypass-only fix would make local behaviour
+diverge from production, which is worse than the status code being wrong.
+
+**Revisit when** there is a server-side workspace resolver — likely alongside any
+work on custom domains, which needs one anyway.
 
 ---
 

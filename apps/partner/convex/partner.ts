@@ -426,6 +426,21 @@ export const createRequest = mutation({
       createdBy: actor._id,
       createdAt: Date.now(),
     })
+    // Bug 9: tell someone. Mocked until the webhook URL is configured.
+    await notifySlack(ctx, {
+      workspaceId: args.workspaceId,
+      requestKey,
+      text: [
+        `New partner request ${requestKey} from ${workspace.displayName}`,
+        `Stage: ${args.stage} · Support: ${args.supportType}`,
+        args.accountName ? `Account: ${args.accountName.trim()}` : undefined,
+        `Process: ${args.candidateProcess.trim()}`,
+        `Owner: ${owner}`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    })
+
     return {
       requestId,
       requestKey,
@@ -586,6 +601,62 @@ async function recordAudit(
     createdAt: Date.now(),
   })
 }
+
+const SLACK_CHANNEL = process.env.PARTNER_SLACK_CHANNEL ?? "#partner-requests"
+
+/**
+ * Bug 9: composes the message and records it. When PARTNER_SLACK_WEBHOOK_URL is
+ * configured this is where the post goes; until then the outbox is the record,
+ * readable by staff, so a request is never silently dropped.
+ */
+async function notifySlack(
+  ctx: MutationCtx,
+  message: {
+    workspaceId: Id<"workspaces">
+    requestKey: string
+    text: string
+  },
+) {
+  await ctx.db.insert("slackOutbox", {
+    channel: SLACK_CHANNEL,
+    text: message.text,
+    workspaceId: message.workspaceId,
+    requestKey: message.requestKey,
+    createdAt: Date.now(),
+  })
+}
+
+/** Bug 9: staff can see what would have been posted. */
+export const listSlackOutbox = query({
+  args: { workspaceId: v.optional(v.id("workspaces")) },
+  returns: v.array(
+    v.object({
+      _id: v.id("slackOutbox"),
+      channel: v.string(),
+      text: v.string(),
+      requestKey: v.string(),
+      createdAt: v.number(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    await requireStaffActor(ctx)
+    const workspaceId = args.workspaceId
+    const rows = workspaceId
+      ? await ctx.db
+          .query("slackOutbox")
+          .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
+          .order("desc")
+          .take(50)
+      : await ctx.db.query("slackOutbox").order("desc").take(50)
+    return rows.map((row) => ({
+      _id: row._id,
+      channel: row.channel,
+      text: row.text,
+      requestKey: row.requestKey,
+      createdAt: row.createdAt,
+    }))
+  },
+})
 
 const INVITATION_TTL_MS = 14 * 24 * 60 * 60 * 1000
 
@@ -832,6 +903,8 @@ export const updateWorkspaceConfiguration = mutation({
       ...(args.enabledSurfaces
         ? { enabledSurfaces: normalizedSurfaces(args.enabledSurfaces) }
         : {}),
+      // Bug 1: marks this workspace as admin-owned so a re-seed preserves it.
+      configuredAt: Date.now(),
       updatedAt: Date.now(),
     })
     return null
@@ -977,12 +1050,11 @@ export const listAuditEvents = query({
   ),
   handler: async (ctx, args) => {
     await requireStaffActor(ctx)
-    const rows = args.workspaceId
+    const workspaceId = args.workspaceId
+    const rows = workspaceId
       ? await ctx.db
           .query("auditEvents")
-          .withIndex("by_workspace", (q) =>
-            q.eq("workspaceId", args.workspaceId),
-          )
+          .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
           .order("desc")
           .take(100)
       : await ctx.db.query("auditEvents").order("desc").take(100)
@@ -1019,6 +1091,8 @@ export const approveClaim = mutation({
       reviewer: args.reviewer.trim(),
       reviewedAt: args.reviewedAt,
       revalidateAt: args.revalidateAt,
+      // Bug 1: marks this decision as staff-made so a re-seed preserves it.
+      claimReviewedAt: Date.now(),
       contentClass:
         args.claimState === "staff-draft"
           ? "staff-draft"
