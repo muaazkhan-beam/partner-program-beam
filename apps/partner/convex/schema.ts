@@ -137,6 +137,21 @@ export default defineSchema({
     .index("by_workspace_and_created", ["workspaceId", "createdAt"])
     .index("by_request_key", ["requestKey"]),
 
+  // Bug 3: the spec requires a minimal audit trail and none existed. Nothing
+  // recorded who invited whom, attached what, or approved which claim — which
+  // also made a re-seed reverting a reviewed decision undetectable.
+  auditEvents: defineTable({
+    actorId: v.id("partnerUsers"),
+    actorEmail: v.string(),
+    action: v.string(),
+    workspaceId: v.optional(v.id("workspaces")),
+    target: v.optional(v.string()),
+    detail: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_workspace", ["workspaceId"])
+    .index("by_created", ["createdAt"]),
+
   magicLinkOutbox: defineTable({
     email: v.string(),
     url: v.string(),

@@ -35,6 +35,26 @@ async function removeRetiredCatalogContent(ctx: MutationCtx) {
   }
 }
 
+const NINETY_DAYS = 90 * 24 * 60 * 60 * 1000
+
+function parseCatalogDate(value: string | undefined) {
+  if (!value) return undefined
+  const parsed = Date.parse(value)
+  return Number.isNaN(parsed) ? undefined : parsed
+}
+
+function reviewedAtFor(item: CatalogContent, now: number) {
+  if (!item.reviewer) return undefined
+  return parseCatalogDate(item.reviewedOn) ?? now
+}
+
+function revalidateAtFor(item: CatalogContent, now: number) {
+  if (!item.reviewer) return undefined
+  const explicit = parseCatalogDate(item.revalidateOn)
+  if (explicit) return explicit
+  return (parseCatalogDate(item.reviewedOn) ?? now) + NINETY_DAYS
+}
+
 async function upsertContent(
   ctx: MutationCtx,
   item: CatalogContent,
@@ -66,8 +86,12 @@ async function upsertContent(
     embedUrl: item.embedUrl,
     status: item.status,
     reviewer: item.reviewer,
-    reviewedAt: item.reviewer ? now : undefined,
-    revalidateAt: item.reviewer ? now + 90 * 24 * 60 * 60 * 1000 : undefined,
+    // Bug 8: these were synthesised from `now` on every seed, so the review
+    // clock reset each time and content never fell due for revalidation. The
+    // catalog now states the dates; the 90-day default applies only when it
+    // does not, and is anchored to the review date rather than to the seed.
+    reviewedAt: reviewedAtFor(item, now),
+    revalidateAt: revalidateAtFor(item, now),
     createdAt: existing?.createdAt ?? now,
   }
   if (existing) {

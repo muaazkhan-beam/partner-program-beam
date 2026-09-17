@@ -2,9 +2,12 @@ import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
 
 import type { Doc, Id } from "./_generated/dataModel"
+import type { MutationCtx } from "./_generated/server"
 import { mutation, query } from "./_generated/server"
 import {
   PartnerAccessError,
+  PartnerInputError,
+  isAllowedInBrandMode,
   isVisibleToPartner,
   partnerFacingContent,
   requireActor,
@@ -265,6 +268,8 @@ async function listGrantedContent(
   kind: Doc<"contentItems">["kind"],
 ) {
   const { actor } = await requireMembership(ctx, workspaceId)
+  const workspace = await ctx.db.get(workspaceId)
+  if (!workspace) throw new PartnerAccessError("Workspace not found")
   const grants = await ctx.db
     .query("contentGrants")
     .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
@@ -274,6 +279,7 @@ async function listGrantedContent(
     const item = await ctx.db.get(grant.contentId)
     if (!item || item.kind !== kind) continue
     if (!isVisibleToPartner(item, actor.isStaff)) continue
+    if (!isAllowedInBrandMode(item, workspace.brandMode, actor.isStaff)) continue
     items.push(toContentCard(item))
   }
   return items
@@ -313,6 +319,11 @@ export const getContent = query({
       .unique()
     if (!grant) return null
     if (!isVisibleToPartner(item, actor.isStaff)) return null
+    const workspace = await ctx.db.get(args.workspaceId)
+    if (!workspace) return null
+    if (!isAllowedInBrandMode(item, workspace.brandMode, actor.isStaff)) {
+      return null
+    }
     return toContentCard(item)
   },
 })
@@ -387,11 +398,12 @@ export const createRequest = mutation({
     const { actor } = await requireMembership(ctx, args.workspaceId)
     const workspace = await ctx.db.get(args.workspaceId)
     if (!workspace) throw new PartnerAccessError("Workspace not found")
+    // Bug 12: these are validation failures, not access failures.
     if (args.candidateProcess.trim().length < 4) {
-      throw new PartnerAccessError("Name the candidate process")
+      throw new PartnerInputError("Name the candidate process")
     }
     if (args.problemStatement.trim().length < 12) {
-      throw new PartnerAccessError(
+      throw new PartnerInputError(
         "Describe the problem in one short paragraph",
       )
     }
@@ -554,12 +566,37 @@ export const ensureStaffSession = mutation({
   },
 })
 
+async function recordAudit(
+  ctx: MutationCtx,
+  actor: Doc<"partnerUsers">,
+  action: string,
+  fields: {
+    workspaceId?: Id<"workspaces">
+    target?: string
+    detail?: string
+  } = {},
+) {
+  await ctx.db.insert("auditEvents", {
+    actorId: actor._id,
+    actorEmail: actor.email,
+    action,
+    workspaceId: fields.workspaceId,
+    target: fields.target,
+    detail: fields.detail,
+    createdAt: Date.now(),
+  })
+}
+
+const INVITATION_TTL_MS = 14 * 24 * 60 * 60 * 1000
+
 export const createInvitation = mutation({
   args: {
     workspaceId: v.id("workspaces"),
     email: v.string(),
     role: partnerInvitationRoleValidator,
-    expiresAt: v.number(),
+    // Bug 13: kept for callers that still send it, but the server decides the
+    // window. A client should not be able to mint a never-expiring invite.
+    expiresAt: v.optional(v.number()),
   },
   returns: v.id("invitations"),
   handler: async (ctx, args) => {
@@ -572,16 +609,50 @@ export const createInvitation = mutation({
         "Invite email must match an allowed workspace domain",
       )
     }
+    const now = Date.now()
+    await recordAudit(ctx, staff, "invitation.create", {
+      workspaceId: args.workspaceId,
+      target: email,
+      detail: args.role,
+    })
+    // Bug 13: repeated invites for the same address left several live rows.
+    const live = (
+      await ctx.db
+        .query("invitations")
+        .withIndex("by_email_and_workspace", (q) =>
+          q.eq("email", email).eq("workspaceId", args.workspaceId),
+        )
+        .take(20)
+    ).find((row) => row.consumedAt === undefined && row.expiresAt > now)
+    if (live) {
+      await ctx.db.patch(live._id, { expiresAt: now + INVITATION_TTL_MS })
+      return live._id
+    }
     return await ctx.db.insert("invitations", {
       email,
       workspaceId: args.workspaceId,
       role: args.role,
-      expiresAt: args.expiresAt,
-      createdAt: Date.now(),
+      expiresAt: now + INVITATION_TTL_MS,
+      createdAt: now,
       createdBy: staff._id,
     })
   },
 })
+
+/**
+ * Bug 4: this list omitted "agents", so a workspace created through the admin
+ * panel lacked a surface every seeded workspace had. Keep it in one place so
+ * the next surface cannot drift the same way.
+ */
+export const DEFAULT_ENABLED_SURFACES = [
+  "home",
+  "agents",
+  "tools",
+  "materials",
+  "faq",
+  "certifications",
+  "requests",
+] as const
 
 const workspaceConfigurationValidator = v.object({
   workspaceId: v.id("workspaces"),
@@ -597,7 +668,18 @@ const workspaceConfigurationValidator = v.object({
   homeDescription: v.string(),
   supportOwner: v.string(),
   allowedEmailDomains: v.array(v.string()),
+  // Bug 5: surfaces could never be turned on or off after creation, so the
+  // spec's "workspaces can hide a surface until its content is ready" was not
+  // achievable through administration.
+  enabledSurfaces: v.optional(v.array(v.string())),
 })
+
+/** Keeps `enabledSurfaces` to known surfaces, and always keeps home reachable. */
+function normalizedSurfaces(surfaces: readonly string[]) {
+  const known = new Set<string>(DEFAULT_ENABLED_SURFACES)
+  const kept = surfaces.map((s) => s.trim()).filter((s) => known.has(s))
+  return kept.includes("home") ? kept : ["home", ...kept]
+}
 
 function normalizedPartnerDomains(domains: readonly string[]) {
   const result = [
@@ -686,7 +768,7 @@ export const createWorkspace = mutation({
   }),
   returns: v.id("workspaces"),
   handler: async (ctx, args) => {
-    await requireStaffActor(ctx)
+    const staffActor = await requireStaffActor(ctx)
     const slug = args.slug.trim().toLowerCase()
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
       throw new PartnerAccessError(
@@ -703,6 +785,7 @@ export const createWorkspace = mutation({
     }
     const journey = defaultWorkspaceJourney()
     const now = Date.now()
+    await recordAudit(ctx, staffActor, "workspace.create", { target: slug })
     return await ctx.db.insert("workspaces", {
       slug,
       name: args.name.trim(),
@@ -716,14 +799,7 @@ export const createWorkspace = mutation({
       homeDescription: args.homeDescription.trim(),
       tracks: journey.tracks,
       steps: journey.steps,
-      enabledSurfaces: [
-        "home",
-        "tools",
-        "materials",
-        "faq",
-        "certifications",
-        "requests",
-      ],
+      enabledSurfaces: [...DEFAULT_ENABLED_SURFACES],
       supportOwner: args.supportOwner.trim(),
       allowedEmailDomains: normalizedPartnerDomains(args.allowedEmailDomains),
       customDomainStatus: "none",
@@ -737,9 +813,13 @@ export const updateWorkspaceConfiguration = mutation({
   args: workspaceConfigurationValidator,
   returns: v.null(),
   handler: async (ctx, args) => {
-    await requireStaffActor(ctx)
+    const staffActor = await requireStaffActor(ctx)
     const workspace = await ctx.db.get(args.workspaceId)
     if (!workspace) throw new PartnerAccessError("Workspace not found")
+    await recordAudit(ctx, staffActor, "workspace.configure", {
+      workspaceId: args.workspaceId,
+      target: workspace.slug,
+    })
     await ctx.db.patch(args.workspaceId, {
       displayName: args.displayName.trim(),
       brandMode: args.brandMode,
@@ -749,6 +829,9 @@ export const updateWorkspaceConfiguration = mutation({
       homeDescription: args.homeDescription.trim(),
       supportOwner: args.supportOwner.trim(),
       allowedEmailDomains: normalizedPartnerDomains(args.allowedEmailDomains),
+      ...(args.enabledSurfaces
+        ? { enabledSurfaces: normalizedSurfaces(args.enabledSurfaces) }
+        : {}),
       updatedAt: Date.now(),
     })
     return null
@@ -805,6 +888,115 @@ export const attachContent = mutation({
   },
 })
 
+/**
+ * Bug 2: nothing removed a membership, so someone who left a partner firm kept
+ * access indefinitely. Removing the workspace domain did not help, because an
+ * existing membership is never re-validated.
+ */
+export const removeMembership = mutation({
+  args: { membershipId: v.id("memberships") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const staff = await requireStaffActor(ctx)
+    const membership = await ctx.db.get(args.membershipId)
+    if (!membership) throw new PartnerAccessError("Membership not found")
+    const user = await ctx.db.get(membership.userId)
+    await recordAudit(ctx, staff, "membership.remove", {
+      workspaceId: membership.workspaceId,
+      target: user?.email,
+      detail: membership.role,
+    })
+    await ctx.db.delete(args.membershipId)
+    return null
+  },
+})
+
+/** Bug 2: a sent invitation could not be cancelled before it was consumed. */
+export const revokeInvitation = mutation({
+  args: { invitationId: v.id("invitations") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const staff = await requireStaffActor(ctx)
+    const invitation = await ctx.db.get(args.invitationId)
+    if (!invitation) throw new PartnerAccessError("Invitation not found")
+    if (invitation.consumedAt !== undefined) {
+      throw new PartnerInputError(
+        "This invitation was already used. Remove the membership instead.",
+      )
+    }
+    await recordAudit(ctx, staff, "invitation.revoke", {
+      workspaceId: invitation.workspaceId,
+      target: invitation.email,
+    })
+    await ctx.db.delete(args.invitationId)
+    return null
+  },
+})
+
+/**
+ * Bug 6: content could be attached to a workspace but never taken back, and a
+ * re-seed only ever adds grants, so a mistake was permanent.
+ */
+export const detachContent = mutation({
+  args: {
+    workspaceId: v.id("workspaces"),
+    contentId: v.id("contentItems"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const staff = await requireStaffActor(ctx)
+    const grant = await ctx.db
+      .query("contentGrants")
+      .withIndex("by_workspace_and_content", (q) =>
+        q.eq("workspaceId", args.workspaceId).eq("contentId", args.contentId),
+      )
+      .unique()
+    if (!grant) throw new PartnerInputError("That content is not attached")
+    const item = await ctx.db.get(args.contentId)
+    await recordAudit(ctx, staff, "content.detach", {
+      workspaceId: args.workspaceId,
+      target: item ? `${item.kind}:${item.slug}` : undefined,
+    })
+    await ctx.db.delete(grant._id)
+    return null
+  },
+})
+
+/** Bug 3: staff need to be able to read the trail, not just write it. */
+export const listAuditEvents = query({
+  args: { workspaceId: v.optional(v.id("workspaces")) },
+  returns: v.array(
+    v.object({
+      _id: v.id("auditEvents"),
+      actorEmail: v.string(),
+      action: v.string(),
+      target: v.optional(v.string()),
+      detail: v.optional(v.string()),
+      createdAt: v.number(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    await requireStaffActor(ctx)
+    const rows = args.workspaceId
+      ? await ctx.db
+          .query("auditEvents")
+          .withIndex("by_workspace", (q) =>
+            q.eq("workspaceId", args.workspaceId),
+          )
+          .order("desc")
+          .take(100)
+      : await ctx.db.query("auditEvents").order("desc").take(100)
+    return rows.map((row) => ({
+      _id: row._id,
+      actorEmail: row.actorEmail,
+      action: row.action,
+      target: row.target,
+      detail: row.detail,
+      createdAt: row.createdAt,
+    }))
+  },
+})
+
 export const approveClaim = mutation({
   args: {
     contentId: v.id("contentItems"),
@@ -815,9 +1007,13 @@ export const approveClaim = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await requireStaffActor(ctx)
+    const staff = await requireStaffActor(ctx)
     const content = await ctx.db.get(args.contentId)
     if (!content) throw new PartnerAccessError("Content not found")
+    await recordAudit(ctx, staff, "claim.review", {
+      target: `${content.kind}:${content.slug}`,
+      detail: `${content.claimState} → ${args.claimState}`,
+    })
     await ctx.db.patch(args.contentId, {
       claimState: args.claimState,
       reviewer: args.reviewer.trim(),
