@@ -29,6 +29,10 @@ export type CatalogContent = {
   restrictedReason?: string
   requestBeamLabel?: string
   reviewer?: string
+  /** ISO date, e.g. 2026-09-01. */
+  reviewedOn?: string
+  /** ISO date. When this claim must be reviewed again. */
+  revalidateOn?: string
 }
 
 /**

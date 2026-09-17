@@ -49,6 +49,10 @@ export default defineSchema({
     supportOwner: v.string(),
     allowedEmailDomains: v.array(v.string()),
     customDomainStatus: customDomainStatusValidator,
+    // Bug 1: set when staff configure a workspace through the admin panel. The
+    // seed preserves admin-owned fields on any workspace carrying this, so a
+    // re-seed cannot silently revert a deliberate change.
+    configuredAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -109,6 +113,9 @@ export default defineSchema({
     revalidateAt: v.optional(v.number()),
     // Present only when kind is "use-case".
     useCase: v.optional(useCaseDetailValidator),
+    // Bug 1: set only by approveClaim. The seed preserves the claim decision on
+    // any item carrying this, so a reviewed claim survives a re-seed.
+    claimReviewedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_kind", ["kind"])
@@ -138,6 +145,37 @@ export default defineSchema({
   })
     .index("by_workspace", ["workspaceId"])
     .index("by_workspace_and_created", ["workspaceId", "createdAt"])
+    .index("by_request_key", ["requestKey"]),
+
+  // Bug 3: the spec requires a minimal audit trail and none existed. Nothing
+  // recorded who invited whom, attached what, or approved which claim — which
+  // also made a re-seed reverting a reviewed decision undetectable.
+  auditEvents: defineTable({
+    actorId: v.id("partnerUsers"),
+    actorEmail: v.string(),
+    action: v.string(),
+    workspaceId: v.optional(v.id("workspaces")),
+    target: v.optional(v.string()),
+    detail: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_workspace", ["workspaceId"])
+    .index("by_created", ["createdAt"]),
+
+  // Bug 9: a request was written with an owner and nothing else happened — no
+  // email, no Slack, no Linear — so whoever owns partner-success had no idea
+  // one had arrived. Mocked as an outbox for now: the message is composed and
+  // recorded, and a real webhook post replaces the write without changing
+  // callers. Same shape as magicLinkOutbox, which is mocked the same way.
+  slackOutbox: defineTable({
+    channel: v.string(),
+    text: v.string(),
+    workspaceId: v.id("workspaces"),
+    requestKey: v.string(),
+    deliveredAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_workspace", ["workspaceId"])
     .index("by_request_key", ["requestKey"]),
 
   magicLinkOutbox: defineTable({

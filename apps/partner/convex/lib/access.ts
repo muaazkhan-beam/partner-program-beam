@@ -11,6 +11,17 @@ export class PartnerAccessError extends Error {
   }
 }
 
+/**
+ * Bug 12: validation failures were thrown as PartnerAccessError, so callers
+ * could not tell "you may not do this" from "you filled the form in wrong".
+ */
+export class PartnerInputError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "PartnerInputError"
+  }
+}
+
 export async function getIdentityEmail(ctx: DbCtx) {
   const identity = await ctx.auth.getUserIdentity()
   const email = normalizeEmail(identity?.email)
@@ -74,6 +85,22 @@ export async function requireMembership(
   return { actor, membership }
 }
 
+/**
+ * Bug 7: every content item declares which brand modes it may appear under, but
+ * nothing read the field, so a partner-fronted workspace could surface material
+ * approved only for Beam-standard. Staff still see everything, so review is
+ * possible from any workspace.
+ */
+export function isAllowedInBrandMode(
+  item: Doc<"contentItems">,
+  brandMode: Doc<"workspaces">["brandMode"],
+  actorIsStaff: boolean,
+) {
+  if (actorIsStaff) return true
+  if (item.allowedBrandModes.length === 0) return true
+  return item.allowedBrandModes.includes(brandMode)
+}
+
 export function isVisibleToPartner(
   item: Doc<"contentItems">,
   actorIsStaff: boolean,
@@ -89,11 +116,16 @@ export function isVisibleToPartner(
 
 export function partnerFacingContent(item: Doc<"contentItems">) {
   if (item.claimState === "restricted") {
+    // Bug 10: the body was redacted but the summary was not, so a restricted
+    // claim written into a summary reached partners unredacted. Safe today only
+    // because of how the two restricted answers happen to be worded.
+    const notice =
+      item.requestBeamLabel ??
+      "Request Beam for a reviewed answer. This claim is not published for partners."
     return {
       ...item,
-      body:
-        item.requestBeamLabel ??
-        "Request Beam for a reviewed answer. This claim is not published for partners.",
+      summary: notice,
+      body: notice,
     }
   }
   return item
