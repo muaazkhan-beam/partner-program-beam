@@ -17,6 +17,7 @@
       ],
       "enabledSurfaces": [
         "home",
+        "journey",
         "tools",
         "materials",
         "faq",

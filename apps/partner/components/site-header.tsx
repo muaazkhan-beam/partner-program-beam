@@ -18,6 +18,7 @@ import { workspacePath } from "@/lib/workspace-resolver"
 
 const titles: Record<string, string> = {
   home: "Home",
+  journey: "Partner journey",
   tools: "Tools",
   materials: "Materials",
   faq: "FAQ",

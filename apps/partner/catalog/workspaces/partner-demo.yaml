@@ -13,6 +13,7 @@ allowedEmailDomains:
   - partner.example
 enabledSurfaces:
   - home
+  - journey
   - tools
   - materials
   - faq

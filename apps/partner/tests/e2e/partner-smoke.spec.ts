@@ -32,6 +32,7 @@ test("scoped preview bypass opens every demo partner surface and interaction", a
   page,
 }) => {
   const surfaces = [
+    ["journey", "Partner journey"],
     ["tools", "Tools"],
     ["materials", "Materials"],
     ["faq", "Partner FAQ"],
