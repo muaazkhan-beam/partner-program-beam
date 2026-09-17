@@ -35,7 +35,7 @@ takes only a slug.
 
 ---
 
-## Stage 0 — Foundations (Mon 15 – Tue 16 Sep)
+## Stage 0 — Foundations (Thu 17 – Fri 18 Sep)
 
 **Goal: one use case renders in the portal, isolated per workspace, with a passing test.**
 Getting the full chain working for *one* record de-risks everything after it.
@@ -93,7 +93,7 @@ they are not granted to, isolation test green.
 
 ---
 
-## Stage 1 — Content and tracks (Wed 17 – Fri 19 Sep)
+## Stage 1 — Content and tracks (Mon 21 – Wed 23 Sep)
 
 ### 1.1 Use case catalog to 12–15 entries — *critical path*
 
@@ -139,7 +139,7 @@ compliance documents are findable in one place.
 
 ---
 
-## Stage 2 — The program (Mon 22 – Fri 26 Sep)
+## Stage 2 — The program (Thu 24 – Mon 28 Sep)
 
 ### 2.1 Certification progress
 
@@ -173,7 +173,7 @@ it, tiers are decorative.
 
 ---
 
-## Stage 3 — Land it (Mon 29 – Wed 30 Sep)
+## Stage 3 — Land it (Tue 29 – Wed 30 Sep)
 
 1. Full check: `pnpm catalog:compile && pnpm typecheck && pnpm test && pnpm test:e2e`
 2. Review with Derya and Fred — claim review on every new use case before publish

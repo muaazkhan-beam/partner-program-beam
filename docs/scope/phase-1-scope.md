@@ -200,14 +200,17 @@ existing governance model rather than inventing one.
 
 Detailed steps: [`../plan/build-plan.md`](../plan/build-plan.md).
 
+Re-baselined 17 September. Stage 0 did not start in its original window.
+
 | Window | Focus | Exit condition |
 | --- | --- | --- |
-| **Stage 0 · 15–16 Sep** | Use case schema through the whole pipeline; 3 use cases end to end | A use case renders in the portal, isolated per workspace, test passing |
-| **Stage 1 · 17–19 Sep** | Catalog to 12–15 entries; tracks; compliance library | Content complete; a BPO and an SI see different home screens |
-| **Stage 2 · 22–26 Sep** | Certification progress; firm tiers; scorecard | A partner can see their tier and what moves them up |
-| **Stage 3 · 29–30 Sep** | Polish, claim review with Derya and Fred, deploy | Live |
+| **Stage 0 · Thu 17 – Fri 18 Sep** | Use case schema through the whole pipeline; 3 use cases end to end | A use case renders in the portal, isolated per workspace, test passing |
+| **Stage 1 · Mon 21 – Wed 23 Sep** | Catalog to 12–15 entries; tracks; compliance library | Content complete; a BPO and an SI see different home screens |
+| **Stage 2 · Thu 24 – Mon 28 Sep** | Certification progress; firm tiers; scorecard | A partner can see their tier and what moves them up |
+| **Stage 3 · Tue 29 – Wed 30 Sep** | Polish, claim review with Derya and Fred, deploy | Live |
 
-**Twelve working days.**
+**Ten working days.** No slack left — a further slip on Stage 0 costs a deliverable, and the
+scorecard is the first to go.
 
 **Content is the critical path, not code.** Writing 12–15 use cases with real provenance
 and assembling the compliance library will take longer than building the surfaces that
