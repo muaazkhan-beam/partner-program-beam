@@ -3,7 +3,11 @@ import { v } from "convex/values"
 import type { Id } from "./_generated/dataModel"
 import type { MutationCtx } from "./_generated/server"
 import { internalMutation, mutation } from "./_generated/server"
-import type { CatalogContent, PartnerCatalog } from "./catalogTypes"
+import type {
+  CatalogContent,
+  PartnerCatalog,
+  UseCaseDetail,
+} from "./catalogTypes"
 import rawCatalog from "./generated/catalog.json"
 import { requireStaffActor } from "./lib/access"
 
@@ -37,7 +41,7 @@ async function removeRetiredCatalogContent(ctx: MutationCtx) {
 
 async function upsertContent(
   ctx: MutationCtx,
-  item: CatalogContent,
+  item: CatalogContent & { useCase?: UseCaseDetail },
   now: number
 ) {
   const existing = await ctx.db
@@ -68,6 +72,7 @@ async function upsertContent(
     reviewer: item.reviewer,
     reviewedAt: item.reviewer ? now : undefined,
     revalidateAt: item.reviewer ? now + 90 * 24 * 60 * 60 * 1000 : undefined,
+    useCase: item.useCase,
     createdAt: existing?.createdAt ?? now,
   }
   if (existing) {
@@ -85,6 +90,21 @@ async function seedCatalogData(ctx: MutationCtx, now: number) {
     ...catalog.materials,
     ...catalog.faq,
     ...catalog.playbooks,
+    ...catalog.useCases.map((item) => ({
+      ...item,
+      useCase: {
+        vertical: item.vertical,
+        department: item.department,
+        systems: item.systems,
+        trigger: item.trigger,
+        before: item.before,
+        after: item.after,
+        humanInLoop: item.humanInLoop,
+        outcome: item.outcome,
+        timeToProduction: item.timeToProduction,
+        complexity: item.complexity,
+      },
+    })),
   ]
   let contentCount = 0
   for (const item of items) {
@@ -136,6 +156,7 @@ async function seedCatalogData(ctx: MutationCtx, now: number) {
       ...workspace.materialSlugs.map((slug) => `material:${slug}`),
       ...workspace.faqSlugs.map((slug) => `faq:${slug}`),
       ...workspace.playbookSlugs.map((slug) => `playbook:${slug}`),
+      ...(workspace.useCaseSlugs ?? []).map((slug) => `use-case:${slug}`),
     ]
     for (const key of slugs) {
       const contentId = contentIds.get(key)

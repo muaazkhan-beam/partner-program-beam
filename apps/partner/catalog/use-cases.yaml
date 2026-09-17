@@ -1,0 +1,98 @@
+# Use case catalog.
+#
+# Answers the first question a partner asks: what exactly can I sell?
+#
+# Every record is a live Beam deployment shape, confirmed by Derya Firat on
+# 2026-09-11 as running rather than pitched. Two rules the compile script
+# enforces, because they are what keep the catalog honest:
+#
+#   humanInLoop  is required. Every use case must name the step that keeps a
+#                human approver, because that is the first objection in every
+#                regulated vertical.
+#   outcome      is optional, but when present it must carry a source. A partner
+#                who repeats a number to a client will be asked where it came
+#                from. No source, no number — leave it out and ship `pending`.
+#
+# Do not add a use case with an invented outcome. An absent outcome is honest;
+# a fabricated one costs the partner the room.
+
+items:
+  - slug: invoice-exception-handling
+    kind: use-case
+    title: Invoice exception handling
+    group: Finance
+    summary: Clear invoices that fail three-way match without a shared mailbox and three people triaging it.
+    body: >-
+      Exception-heavy accounts payable is the strongest first workflow in finance. The
+      process is high volume, the rules are already written down, and the failure mode is
+      visible to the CFO every month-end. Scope one entity and one ERP before expanding.
+    vertical: financial-services
+    department: finance
+    systems: [SAP, DATEV, Outlook]
+    trigger: An invoice fails three-way match against purchase order and goods receipt.
+    before: Exceptions land in a shared mailbox and are triaged by hand, with resolution measured in days and the backlog visible at month-end close.
+    after: The agent reads the invoice, queries the ERP for the purchase order and receipt, classifies the exception, drafts the correction, and routes it to an approver with the evidence attached.
+    humanInLoop: An approver signs off every correction above the client's materiality threshold. The agent never posts to the ledger unattended.
+    timeToProduction: 4 weeks
+    complexity: starter
+    status: pending
+    contentClass: shared-partner-safe
+    audience: partner-internal
+    forwardable: true
+    allowedBrandModes: [beam-standard, co-branded, partner-fronted]
+    claimState: approved
+    reviewer: Partner Success
+
+  - slug: supplier-communication
+    kind: use-case
+    title: Supplier communication and FAQs
+    group: Procurement
+    summary: Answer routine supplier questions from the systems that already hold the answer.
+    body: >-
+      Procurement inboxes carry a long tail of questions whose answers already exist in the
+      ERP — delivery dates, payment status, document requests. The work is repetitive,
+      bounded, and easy to evaluate, which makes it a good second workflow once finance
+      exceptions are live.
+    vertical: financial-services
+    department: procurement
+    systems: [SAP, Outlook]
+    trigger: A supplier emails the procurement mailbox with a status or document request.
+    before: Buyers interrupt planned work to look up the same answers in the ERP and reply by hand, and response times stretch when volume spikes.
+    after: The agent classifies the request, retrieves the answer from the system of record, drafts a reply in the client's tone, and escalates anything touching price, contract terms or a dispute.
+    humanInLoop: Anything involving commercial terms, disputes or a new supplier goes to a buyer. The agent answers only from the system of record.
+    timeToProduction: 4 weeks
+    complexity: starter
+    status: pending
+    contentClass: shared-partner-safe
+    audience: partner-internal
+    forwardable: true
+    allowedBrandModes: [beam-standard, co-branded, partner-fronted]
+    claimState: approved
+    reviewer: Partner Success
+
+  - slug: cv-screening
+    kind: use-case
+    title: CV screening
+    group: HR
+    summary: Screen applications against the role's criteria, with the shortlist decision left to a recruiter.
+    body: >-
+      High-volume hiring is a natural fit for BPO and RPO partners, whose clients already
+      outsource the work. Screening is also the use case where governance matters most —
+      the guardrails below are not optional, and partners should lead with them rather
+      than be asked.
+    vertical: bpo-rpo
+    department: hr
+    systems: [Applicant tracking system, Email]
+    trigger: An application arrives against an open role.
+    before: Recruiters read every application to produce a shortlist, and time-to-first-response stretches as volume rises.
+    after: The agent extracts the candidate's experience against the role's stated criteria, flags gaps and strengths with the evidence it used, and assembles a structured shortlist for the recruiter.
+    humanInLoop: A recruiter makes every advance-or-reject decision. The agent produces evidence and a recommendation, never an outcome, and no candidate is rejected without a human reviewing the reason.
+    timeToProduction: 4 weeks
+    complexity: standard
+    status: pending
+    contentClass: shared-partner-safe
+    audience: partner-internal
+    forwardable: false
+    allowedBrandModes: [beam-standard, co-branded]
+    claimState: approved
+    reviewer: Partner Success

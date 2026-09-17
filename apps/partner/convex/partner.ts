@@ -25,6 +25,7 @@ import {
   requestStageValidator,
   requestStatusValidator,
   requestSupportTypeValidator,
+  useCaseDetailValidator,
 } from "./lib/validators"
 
 const workspacePublicValidator = v.object({
@@ -230,6 +231,7 @@ const contentCardValidator = v.object({
   reviewer: v.optional(v.string()),
   reviewedAt: v.optional(v.number()),
   revalidateAt: v.optional(v.number()),
+  useCase: v.optional(useCaseDetailValidator),
 })
 
 function toContentCard(item: Doc<"contentItems">) {
@@ -256,6 +258,7 @@ function toContentCard(item: Doc<"contentItems">) {
     reviewer: visible.reviewer,
     reviewedAt: visible.reviewedAt,
     revalidateAt: visible.revalidateAt,
+    useCase: visible.useCase,
   }
 }
 

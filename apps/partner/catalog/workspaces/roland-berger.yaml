@@ -13,6 +13,7 @@ allowedEmailDomains:
   - rolandberger.com
 enabledSurfaces:
   - home
+  - use-cases
   - agents
   - tools
   - materials
@@ -88,3 +89,6 @@ faqSlugs:
   - leadership-pack
 playbookSlugs:
   - one-workflow-shadow
+useCaseSlugs:
+  - invoice-exception-handling
+  - supplier-communication
