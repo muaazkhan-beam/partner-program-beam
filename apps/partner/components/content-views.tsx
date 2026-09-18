@@ -939,9 +939,25 @@ function SharePreviewDetail({
   item: ContentCard
   kind: "material" | "playbook"
 }) {
+  const workspace = useWorkspace()
   const hasPublishedShare = item.shareUrl?.startsWith(
     "https://shares.beam.ai/s/"
   )
+  // A pending material has no file to open yet, so the request is the only
+  // action on the page; keep it beside the title rather than under the frame.
+  const requestLink =
+    item.status === "pending" || item.requestBeamLabel ? (
+      <Link
+        className="flex max-w-xl items-center justify-between gap-3 rounded-lg border p-3 text-sm transition-colors hover:bg-muted/40"
+        href={requestHref(workspace.slug, {
+          about: `${item.kind}:${item.slug}`,
+          support: supportForKind(item.kind),
+        })}
+      >
+        <span>{item.requestBeamLabel ?? "Request this from Beam"}</span>
+        <RiArrowRightLine className="size-4 shrink-0 text-muted-foreground" />
+      </Link>
+    ) : null
 
   return (
     <div className="space-y-6">
@@ -965,6 +981,7 @@ function SharePreviewDetail({
         <p className="text-base leading-7 text-muted-foreground">
           {item.summary}
         </p>
+        {hasPublishedShare ? null : requestLink}
       </div>
       <section className="overflow-hidden rounded-3xl border bg-muted/25 p-3 shadow-sm sm:p-5">
         <div className="partner-share-frame mx-auto aspect-[16/9] max-w-5xl overflow-auto rounded-2xl border bg-background shadow-xl">
@@ -1018,6 +1035,7 @@ function SharePreviewDetail({
           Open in Beam Shares
         </Button>
       ) : null}
+      {hasPublishedShare ? requestLink : null}
       <p className="text-xs leading-5 text-muted-foreground">
         {hasPublishedShare
           ? "Embedded from the reviewed Beam Share attached to this workspace."
