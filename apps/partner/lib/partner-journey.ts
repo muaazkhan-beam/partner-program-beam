@@ -72,6 +72,7 @@ export const journeyPhases: JourneyPhase[] = [
       },
     ],
     resources: [
+      { kind: "material", slug: "where-beam-fits" },
       { kind: "use-case", slug: "invoice-exception-handling" },
       { kind: "use-case", slug: "supplier-communication" },
       { kind: "use-case", slug: "cv-screening" },
@@ -164,6 +165,7 @@ export const journeyPhases: JourneyPhase[] = [
     ],
     resources: [
       { kind: "faq", slug: "security-review-pack" },
+      { kind: "material", slug: "security-compliance-pack" },
       { kind: "faq", slug: "access-and-sandbox" },
       { kind: "tool", slug: "proof-pack" },
       { kind: "faq", slug: "brand-shapes" },

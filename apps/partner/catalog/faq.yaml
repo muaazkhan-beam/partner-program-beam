@@ -200,7 +200,7 @@ items:
     kind: faq
     title: What security, privacy, and architecture evidence can we give a client?
     summary: Pending. Use only the reviewed evidence pack for the named deployment.
-    body: This answer is pending security review. Do not improvise claims about hosting, residency, private networking, certifications, retention, or regulated-industry readiness. The approved evidence must match the client and deployment under discussion.
+    body: This answer is pending security review. Do not improvise claims about hosting, residency, private networking, certifications, retention, or regulated-industry readiness. The approved evidence must match the client and deployment under discussion. The Security and compliance pack in Materials lists the documents Beam can share, as printed.
     contentClass: shared-partner-safe
     audience: technical
     forwardable: false
