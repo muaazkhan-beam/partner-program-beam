@@ -422,7 +422,9 @@ function JourneyBody({ items }: { items: JourneyItem[] | undefined }) {
                       <span className="flex flex-wrap items-center gap-2">
                         <Badge variant="outline">{kindLabel[item.kind]}</Badge>
                         {item.status === "pending" ? (
-                          <Badge variant="secondary">Pending</Badge>
+                          <Badge variant="secondary">
+                            {item.kind === "use-case" ? "Outcome pending" : "Pending"}
+                          </Badge>
                         ) : null}
                       </span>
                       <span className="mt-2 block text-sm font-medium">

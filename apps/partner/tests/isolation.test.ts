@@ -604,6 +604,38 @@ test("staff can revoke access and detach content, and it is audited (bugs 2, 3, 
   }
 })
 
+test("configuring a workspace keeps the use-case catalog and an opted-in journey", async () => {
+  const t = await seeded()
+  const staff = await memberAs(t, "ops@beam.ai", "partner-demo")
+  const workspace = await t.query(api.partner.resolveWorkspace, {
+    slug: "partner-demo",
+  })
+  assert.ok(workspace)
+  assert.ok(workspace.enabledSurfaces.includes("use-cases"))
+  assert.ok(workspace.enabledSurfaces.includes("journey"))
+
+  await staff.mutation(api.partner.updateWorkspaceConfiguration, {
+    workspaceId: workspace._id,
+    displayName: workspace.displayName,
+    brandHeader: workspace.brandHeader,
+    brandMode: workspace.brandMode,
+    homeTitle: workspace.homeTitle,
+    homeHeadline: workspace.homeHeadline,
+    homeDescription: workspace.homeDescription,
+    supportOwner: workspace.supportOwner,
+    allowedEmailDomains: ["partner.example"],
+    enabledSurfaces: [...workspace.enabledSurfaces, "not-a-surface"],
+  })
+
+  const after = await t.query(api.partner.resolveWorkspace, {
+    slug: "partner-demo",
+  })
+  assert.ok(after)
+  assert.ok(after.enabledSurfaces.includes("use-cases"), "use-cases survives a save")
+  assert.ok(after.enabledSurfaces.includes("journey"), "journey survives a save")
+  assert.ok(!after.enabledSurfaces.includes("not-a-surface"), "unknown keys are dropped")
+})
+
 test("a workspace created by staff gets every default surface (bug 4)", async () => {
   const t = await seeded()
   const staff = await memberAs(t, "ops@beam.ai", "roboyo", "staff")
