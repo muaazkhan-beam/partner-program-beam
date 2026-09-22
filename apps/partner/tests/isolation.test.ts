@@ -370,7 +370,7 @@ test("restricted deployment FAQ returns request-Beam instead of an unreviewed cl
 test("preview seed loads the demo and reviewed partner workspaces without staff auth", async () => {
   const t = convexTest(schema, convexModules)
   const result = await t.mutation(internal.seed.seedPreview, {})
-  assert.equal(result.workspaceCount, 4)
+  assert.equal(result.workspaceCount, 5)
   assert.ok(result.contentCount > 0)
   const demo = await t.query(api.partner.resolveWorkspace, {
     slug: "partner-demo",
@@ -382,10 +382,15 @@ test("preview seed loads the demo and reviewed partner workspaces without staff 
   const rolandBerger = await t.query(api.partner.resolveWorkspace, {
     slug: "roland-berger",
   })
+  const grantThornton = await t.query(api.partner.resolveWorkspace, {
+    slug: "grant-thornton-sa",
+  })
   assert.equal(demo?.slug, "partner-demo")
   assert.equal(pwc?.slug, "pwc-me")
   assert.equal(roboyo?.slug, "roboyo")
   assert.equal(rolandBerger?.slug, "roland-berger")
+  assert.equal(grantThornton?.slug, "grant-thornton-sa")
+  assert.deepEqual(grantThornton?.allowedEmailDomains, ["sa.gt.com"])
 })
 
 test("use cases are granted per workspace and carry their guardrails", async () => {

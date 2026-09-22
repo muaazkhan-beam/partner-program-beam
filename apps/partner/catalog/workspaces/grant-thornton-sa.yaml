@@ -1,0 +1,83 @@
+slug: grant-thornton-sa
+name: Grant Thornton Saudi Arabia
+displayName: Grant Thornton KSA
+primaryHostname: grant-thornton-sa.partner.beam.ai
+canonicalPath: /w/grant-thornton-sa
+brandMode: co-branded
+brandHeader: Grant Thornton × Beam
+homeTitle: The Agent Factory for Business Process Services
+homeHeadline: Turn one BPO workflow into a governed agent-enabled service
+homeDescription: Grant Thornton owns the client, operating model, controls, and service delivery. Beam provides the agent factory, platform, and evaluation loop to take one Saudi business process from discovery to measurable production outcomes.
+supportOwner: partner-success@beam.ai
+allowedEmailDomains:
+  - sa.gt.com
+enabledSurfaces:
+  - home
+  - tools
+  - materials
+  - faq
+  - requests
+tracks:
+  - id: layer
+    title: Agent-enabled BPO
+    framing: layer
+    summary: Position Beam as the governed agent factory behind Grant Thornton's finance, compliance, payroll, and back-office services.
+    action: Open the partner FAQ
+    href: /faq
+  - id: beachhead
+    title: First service workflow
+    framing: beachhead
+    summary: Select one exception-heavy process, map its controls, validate a shadow workflow, and agree measurable service outcomes.
+    action: Start a client opportunity
+    href: /requests
+  - id: clearance
+    title: Control and delivery readiness
+    framing: clearance
+    summary: Use reviewed security, sovereignty, human-approval, and independence answers. Route restricted claims to Beam.
+    action: Open the delivery FAQ
+    href: /faq
+steps:
+  - title: Qualify the client process
+    detail: Confirm the client outcome, operational volume, current service model, systems, and accountable stakeholders.
+  - title: Map controls and exceptions
+    detail: Use the operating diagnostic to capture handoffs, approvals, regulatory obligations, and failure paths.
+  - title: Show a shadow workflow
+    detail: Request a Beam-run demonstration, then validate the process with representative test data and human review.
+  - title: Agree service outcomes
+    detail: Define the SLA, evaluation plan, control evidence, and first production outcome with Beam.
+toolSlugs:
+  - partner-faq
+  - call-prep
+  - materials-library
+  - operating-diagnostic
+  - discovery
+  - platform-demo
+  - one-workflow-playbook
+  - beam-platform
+  - success-criteria
+materialSlugs:
+  - where-beam-fits
+  - joint-motion-one-pager
+  - proof-pack-placeholder
+  - beam-partner-executive-overview
+  - beam-discovery-sales-deck
+faqSlugs:
+  - why-not-sap
+  - data-integration
+  - first-process-fit
+  - when-to-walk-away
+  - human-approval
+  - deployment-ksa-kuwait
+  - not-another-ai-tool
+  - partner-vs-beam
+  - brand-shapes
+  - first-engagement
+  - measuring-success
+  - audit-independence
+  - security-review-pack
+  - access-and-sandbox
+  - support-and-escalation
+  - accuracy
+  - leadership-pack
+playbookSlugs:
+  - one-workflow-shadow

@@ -2,7 +2,10 @@ import { getSessionCookie } from "better-auth/cookies"
 import { NextResponse, type NextRequest } from "next/server"
 
 import { isServerAuthBypass } from "@/lib/auth-bypass"
-import { getLoginPath, getSafeAuthReturnPath } from "@/lib/auth-redirect"
+import {
+  getAuthenticatedLoginReturnPath,
+  getLoginPath,
+} from "@/lib/auth-redirect"
 import {
   isPublicPath,
   isPartnerLoginEntryPath,
@@ -41,9 +44,19 @@ export function proxy(request: NextRequest) {
   if (pathname.startsWith("/api/auth")) return NextResponse.next()
 
   const session = getSessionCookie(request)
-  if (pathname === "/login" && session) {
-    const returnPath = getSafeAuthReturnPath(
+  // A signed-in user has nothing to do on a login screen. Send apex users to
+  // staff admin and tenant/entry users to their workspace when no path was
+  // requested. Using /admin on a tenant host would deliberately 404 above.
+  const isLoginScreen =
+    pathname === "/login" || pathname === "/" || isPartnerLoginEntry
+  if (isLoginScreen && session) {
+    const workspaceSlug =
+      resolution.source === "host" || resolution.source === "entry"
+        ? resolution.slug
+        : null
+    const returnPath = getAuthenticatedLoginReturnPath(
       request.nextUrl.searchParams.get("from"),
+      workspaceSlug,
     )
     return NextResponse.redirect(new URL(returnPath, request.url))
   }
