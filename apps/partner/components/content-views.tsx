@@ -46,6 +46,7 @@ type ContentCard = {
   summary: string
   body: string
   group?: string
+  highlight?: boolean
   claimState: string
   audience: string
   forwardable: boolean
@@ -297,7 +298,131 @@ function MaterialsGridBody({
   if (items.length === 0) {
     return <p className="text-sm text-muted-foreground">{empty}</p>
   }
-  return <PreviewCatalog kind="material" items={items} surface="materials" />
+  return <MaterialGroups items={items} />
+}
+
+/**
+ * Materials are grouped by what a partner is trying to do, and each group leads
+ * with one item.
+ *
+ * Before this, every material rendered as an identical card with a colour
+ * picked by list position — so the colours carried no meaning and a partner had
+ * to open each one to find out what it was. Now the highlight answers "start
+ * here" and the rest say, in a line, how they differ.
+ */
+function MaterialGroups({ items }: { items: ContentCard[] }) {
+  const workspace = useWorkspace()
+  const groups = new Map<string, ContentCard[]>()
+  for (const item of items) {
+    const key = item.group ?? "More material"
+    groups.set(key, [...(groups.get(key) ?? []), item])
+  }
+
+  const href = (item: ContentCard) =>
+    workspacePath(workspace.slug, `/${contentSurface(item.kind)}/${item.slug}`)
+
+  return (
+    <div className="space-y-12">
+      {[...groups.entries()].map(([group, groupItems]) => {
+        const lead = groupItems.find((item) => item.highlight) ?? groupItems[0]
+        if (!lead) return null
+        const rest = groupItems.filter((item) => item !== lead)
+        return (
+          <section key={group} className="space-y-4">
+            <div className="flex items-baseline justify-between gap-3 border-b pb-2">
+              <h2 className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                {group}
+              </h2>
+              <span className="font-mono text-[11px] text-muted-foreground">
+                {groupItems.length}
+              </span>
+            </div>
+
+            <div className="grid gap-5 lg:grid-cols-[1.1fr_.9fr]">
+              <Link
+                href={href(lead)}
+                className="group flex flex-col gap-4 rounded-2xl border bg-card p-6 transition-colors hover:border-primary/40"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline">Start here</Badge>
+                  <Badge variant="outline">
+                    {tagLabel(
+                      lead.format ??
+                        (lead.kind === "playbook" ? "Playbook" : "Material"),
+                    )}
+                  </Badge>
+                  <Badge variant="outline">
+                    {lead.forwardable ? "Forwardable" : "Internal"}
+                  </Badge>
+                  {lead.status === "pending" ? (
+                    <Badge variant="outline">Pending</Badge>
+                  ) : null}
+                </div>
+                <h3 className="text-xl font-medium tracking-tight">
+                  {lead.title}
+                </h3>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  {lead.summary}
+                </p>
+                <span className="mt-auto inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+                  Open <RiArrowRightLine className="size-4" />
+                </span>
+              </Link>
+
+              {rest.length > 0 ? (
+                <ul className="flex flex-col divide-y rounded-2xl border bg-card">
+                  {rest.map((item) => (
+                    <li key={item.slug}>
+                      <Link
+                        href={href(item)}
+                        className="flex items-start gap-3 p-4 transition-colors hover:bg-accent/40"
+                      >
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <p className="text-sm font-medium tracking-tight">
+                            {item.title}
+                          </p>
+                          <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                            {item.summary}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            <span className="font-mono text-[10px] text-muted-foreground">
+                              {tagLabel(
+                                item.format ??
+                                  (item.kind === "playbook"
+                                    ? "Playbook"
+                                    : "Material"),
+                              )}
+                            </span>
+                            <span className="font-mono text-[10px] text-muted-foreground">
+                              ·
+                            </span>
+                            <span className="font-mono text-[10px] text-muted-foreground">
+                              {item.forwardable ? "Forwardable" : "Internal"}
+                            </span>
+                            {item.status === "pending" ? (
+                              <>
+                                <span className="font-mono text-[10px] text-muted-foreground">
+                                  ·
+                                </span>
+                                <span className="font-mono text-[10px] text-muted-foreground">
+                                  Pending
+                                </span>
+                              </>
+                            ) : null}
+                          </div>
+                        </div>
+                        <RiArrowRightLine className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          </section>
+        )
+      })}
+    </div>
+  )
 }
 
 function ContentGridBody({

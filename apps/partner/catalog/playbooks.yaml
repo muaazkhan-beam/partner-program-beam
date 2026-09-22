@@ -1,6 +1,7 @@
 items:
   - slug: one-workflow-shadow
     kind: playbook
+    group: Scope and deliver
     title: One-workflow shadow engagement
     summary: One client, one shared-services process, shadow environment, then a playbook.
     body: |

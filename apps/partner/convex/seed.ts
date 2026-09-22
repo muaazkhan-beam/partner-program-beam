@@ -81,6 +81,7 @@ async function upsertContent(
     summary: item.summary,
     body: item.body,
     group: item.group,
+    highlight: item.highlight,
     audience: item.audience,
     forwardable: item.forwardable,
     allowedBrandModes: item.allowedBrandModes,

@@ -212,6 +212,7 @@ const contentCardValidator = v.object({
   summary: v.string(),
   body: v.string(),
   group: v.optional(v.string()),
+  highlight: v.optional(v.boolean()),
   contentClass: v.union(
     v.literal("shared-partner-safe"),
     v.literal("workspace-only"),
@@ -247,6 +248,7 @@ function toContentCard(item: Doc<"contentItems">) {
     summary: visible.summary,
     body: visible.body,
     group: visible.group,
+    highlight: visible.highlight,
     contentClass: visible.contentClass,
     audience: visible.audience,
     forwardable: visible.forwardable,

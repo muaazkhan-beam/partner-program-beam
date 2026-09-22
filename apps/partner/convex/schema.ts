@@ -96,6 +96,7 @@ export default defineSchema({
     summary: v.string(),
     body: v.string(),
     group: v.optional(v.string()),
+    highlight: v.optional(v.boolean()),
     contentClass: contentClassValidator,
     audience: contentAudienceValidator,
     forwardable: v.boolean(),

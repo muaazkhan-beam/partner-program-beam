@@ -917,6 +917,8 @@
     {
       "slug": "where-beam-fits",
       "kind": "material",
+      "group": "Know Beam",
+      "highlight": true,
       "title": "Where Beam fits",
       "format": "one-pager",
       "summary": "What Beam is, when it gets in, what it is not, and where it does not go. One page for an internal sponsor.",
@@ -936,6 +938,7 @@
     {
       "slug": "joint-motion-one-pager",
       "kind": "material",
+      "group": "Sell with Beam",
       "title": "Joint-motion one-pager",
       "format": "one-pager",
       "summary": "Roles, brand shapes, and the first trade of one client / one workflow.",
@@ -955,6 +958,7 @@
     {
       "slug": "shared-services-packaging",
       "kind": "material",
+      "group": "Know Beam",
       "title": "AI-native company packaging note",
       "format": "note",
       "summary": "Partner-fronted Future of AI-Native Companies packaging for transformation and managed services.",
@@ -974,6 +978,7 @@
     {
       "slug": "proof-pack-placeholder",
       "kind": "material",
+      "group": "Scope and deliver",
       "title": "Proof pack",
       "format": "pack",
       "summary": "Reviewed placeholder until a sector-matched pack is attached.",
@@ -993,6 +998,8 @@
     {
       "slug": "beam-partner-executive-overview",
       "kind": "material",
+      "group": "Sell with Beam",
+      "highlight": true,
       "title": "Beam Partner Executive Overview",
       "format": "deck",
       "summary": "Executive partner deck from rising client AI demand through discovery, governed production, joint delivery, and account expansion.",
@@ -1011,6 +1018,7 @@
     {
       "slug": "beam-discovery-sales-deck",
       "kind": "material",
+      "group": "Sell with Beam",
       "title": "Beam Discovery | Process Discovery Sales Deck",
       "format": "deck",
       "summary": "Reusable executive sales deck for mapping operational work, ranking AI opportunities, and moving selected agents into production.",
@@ -1029,6 +1037,7 @@
     {
       "slug": "who-we-are",
       "kind": "material",
+      "group": "Know Beam",
       "title": "Who we are",
       "format": "one-pager",
       "summary": "What Beam does, how Beam contracts, and who to contact. Registered details on request.",
@@ -1049,6 +1058,7 @@
     {
       "slug": "ideal-client-profile",
       "kind": "material",
+      "group": "Sell with Beam",
       "title": "Ideal client profile",
       "format": "guide",
       "summary": "Who Beam is for, the conditions a first process must meet, the channel to lead with, and the hard disqualifiers.",
@@ -1069,6 +1079,8 @@
     {
       "slug": "partner-discovery-kit",
       "kind": "material",
+      "group": "Scope and deliver",
+      "highlight": true,
       "title": "Discovery kit for the first workflow",
       "format": "guide",
       "summary": "Discovery questions, the good-fit and anti-pattern list, and the feasibility scorecard for choosing the first workflow.",
@@ -1089,6 +1101,8 @@
     {
       "slug": "security-compliance-pack",
       "kind": "material",
+      "group": "Security and compliance",
+      "highlight": true,
       "title": "Security and compliance pack",
       "format": "pack",
       "summary": "The security, privacy and continuity documents Beam can share with a client's security team, listed as printed. Reviewed copies are issued per client and deployment.",
@@ -1490,6 +1504,7 @@
     {
       "slug": "one-workflow-shadow",
       "kind": "playbook",
+      "group": "Scope and deliver",
       "title": "One-workflow shadow engagement",
       "summary": "One client, one shared-services process, shadow environment, then a playbook.",
       "body": "Partner brings the named client, the process, and humans in the delivery center.\nBeam brings the platform, an FDE, the agent graph, and evals.\n\nSequence:\n1. Qualify the client and the process.\n2. Run a 60-minute diagnostic.\n3. Show a shadow workflow on test data.\n4. Agree success criteria in writing.\n5. File a Beam request for the shadow demo if it is not already scheduled.\n\nDo not open Platform admin, Iris authoring, or a joint-venture workspace. Failure mode is request Beam.\n",

@@ -16,6 +16,8 @@ export type CatalogContent = {
   summary: string
   body: string
   group?: string
+  /** One item per group leads it: full card, picture, introduction. */
+  highlight?: boolean
   format?: string
   shareUrl?: string
   embedUrl?: string

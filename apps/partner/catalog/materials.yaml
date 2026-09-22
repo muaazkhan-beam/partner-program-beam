@@ -1,6 +1,16 @@
+# Materials are grouped by what a partner is trying to do, not by document
+# type. One item per group is the highlight: it leads the group with a full
+# card, and the rest sit under it as supporting items.
+#
+# GROUPS ARE PROVISIONAL. Jack asked for pre-selected packages — know us,
+# sell with us, marketing — confirmed with Derya and GTM. These are a first
+# cut against the content we actually hold; replace them once she confirms.
+
 items:
   - slug: where-beam-fits
     kind: material
+    group: Know Beam
+    highlight: true
     title: Where Beam fits
     format: one-pager
     summary: What Beam is, when it gets in, what it is not, and where it does not go. One page for an internal sponsor.
@@ -29,6 +39,7 @@ items:
     requestBeamLabel: Request Beam for the reviewed note before forwarding.
   - slug: joint-motion-one-pager
     kind: material
+    group: Sell with Beam
     title: Joint-motion one-pager
     format: one-pager
     summary: Roles, brand shapes, and the first trade of one client / one workflow.
@@ -43,6 +54,7 @@ items:
     requestBeamLabel: Request Beam for the reviewed one-pager before forwarding.
   - slug: shared-services-packaging
     kind: material
+    group: Know Beam
     title: AI-native company packaging note
     format: note
     summary: Partner-fronted Future of AI-Native Companies packaging for transformation and managed services.
@@ -57,6 +69,7 @@ items:
     requestBeamLabel: Request Beam for the packaging note for this workspace.
   - slug: proof-pack-placeholder
     kind: material
+    group: Scope and deliver
     title: Proof pack
     format: pack
     summary: Reviewed placeholder until a sector-matched pack is attached.
@@ -71,6 +84,8 @@ items:
     requestBeamLabel: Request a sector-matched proof pack.
   - slug: beam-partner-executive-overview
     kind: material
+    group: Sell with Beam
+    highlight: true
     title: Beam Partner Executive Overview
     format: deck
     summary: Executive partner deck from rising client AI demand through discovery, governed production, joint delivery, and account expansion.
@@ -84,6 +99,7 @@ items:
     reviewer: Partner Success
   - slug: beam-discovery-sales-deck
     kind: material
+    group: Sell with Beam
     title: Beam Discovery | Process Discovery Sales Deck
     format: deck
     summary: Reusable executive sales deck for mapping operational work, ranking AI opportunities, and moving selected agents into production.
@@ -97,6 +113,7 @@ items:
     reviewer: Partner Success
   - slug: who-we-are
     kind: material
+    group: Know Beam
     title: Who we are
     format: one-pager
     summary: What Beam does, how Beam contracts, and who to contact. Registered details on request.
@@ -116,6 +133,7 @@ items:
     requestBeamLabel: Request the registered company details for a contract or security questionnaire.
   - slug: ideal-client-profile
     kind: material
+    group: Sell with Beam
     title: Ideal client profile
     format: guide
     summary: Who Beam is for, the conditions a first process must meet, the channel to lead with, and the hard disqualifiers.
@@ -133,6 +151,8 @@ items:
     requestBeamLabel: Ask Beam to qualify a named account against this profile.
   - slug: partner-discovery-kit
     kind: material
+    group: Scope and deliver
+    highlight: true
     title: Discovery kit for the first workflow
     format: guide
     summary: Discovery questions, the good-fit and anti-pattern list, and the feasibility scorecard for choosing the first workflow.
@@ -150,6 +170,8 @@ items:
     requestBeamLabel: Request a Beam FDE for the first discovery workshop.
   - slug: security-compliance-pack
     kind: material
+    group: Security and compliance
+    highlight: true
     title: Security and compliance pack
     format: pack
     summary: The security, privacy and continuity documents Beam can share with a client's security team, listed as printed. Reviewed copies are issued per client and deployment.
