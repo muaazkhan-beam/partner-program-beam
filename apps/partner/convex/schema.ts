@@ -14,6 +14,7 @@ import {
   requestStatusValidator,
   requestSupportTypeValidator,
   trackFramingValidator,
+  useCaseDetailValidator,
 } from "./lib/validators"
 
 export default defineSchema({
@@ -110,6 +111,8 @@ export default defineSchema({
     reviewer: v.optional(v.string()),
     reviewedAt: v.optional(v.number()),
     revalidateAt: v.optional(v.number()),
+    // Present only when kind is "use-case".
+    useCase: v.optional(useCaseDetailValidator),
     // Bug 1: set only by approveClaim. The seed preserves the claim decision on
     // any item carrying this, so a reviewed claim survives a re-seed.
     claimReviewedAt: v.optional(v.number()),

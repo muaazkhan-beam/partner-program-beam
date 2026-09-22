@@ -13,6 +13,8 @@ allowedEmailDomains:
   - partner.example
 enabledSurfaces:
   - home
+  - journey
+  - use-cases
   - agents
   - tools
   - materials
@@ -69,6 +71,10 @@ materialSlugs:
   - proof-pack-placeholder
   - beam-partner-executive-overview
   - beam-discovery-sales-deck
+  - who-we-are
+  - ideal-client-profile
+  - partner-discovery-kit
+  - security-compliance-pack
 faqSlugs:
   - why-not-sap
   - vs-epm
@@ -92,3 +98,7 @@ faqSlugs:
   - leadership-pack
 playbookSlugs:
   - one-workflow-shadow
+useCaseSlugs:
+  - invoice-exception-handling
+  - supplier-communication
+  - cv-screening

@@ -124,7 +124,7 @@ export function partnerFacingContent(item: Doc<"contentItems">) {
       "Request Beam for a reviewed answer. This claim is not published for partners."
     return {
       ...item,
-      summary: item.restrictedReason ?? notice,
+      summary: notice,
       body: notice,
     }
   }

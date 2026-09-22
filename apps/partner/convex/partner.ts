@@ -28,6 +28,7 @@ import {
   requestStageValidator,
   requestStatusValidator,
   requestSupportTypeValidator,
+  useCaseDetailValidator,
 } from "./lib/validators"
 
 const workspacePublicValidator = v.object({
@@ -233,6 +234,7 @@ const contentCardValidator = v.object({
   reviewer: v.optional(v.string()),
   reviewedAt: v.optional(v.number()),
   revalidateAt: v.optional(v.number()),
+  useCase: v.optional(useCaseDetailValidator),
 })
 
 function toContentCard(item: Doc<"contentItems">) {
@@ -259,6 +261,7 @@ function toContentCard(item: Doc<"contentItems">) {
     reviewer: visible.reviewer,
     reviewedAt: visible.reviewedAt,
     revalidateAt: visible.revalidateAt,
+    useCase: visible.useCase,
   }
 }
 
@@ -718,11 +721,19 @@ export const createInvitation = mutation({
 export const DEFAULT_ENABLED_SURFACES = [
   "home",
   "agents",
+  "use-cases",
   "tools",
   "materials",
   "faq",
   "certifications",
   "requests",
+] as const
+
+// Surfaces a workspace may enable. Superset of the defaults: the journey is
+// opt-in per workspace while it is a prototype, but it must survive a save.
+export const KNOWN_SURFACES = [
+  ...DEFAULT_ENABLED_SURFACES,
+  "journey",
 ] as const
 
 const workspaceConfigurationValidator = v.object({
@@ -747,7 +758,7 @@ const workspaceConfigurationValidator = v.object({
 
 /** Keeps `enabledSurfaces` to known surfaces, and always keeps home reachable. */
 function normalizedSurfaces(surfaces: readonly string[]) {
-  const known = new Set<string>(DEFAULT_ENABLED_SURFACES)
+  const known = new Set<string>(KNOWN_SURFACES)
   const kept = surfaces.map((s) => s.trim()).filter((s) => known.has(s))
   return kept.includes("home") ? kept : ["home", ...kept]
 }

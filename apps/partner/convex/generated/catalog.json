@@ -17,6 +17,8 @@
       ],
       "enabledSurfaces": [
         "home",
+        "journey",
+        "use-cases",
         "agents",
         "tools",
         "materials",
@@ -90,7 +92,11 @@
         "joint-motion-one-pager",
         "proof-pack-placeholder",
         "beam-partner-executive-overview",
-        "beam-discovery-sales-deck"
+        "beam-discovery-sales-deck",
+        "who-we-are",
+        "ideal-client-profile",
+        "partner-discovery-kit",
+        "security-compliance-pack"
       ],
       "faqSlugs": [
         "why-not-sap",
@@ -116,6 +122,11 @@
       ],
       "playbookSlugs": [
         "one-workflow-shadow"
+      ],
+      "useCaseSlugs": [
+        "invoice-exception-handling",
+        "supplier-communication",
+        "cv-screening"
       ]
     },
     {
@@ -136,6 +147,7 @@
       ],
       "enabledSurfaces": [
         "home",
+        "use-cases",
         "agents",
         "tools",
         "materials",
@@ -239,6 +251,10 @@
       ],
       "playbookSlugs": [
         "one-workflow-shadow"
+      ],
+      "useCaseSlugs": [
+        "invoice-exception-handling",
+        "supplier-communication"
       ]
     },
     {
@@ -258,6 +274,7 @@
       ],
       "enabledSurfaces": [
         "home",
+        "use-cases",
         "agents",
         "tools",
         "materials",
@@ -358,6 +375,11 @@
       ],
       "playbookSlugs": [
         "one-workflow-shadow"
+      ],
+      "useCaseSlugs": [
+        "invoice-exception-handling",
+        "supplier-communication",
+        "cv-screening"
       ]
     },
     {
@@ -377,6 +399,7 @@
       ],
       "enabledSurfaces": [
         "home",
+        "use-cases",
         "agents",
         "tools",
         "materials",
@@ -472,6 +495,10 @@
       ],
       "playbookSlugs": [
         "one-workflow-shadow"
+      ],
+      "useCaseSlugs": [
+        "invoice-exception-handling",
+        "supplier-communication"
       ]
     }
   ],
@@ -785,8 +812,8 @@
       "kind": "material",
       "title": "Where Beam fits",
       "format": "one-pager",
-      "summary": "Two-page note covering FAQ 1–3 for internal sponsors.",
-      "body": "Beam is the intelligence layer across systems. It does not replace a clean ERP module or an EPM planning model. Forward only in the approved brand mode for this workspace.",
+      "summary": "What Beam is, when it gets in, what it is not, and where it does not go. One page for an internal sponsor.",
+      "body": "What Beam is\nBeam is the intelligence layer that runs the process across systems, with a graph that must start and finish, evals on the steps that matter, and an audit log. The user stays in the screen they already live in. Beam writes back.\n\nWhen Beam gets in\nUse this when the process spans two or more systems, is exception-heavy, or sits on a 15–30 year ERP the client will not rip out. A strong first workflow is frequent enough to matter, contains manual handoffs or re-keying, crosses two or more systems, and has exceptions that prevent simple rules-based automation.\n\nWhat Beam is not\nEPM is a planning and data-model layer. Beam is not that database. We are not a process-mining suite and not a data-lake vendor. We do not sprinkle assistants on unchanged processes.\n\nAnd where it doesn't\nDo not pick a fight inside a clean, single-module S/4 workflow the ERP already does well. If the client has no API and no export path, say so early. Pause when there is no API or export path, no accountable process owner, no representative test data, or no measurable operational outcome. Also escalate expectations of unsupervised high-risk action. Start read-first and recommend-first. The agent can gather evidence, prepare a decision, and propose an action while an accountable person approves high-risk steps such as payments, regulated decisions, or material client communications.\n\nNot yet published\nPricing, deal registration, regional deployment, support coverage and access are pending Beam review. Ask Beam from the answer you are stuck on.\n",
       "status": "pending",
       "contentClass": "shared-partner-safe",
       "audience": "partner-internal",
@@ -796,7 +823,8 @@
         "co-branded"
       ],
       "claimState": "approved",
-      "reviewer": "Partner Success"
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request Beam for the reviewed note before forwarding."
     },
     {
       "slug": "joint-motion-one-pager",
@@ -814,7 +842,8 @@
         "partner-fronted"
       ],
       "claimState": "approved",
-      "reviewer": "Partner Success"
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request Beam for the reviewed one-pager before forwarding."
     },
     {
       "slug": "shared-services-packaging",
@@ -832,7 +861,8 @@
         "partner-fronted"
       ],
       "claimState": "approved",
-      "reviewer": "Partner Success"
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request Beam for the packaging note for this workspace."
     },
     {
       "slug": "proof-pack-placeholder",
@@ -888,6 +918,85 @@
       ],
       "claimState": "approved",
       "reviewer": "Partner Success"
+    },
+    {
+      "slug": "who-we-are",
+      "kind": "material",
+      "title": "Who we are",
+      "format": "one-pager",
+      "summary": "What Beam does, how Beam contracts, and who to contact. Registered details on request.",
+      "body": "Beam contracts through a regional legal entity chosen per engagement. The registered company, address and company number are confirmed by Beam for each client; request them before drafting a contract or answering a security questionnaire.\n\nBeam's job is the platform, the agent factory, and the production eval loop. The partner's job is the client, the operating model, the humans in the delivery center, and the transformation story.\n\nPartner contact: the support owner shown in this workspace.\n",
+      "status": "pending",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request the registered company details for a contract or security questionnaire."
+    },
+    {
+      "slug": "ideal-client-profile",
+      "kind": "material",
+      "title": "Ideal client profile",
+      "format": "guide",
+      "summary": "Who Beam is for, the conditions a first process must meet, the channel to lead with, and the hard disqualifiers.",
+      "body": "This guide will set out who Beam is for, the conditions a first process must meet, which channel to lead with, and the hard disqualifiers that end a conversation early.\n\nThis guide is pending GTM review. Do not qualify a named account or run a client workshop from an unpublished profile; request Beam and the reviewed version follows.\n",
+      "status": "pending",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Ask Beam to qualify a named account against this profile."
+    },
+    {
+      "slug": "partner-discovery-kit",
+      "kind": "material",
+      "title": "Discovery kit for the first workflow",
+      "format": "guide",
+      "summary": "Discovery questions, the good-fit and anti-pattern list, and the feasibility scorecard for choosing the first workflow.",
+      "body": "This kit will hold the discovery questions to ask a client, the good-fit and anti-pattern list, and the feasibility scorecard for choosing the first workflow.\n\nThis guide is pending GTM review. Do not run a client workshop from an unpublished kit; request Beam and a Beam FDE joins the first discovery workshop.\n",
+      "status": "pending",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request a Beam FDE for the first discovery workshop."
+    },
+    {
+      "slug": "security-compliance-pack",
+      "kind": "material",
+      "title": "Security and compliance pack",
+      "format": "pack",
+      "summary": "The security, privacy and continuity documents Beam can share with a client's security team, listed as printed. Reviewed copies are issued per client and deployment.",
+      "body": "Documents in the pack, as printed on each:\n\nInformation Security Policy · v2.0 · 23 Jun 2025 · 10 pages\nData Privacy Policy · v2.0 · 1 Dec 2024 · 5 pages\nGDPR Manual · version and date not printed on the document; confirm with Beam · 11 pages\nData and Record Retention Policy · v2.0 · 1 Jan 2025 · 5 pages\nBackup Policy and Procedure · v1.0 · 1 Dec 2023 · 4 pages\nBusiness Continuity and Disaster Recovery Policy · v3.0 · 1 Dec 2025 as printed · 8 pages\nInformation Security Incident Management Policy and Procedure · v2.0 · 1 Jan 2025 · 22 pages\nAccess Control Policy · v2.0 · 1 Dec 2024 · 6 pages\n\nRequest the reviewed copy for the client and deployment under discussion. Do not describe any of these to a client as a certification, a hosting commitment, or a residency guarantee; the approved evidence must match the named deployment.\n",
+      "status": "pending",
+      "contentClass": "shared-partner-safe",
+      "audience": "technical",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success",
+      "requestBeamLabel": "Request the reviewed pack for a named client and deployment."
     }
   ],
   "faq": [
@@ -1187,7 +1296,7 @@
       "kind": "faq",
       "title": "What security, privacy, and architecture evidence can we give a client?",
       "summary": "Pending. Use only the reviewed evidence pack for the named deployment.",
-      "body": "This answer is pending security review. Do not improvise claims about hosting, residency, private networking, certifications, retention, or regulated-industry readiness. The approved evidence must match the client and deployment under discussion.",
+      "body": "This answer is pending security review. Do not improvise claims about hosting, residency, private networking, certifications, retention, or regulated-industry readiness. The approved evidence must match the client and deployment under discussion. The Security and compliance pack in Materials lists the documents Beam can share, as printed.",
       "contentClass": "shared-partner-safe",
       "audience": "technical",
       "forwardable": false,
@@ -1284,6 +1393,101 @@
         "beam-standard",
         "co-branded",
         "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    }
+  ],
+  "useCases": [
+    {
+      "slug": "invoice-exception-handling",
+      "kind": "use-case",
+      "title": "Invoice exception handling",
+      "group": "Finance",
+      "summary": "Clear invoices that fail three-way match without a shared mailbox and three people triaging it.",
+      "body": "Exception-heavy accounts payable is the strongest first workflow in finance. The process is high volume, the rules are already written down, and the failure mode is visible to the CFO every month-end. Scope one entity and one ERP before expanding.",
+      "vertical": "financial-services",
+      "department": "finance",
+      "systems": [
+        "SAP",
+        "DATEV",
+        "Outlook"
+      ],
+      "trigger": "An invoice fails three-way match against purchase order and goods receipt.",
+      "before": "Exceptions land in a shared mailbox and are triaged by hand, with resolution measured in days and the backlog visible at month-end close.",
+      "after": "The agent reads the invoice, queries the ERP for the purchase order and receipt, classifies the exception, drafts the correction, and routes it to an approver with the evidence attached.",
+      "humanInLoop": "An approver signs off every correction above the client's materiality threshold. The agent never posts to the ledger unattended.",
+      "timeToProduction": "4 weeks",
+      "complexity": "starter",
+      "status": "pending",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "supplier-communication",
+      "kind": "use-case",
+      "title": "Supplier communication and FAQs",
+      "group": "Procurement",
+      "summary": "Answer routine supplier questions from the systems that already hold the answer.",
+      "body": "Procurement inboxes carry a long tail of questions whose answers already exist in the ERP — delivery dates, payment status, document requests. The work is repetitive, bounded, and easy to evaluate, which makes it a good second workflow once finance exceptions are live.",
+      "vertical": "financial-services",
+      "department": "procurement",
+      "systems": [
+        "SAP",
+        "Outlook"
+      ],
+      "trigger": "A supplier emails the procurement mailbox with a status or document request.",
+      "before": "Buyers interrupt planned work to look up the same answers in the ERP and reply by hand, and response times stretch when volume spikes.",
+      "after": "The agent classifies the request, retrieves the answer from the system of record, drafts a reply in the client's tone, and escalates anything touching price, contract terms or a dispute.",
+      "humanInLoop": "Anything involving commercial terms, disputes or a new supplier goes to a buyer. The agent answers only from the system of record.",
+      "timeToProduction": "4 weeks",
+      "complexity": "starter",
+      "status": "pending",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": true,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded",
+        "partner-fronted"
+      ],
+      "claimState": "approved",
+      "reviewer": "Partner Success"
+    },
+    {
+      "slug": "cv-screening",
+      "kind": "use-case",
+      "title": "CV screening",
+      "group": "HR",
+      "summary": "Screen applications against the role's criteria, with the shortlist decision left to a recruiter.",
+      "body": "High-volume hiring is a natural fit for BPO and RPO partners, whose clients already outsource the work. Screening is also the use case where governance matters most — the guardrails below are not optional, and partners should lead with them rather than be asked.",
+      "vertical": "bpo-rpo",
+      "department": "hr",
+      "systems": [
+        "Applicant tracking system",
+        "Email"
+      ],
+      "trigger": "An application arrives against an open role.",
+      "before": "Recruiters read every application to produce a shortlist, and time-to-first-response stretches as volume rises.",
+      "after": "The agent extracts the candidate's experience against the role's stated criteria, flags gaps and strengths with the evidence it used, and assembles a structured shortlist for the recruiter.",
+      "humanInLoop": "A recruiter makes every advance-or-reject decision. The agent produces evidence and a recommendation, never an outcome, and no candidate is rejected without a human reviewing the reason.",
+      "timeToProduction": "4 weeks",
+      "complexity": "standard",
+      "status": "pending",
+      "contentClass": "shared-partner-safe",
+      "audience": "partner-internal",
+      "forwardable": false,
+      "allowedBrandModes": [
+        "beam-standard",
+        "co-branded"
       ],
       "claimState": "approved",
       "reviewer": "Partner Success"
