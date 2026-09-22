@@ -8,6 +8,7 @@ import {
 } from "@remixicon/react"
 
 import { useWorkspace } from "@/components/workspace-context"
+import { journeyPhases } from "@/lib/partner-journey"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { PageContainer } from "@/components/page-container"
@@ -19,6 +20,51 @@ const framingLabel = {
   beachhead: "Beachhead",
   clearance: "Clearance",
 } as const
+
+/**
+ * The journey used to be its own nav entry, which meant a partner had to know
+ * it existed. It belongs on the page they land on: five phases, where the work
+ * actually happens, one click in.
+ */
+function JourneyStrip({ slug }: { slug: string }) {
+  const href = workspacePath(slug, "/journey")
+  return (
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+          Take one client process from scope to delivery
+        </h2>
+        <Link
+          href={href}
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+        >
+          Open the journey
+          <RiArrowRightLine className="size-4" />
+        </Link>
+      </div>
+      <ol className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        {journeyPhases.map((phase) => (
+          <li key={phase.slug}>
+            <Link
+              href={`${href}#${phase.slug}`}
+              className="flex h-full flex-col gap-1 rounded-xl border bg-card p-3 transition-colors hover:border-primary/40"
+            >
+              <span className="font-mono text-[10px] text-muted-foreground">
+                {phase.number}
+              </span>
+              <span className="text-sm font-medium tracking-tight">
+                {phase.name}
+              </span>
+              <span className="text-xs leading-snug text-muted-foreground">
+                {phase.goal}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
 
 export default function HomePage() {
   const workspace = useWorkspace()
@@ -33,6 +79,7 @@ export default function HomePage() {
         />
         <p className="text-sm text-muted-foreground">{workspace.homeTitle}</p>
       </div>
+      <JourneyStrip slug={workspace.slug} />
       <section className="grid gap-4 lg:grid-cols-[1.35fr_.65fr]">
         <article
           className="partner-feature-card relative isolate flex min-h-64 overflow-hidden rounded-3xl border border-white/10 p-6 text-white shadow-xl sm:p-7"

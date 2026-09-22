@@ -3,26 +3,28 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
-  RiMedalLine,
+  RiAiAgentLine,
+  RiCompass3Line,
   RiFileTextLine,
   RiHome5Line,
+  RiMedalLine,
   RiQuestionLine,
-  RiRoadMapLine,
   RiSendPlaneLine,
   RiShieldUserLine,
-  RiAiAgentLine,
   RiStackLine,
   RiToolsLine,
 } from "@remixicon/react"
 
 import { AuthUserControl } from "@/components/auth-user-control"
 import { BeamLogo } from "@/components/beam-logo"
-import { NavMain } from "@/components/nav-main"
+import { NavMain, type NavItem, type NavSection } from "@/components/nav-main"
 import { useWorkspace } from "@/components/workspace-context"
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -30,37 +32,124 @@ import {
 } from "@/components/ui/sidebar"
 import { workspacePath } from "@/lib/workspace-resolver"
 
+type NavDefinition = {
+  title: string
+  path: string
+  icon: typeof RiHome5Line
+  surface: string
+  badge?: string
+  children?: NavDefinition[]
+}
+
+/**
+ * Two groups rather than one flat list.
+ *
+ * "Work" holds the pages a partner moves through on a live deal; "Reference"
+ * holds the pages they look something up in. They behave differently — one is
+ * a sequence with state, the other is a catalog — and listing them at one
+ * level made a partner read all nine labels to find either.
+ *
+ * Journey is not here: it now opens from Home, which is where a partner lands
+ * anyway. Requests is not here either — it is an action, not a place, so it
+ * sits below the groups.
+ */
+const WORK: NavDefinition[] = [
+  {
+    title: "Scope",
+    path: "/journey",
+    icon: RiCompass3Line,
+    surface: "journey",
+    children: [
+      {
+        title: "Agents",
+        path: "/agents",
+        icon: RiAiAgentLine,
+        surface: "agents",
+      },
+      {
+        title: "Use cases",
+        path: "/use-cases",
+        icon: RiStackLine,
+        surface: "use-cases",
+      },
+    ],
+  },
+]
+
+const REFERENCE: NavDefinition[] = [
+  { title: "Tools", path: "/tools", icon: RiToolsLine, surface: "tools" },
+  {
+    title: "Materials",
+    path: "/materials",
+    icon: RiFileTextLine,
+    surface: "materials",
+  },
+  { title: "FAQ", path: "/faq", icon: RiQuestionLine, surface: "faq" },
+  {
+    title: "Certifications",
+    path: "/certifications",
+    icon: RiMedalLine,
+    surface: "certifications",
+  },
+]
+
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const workspace = useWorkspace()
   const surfaces = new Set(workspace.enabledSurfaces)
-  const navigation = [
-    { title: "Home", url: workspacePath(workspace.slug, "/home"), icon: RiHome5Line, surface: "home" },
-    { title: "Journey", url: workspacePath(workspace.slug, "/journey"), icon: RiRoadMapLine, surface: "journey", badge: "Prototype" },
-    { title: "Agents", url: workspacePath(workspace.slug, "/agents"), icon: RiAiAgentLine, surface: "agents", badge: "New" },
-    { title: "Use cases", url: workspacePath(workspace.slug, "/use-cases"), icon: RiStackLine, surface: "use-cases", badge: "New" },
-    { title: "Tools", url: workspacePath(workspace.slug, "/tools"), icon: RiToolsLine, surface: "tools" },
-    { title: "Materials", url: workspacePath(workspace.slug, "/materials"), icon: RiFileTextLine, surface: "materials" },
-    { title: "FAQ", url: workspacePath(workspace.slug, "/faq"), icon: RiQuestionLine, surface: "faq" },
-    { title: "Certifications", url: workspacePath(workspace.slug, "/certifications"), icon: RiMedalLine, surface: "certifications", badge: "New" },
-    { title: "Requests", url: workspacePath(workspace.slug, "/requests"), icon: RiSendPlaneLine, surface: "requests" },
-    ...(workspace.isStaff
-      ? [
-          {
-            title: "Admin",
-            url: "/admin",
-            icon: RiShieldUserLine,
-            surface: "admin",
-          },
-        ]
-      : []),
-  ].filter((item) => item.surface === "admin" || surfaces.has(item.surface))
 
-  const items = navigation.map((item) => ({
-    ...item,
-    active: pathname === item.url || pathname.startsWith(`${item.url}/`),
-    icon: <item.icon />,
-  }))
+  const isActive = (url: string) =>
+    pathname === url || pathname.startsWith(`${url}/`)
+
+  const toItem = (definition: NavDefinition): NavItem => {
+    const url = workspacePath(workspace.slug, definition.path)
+    const Icon = definition.icon
+    return {
+      title: definition.title,
+      url,
+      icon: <Icon />,
+      active: isActive(url),
+      badge: definition.badge,
+      children: definition.children
+        ?.filter((child) => surfaces.has(child.surface))
+        .map((child) => {
+          const childUrl = workspacePath(workspace.slug, child.path)
+          const ChildIcon = child.icon
+          return {
+            title: child.title,
+            url: childUrl,
+            icon: <ChildIcon />,
+            active: isActive(childUrl),
+            badge: child.badge,
+          }
+        }),
+    }
+  }
+
+  /**
+   * A parent stays when its own surface is off but a child is on — otherwise
+   * turning off Journey for a workspace would hide Agents and Use cases with
+   * it. In that case the parent links to the first child it still has.
+   */
+  const build = (definitions: NavDefinition[]) =>
+    definitions
+      .map((definition) => {
+        const enabled = surfaces.has(definition.surface)
+        const item = toItem(definition)
+        if (enabled) return item
+        const [first, ...rest] = item.children ?? []
+        if (!first) return null
+        return { ...first, children: rest }
+      })
+      .filter((item): item is NavItem => item !== null)
+
+  const sections: NavSection[] = [
+    { label: "Work", items: build(WORK) },
+    { label: "Reference", items: build(REFERENCE) },
+  ].filter((section) => section.items.length > 0)
+
+  const homeUrl = workspacePath(workspace.slug, "/home")
+  const requestsUrl = workspacePath(workspace.slug, "/requests")
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -70,7 +159,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton
               size="lg"
               className="data-[slot=sidebar-menu-button]:px-2"
-              render={<Link href={workspacePath(workspace.slug, "/home")} />}
+              render={<Link href={homeUrl} />}
             >
               <BeamLogo className="size-8 rounded-lg" />
               <span className="grid flex-1 text-left leading-tight">
@@ -85,10 +174,62 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
       <SidebarContent>
-        <NavMain items={items} />
+        {surfaces.has("home") ? (
+          <SidebarGroup className="pb-0">
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    tooltip="Home"
+                    isActive={isActive(homeUrl)}
+                    render={<Link href={homeUrl} />}
+                  >
+                    <RiHome5Line />
+                    <span>Home</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
+
+        <NavMain sections={sections} />
       </SidebarContent>
+
       <SidebarFooter>
+        {surfaces.has("requests") ? (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip="Ask Beam for help on a deal"
+                isActive={isActive(requestsUrl)}
+                className="justify-center border bg-sidebar-accent/60 font-medium"
+                render={<Link href={requestsUrl} />}
+              >
+                <RiSendPlaneLine />
+                <span>Request Beam</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        ) : null}
+
+        {workspace.isStaff ? (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip="Staff admin"
+                isActive={pathname.startsWith("/admin")}
+                render={<Link href="/admin" />}
+              >
+                <RiShieldUserLine />
+                <span>Admin</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        ) : null}
+
         <AuthUserControl />
       </SidebarFooter>
     </Sidebar>
