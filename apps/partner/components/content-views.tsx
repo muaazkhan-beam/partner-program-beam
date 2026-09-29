@@ -19,6 +19,8 @@ import {
 } from "@remixicon/react"
 
 import { Badge } from "@/components/ui/badge"
+import { FaqAsk } from "@/components/faq-ask"
+import type { AskCandidate } from "@/lib/faq-answer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useWorkspace } from "@/components/workspace-context"
@@ -239,6 +241,30 @@ function BypassContentGrid({
   const workspace = useWorkspace()
   const items = listWorkspaceItems(workspace.slug, kind) as ContentCard[]
   return <ContentGridBody kind={kind} empty={empty} items={items} />
+}
+
+function LiveFaqAsk() {
+  const workspace = useWorkspace()
+  const items = useQuery(api.partner.listContent, {
+    workspaceId: workspace.workspaceId as never,
+    kind: "faq",
+  })
+  return <FaqAsk items={(items ?? []) as AskCandidate[]} />
+}
+
+function BypassFaqAsk() {
+  const workspace = useWorkspace()
+  const items = listWorkspaceItems(workspace.slug, "faq") as ContentCard[]
+  return <FaqAsk items={items as AskCandidate[]} />
+}
+
+/**
+ * Same data path as the FAQ list, so the ask panel can never surface something
+ * the list would have hidden.
+ */
+export function FaqAskPanel() {
+  if (authBypass) return <BypassFaqAsk />
+  return <LiveFaqAsk />
 }
 
 export function ContentGrid({

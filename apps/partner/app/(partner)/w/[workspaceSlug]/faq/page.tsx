@@ -1,6 +1,6 @@
 "use client"
 
-import { ContentGrid } from "@/components/content-views"
+import { ContentGrid, FaqAskPanel } from "@/components/content-views"
 import { PageContainer } from "@/components/page-container"
 import { PageHeading } from "@/components/page-heading"
 
@@ -13,6 +13,7 @@ export default function FaqPage() {
           description="Staff-published answers. Restricted deployment, exclusivity, independence, and pricing questions route to Beam."
         />
       </div>
+      <FaqAskPanel />
       <ContentGrid
         kind="faq"
         empty="No FAQ entries are attached to this workspace yet."
