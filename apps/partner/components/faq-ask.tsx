@@ -36,13 +36,11 @@ function tag(value: string) {
  */
 export function FaqAsk({ items }: { items: AskCandidate[] }) {
   const workspace = useWorkspace()
-  const [draft, setDraft] = useState("")
   const [question, setQuestion] = useState("")
 
-  const outcome = useMemo(
-    () => resolveAsk(question, items),
-    [question, items],
-  )
+  // Answer as they type. Requiring a submit meant a partner could type the
+  // whole question, see nothing happen, and conclude it was broken.
+  const outcome = useMemo(() => resolveAsk(question, items), [question, items])
 
   const answerHref = (slug: string) =>
     workspacePath(workspace.slug, `/faq/${slug}`)
@@ -51,10 +49,7 @@ export function FaqAsk({ items }: { items: AskCandidate[] }) {
   return (
     <section className="mx-auto w-full max-w-4xl space-y-4">
       <form
-        onSubmit={(event) => {
-          event.preventDefault()
-          setQuestion(draft)
-        }}
+        onSubmit={(event) => event.preventDefault()}
         className="rounded-2xl border bg-card p-4 sm:p-5"
       >
         <label
@@ -64,27 +59,32 @@ export function FaqAsk({ items }: { items: AskCandidate[] }) {
           <RiSparkling2Line className="size-3.5" />
           Ask Beam
         </label>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+        <div className="mt-3 flex gap-2">
           <Input
             id="faq-ask"
             className="h-11 flex-1"
             placeholder="Ask the question your client just asked you…"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            value={question}
+            onChange={(event) => setQuestion(event.target.value)}
+            autoComplete="off"
           />
-          <Button type="submit" className="h-11 sm:w-28">
-            Ask
-          </Button>
+          {question ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11"
+              onClick={() => setQuestion("")}
+            >
+              Clear
+            </Button>
+          ) : null}
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {SUGGESTIONS.map((suggestion) => (
             <button
               key={suggestion}
               type="button"
-              onClick={() => {
-                setDraft(suggestion)
-                setQuestion(suggestion)
-              }}
+              onClick={() => setQuestion(suggestion)}
               className="rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
             >
               {suggestion}

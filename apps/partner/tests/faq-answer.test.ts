@@ -110,3 +110,33 @@ test("an approved answer is given, with the rest offered as related", () => {
   assert.equal(outcome.answer.slug, "why-not-sap")
   assert.equal(outcome.related.length, 1)
 })
+
+test("a regional question finds the restricted answer despite different wording", () => {
+  // The failure this guards: "KSA" and "Saudi Arabia" are the same question to
+  // a partner but share no terms, so the restricted answer was never found and
+  // an approved one about data storage was given instead. The guardrail was
+  // bypassed by vocabulary, not by logic.
+  const restricted = answer({
+    slug: "deployment-ksa-kuwait",
+    title: "What does deployment look like in Saudi Arabia or Kuwait?",
+    summary: "Restricted. Do not state residency or on-prem as a generic promise.",
+    body: "Regional deployment needs commercial and security approval.",
+    claimState: "restricted",
+  })
+  const approved = answer({
+    slug: "data-integration",
+    title: "You do not store the data. So how do you work?",
+    summary: "Beam reads from the systems that already hold the record.",
+    body: "Data stays in the client's systems.",
+  })
+
+  const outcome = resolveAsk("can you guarantee data residency in KSA", [
+    approved,
+    restricted,
+  ])
+  assert.equal(outcome.kind, "route-to-beam")
+  assert.equal(
+    outcome.kind === "route-to-beam" ? outcome.answer.slug : undefined,
+    "deployment-ksa-kuwait",
+  )
+})

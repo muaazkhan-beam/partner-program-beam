@@ -49,11 +49,46 @@ const STOPWORDS = new Set([
   "which", "who", "why", "will", "with", "would", "you", "your",
 ])
 
+/**
+ * A stopgap, and worth naming as one.
+ *
+ * Term overlap only protects a restricted claim if the question happens to use
+ * the same words the answer does. "KSA" and "Saudi Arabia" are the same
+ * question to a partner and share no terms, so the restricted answer was never
+ * found and an approved one was given instead. That is the failure mode that
+ * matters here: not a weak answer, but the guardrail being bypassed by
+ * vocabulary.
+ *
+ * These aliases close the cases we know about. They do not close the general
+ * problem — that needs real retrieval, which is the strongest argument for
+ * connecting this to a Beam agent rather than leaving it on term matching.
+ */
+const ALIASES: Record<string, string[]> = {
+  ksa: ["saudi", "arabia"],
+  uae: ["emirates", "dubai"],
+  gcc: ["saudi", "arabia", "kuwait", "emirates", "region", "regional"],
+  residency: ["sovereignty", "residence", "hosting", "deployment"],
+  sovereignty: ["residency", "deployment"],
+  onprem: ["premises", "deployment"],
+  "on-prem": ["premises", "deployment"],
+  pricing: ["price", "cost", "packaging"],
+  cost: ["pricing", "price", "packaging"],
+  margin: ["money", "revenue", "commercial"],
+  exclusive: ["exclusivity", "territory"],
+  gdpr: ["privacy", "compliance", "security"],
+  soc2: ["security", "compliance", "certification"],
+}
+
 export function terms(text: string) {
-  return text
+  const words = text
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter((word) => word.length > 2 && !STOPWORDS.has(word))
+  const expanded = new Set(words)
+  for (const word of words) {
+    for (const alias of ALIASES[word] ?? []) expanded.add(alias)
+  }
+  return [...expanded]
 }
 
 /**
