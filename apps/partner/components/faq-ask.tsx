@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import { RiArrowRightLine, RiSparkling2Line } from "@remixicon/react"
 
 import { Badge } from "@/components/ui/badge"
@@ -34,9 +34,18 @@ function tag(value: string) {
  * FAQ list already follows; it just has to hold here too, because this is the
  * surface a partner will actually use mid-call.
  */
-export function FaqAsk({ items }: { items: AskCandidate[] }) {
+export function FaqAsk({
+  items,
+  query,
+  onQueryChange,
+}: {
+  items: AskCandidate[]
+  query: string
+  onQueryChange: (value: string) => void
+}) {
   const workspace = useWorkspace()
-  const [question, setQuestion] = useState("")
+  const question = query
+  const setQuestion = onQueryChange
 
   // Answer as they type. Requiring a submit meant a partner could type the
   // whole question, see nothing happen, and conclude it was broken.

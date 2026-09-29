@@ -13,7 +13,6 @@ import {
   RiPresentationLine,
   RiQuestionLine,
   RiRobot2Line,
-  RiSearchLine,
   RiTerminalBoxLine,
   RiToolsLine,
 } from "@remixicon/react"
@@ -22,7 +21,6 @@ import { Badge } from "@/components/ui/badge"
 import { FaqAsk } from "@/components/faq-ask"
 import type { AskCandidate } from "@/lib/faq-answer"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { useWorkspace } from "@/components/workspace-context"
 import { authBypass } from "@/components/providers"
 import type { ContentKind, UseCaseDetail } from "@/convex/catalogTypes"
@@ -243,28 +241,50 @@ function BypassContentGrid({
   return <ContentGridBody kind={kind} empty={empty} items={items} />
 }
 
-function LiveFaqAsk() {
+/**
+ * One question box, not two.
+ *
+ * The ask panel and the list each had their own input, so a partner could type
+ * into the lower one and get filtering when they expected an answer. Jack asked
+ * for one thing — ask a question — so a single query now drives both: the
+ * answer above, the narrowed list below.
+ */
+function FaqSurfaceBody({ items }: { items: ContentCard[] | undefined }) {
+  const [query, setQuery] = useState("")
+  if (items === undefined) {
+    return <p className="text-sm text-muted-foreground">Loading…</p>
+  }
+  return (
+    <div className="space-y-6">
+      <FaqAsk
+        items={items as AskCandidate[]}
+        query={query}
+        onQueryChange={setQuery}
+      />
+      <FaqRows items={items} query={query} />
+    </div>
+  )
+}
+
+function LiveFaqSurface() {
   const workspace = useWorkspace()
   const items = useQuery(api.partner.listContent, {
     workspaceId: workspace.workspaceId as never,
     kind: "faq",
   })
-  return <FaqAsk items={(items ?? []) as AskCandidate[]} />
+  return <FaqSurfaceBody items={items as ContentCard[] | undefined} />
 }
 
-function BypassFaqAsk() {
+function BypassFaqSurface() {
   const workspace = useWorkspace()
   const items = listWorkspaceItems(workspace.slug, "faq") as ContentCard[]
-  return <FaqAsk items={items as AskCandidate[]} />
+  return <FaqSurfaceBody items={items} />
 }
 
-/**
- * Same data path as the FAQ list, so the ask panel can never surface something
- * the list would have hidden.
- */
-export function FaqAskPanel() {
-  if (authBypass) return <BypassFaqAsk />
-  return <LiveFaqAsk />
+/** Same data path as the list, so the answer can never surface what the list hides. */
+export function FaqSurface() {
+  if (authBypass) return <BypassFaqSurface />
+  return <LiveFaqSurface />
 }
 
 export function ContentGrid({
@@ -471,7 +491,7 @@ function ContentGridBody({
     return <ToolCatalog items={items} />
   }
   if (kind === "faq") {
-    return <FaqRows items={items} />
+    return <FaqRows items={items} query="" />
   }
   if (kind === "use-case") {
     return <UseCaseCatalog items={items} />
@@ -605,9 +625,15 @@ function ToolCatalog({ items }: { items: ContentCard[] }) {
   )
 }
 
-function FaqRows({ items }: { items: ContentCard[] }) {
+function FaqRows({
+  items,
+  query,
+}: {
+  items: ContentCard[]
+  /** Owned by the ask box above: one input drives both the answer and the list. */
+  query: string
+}) {
   const workspace = useWorkspace()
-  const [query, setQuery] = useState("")
   const [filter, setFilter] = useState<
     "all" | "partner" | "technical" | "pending" | "restricted"
   >("all")
@@ -637,16 +663,7 @@ function FaqRows({ items }: { items: ContentCard[] }) {
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <div className="rounded-2xl border bg-muted/25 p-3 sm:p-4">
-        <div className="relative">
-          <RiSearchLine className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="h-11 bg-background pl-10"
-            placeholder="Search questions and answers…"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
           {filters.map(([value, label]) => (
             <button
               key={value}
