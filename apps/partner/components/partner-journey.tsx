@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useWorkspace } from "@/components/workspace-context"
+import { parseStore, readStore, subscribeToStore, writeStore } from "@/lib/browser-store"
 import { listWorkspaceItems } from "@/lib/catalog/static"
 import {
   journeyPhases,
@@ -53,47 +54,27 @@ const totalDeliverables = journeyPhases.reduce(
 )
 
 // Prototype persistence: progress lives in this browser until it moves to a
-// per-workspace table in Convex. The in-memory copy covers blocked storage.
-const memoryProgress = new Map<string, string>()
-const progressListeners = new Set<() => void>()
+// per-workspace table in Convex (see lib/browser-store.ts).
+const subscribeToProgress = subscribeToStore
+const readProgress = (key: string) => readStore(key, "{}")
+const writeProgress = (key: string, progress: Progress) => writeStore(key, progress)
+const parseProgress = (raw: string) => parseStore<Progress>(raw, {})
 
-function subscribeToProgress(listener: () => void) {
-  progressListeners.add(listener)
-  window.addEventListener("storage", listener)
-  return () => {
-    progressListeners.delete(listener)
-    window.removeEventListener("storage", listener)
-  }
+function subscribeToLocation(listener: () => void) {
+  window.addEventListener("popstate", listener)
+  return () => window.removeEventListener("popstate", listener)
 }
 
-function readProgress(key: string) {
-  try {
-    const stored = window.localStorage.getItem(key)
-    if (stored !== null) return stored
-  } catch {
-    // Storage is blocked; fall back to the in-memory copy.
-  }
-  return memoryProgress.get(key) ?? "{}"
+function readPhaseParam() {
+  const phase = new URLSearchParams(window.location.search).get("phase")
+  return phase && journeyPhases.some((entry) => entry.slug === phase)
+    ? phase
+    : null
 }
 
-function writeProgress(key: string, progress: Progress) {
-  const value = JSON.stringify(progress)
-  memoryProgress.set(key, value)
-  try {
-    window.localStorage.setItem(key, value)
-  } catch {
-    // Storage is blocked; the in-memory copy lasts for this visit.
-  }
-  progressListeners.forEach((listener) => listener())
-}
-
-function parseProgress(raw: string): Progress {
-  try {
-    const parsed: unknown = JSON.parse(raw)
-    return parsed && typeof parsed === "object" ? (parsed as Progress) : {}
-  } catch {
-    return {}
-  }
+/** Journey keys other surfaces may tick, e.g. scope:use-case from the workbench. */
+export function journeyStorageKey(workspaceSlug: string) {
+  return `beam-partner-journey:${workspaceSlug}`
 }
 
 function deliverableKey(phase: JourneyPhase, deliverableId: string) {
@@ -160,14 +141,21 @@ function LivePartnerJourney() {
 
 function JourneyBody({ items }: { items: JourneyItem[] | undefined }) {
   const workspace = useWorkspace()
-  const storageKey = `beam-partner-journey:${workspace.slug}`
+  const storageKey = journeyStorageKey(workspace.slug)
   const rawProgress = useSyncExternalStore(
     subscribeToProgress,
     () => readProgress(storageKey),
     () => "{}"
   )
   const progress = useMemo(() => parseProgress(rawProgress), [rawProgress])
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(null)
+  const [chosenSlug, setSelectedSlug] = useState<string | null>(null)
+  // A link may open a phase directly (?phase=scope); the lock still applies.
+  const linkedSlug = useSyncExternalStore(
+    subscribeToLocation,
+    readPhaseParam,
+    () => null
+  )
+  const selectedSlug = chosenSlug ?? linkedSlug
   const itemsByKey = useMemo(
     () =>
       new Map(
@@ -440,8 +428,16 @@ function JourneyBody({ items }: { items: JourneyItem[] | undefined }) {
               ))}
             </ul>
           )}
+          {phase.surface ? (
+            <Link
+              className={cn(buttonVariants(), "mt-auto w-full")}
+              href={workspacePath(workspace.slug, phase.surface.href)}
+            >
+              {phase.surface.label}
+            </Link>
+          ) : null}
           <Link
-            className={cn(buttonVariants({ variant: "outline" }), "mt-auto w-full")}
+            className={cn(buttonVariants({ variant: "outline" }), phase.surface ? "w-full" : "mt-auto w-full")}
             href={requestHref(workspace.slug, {
               about: `journey:${phase.slug}`,
               support: phase.requestSupport,

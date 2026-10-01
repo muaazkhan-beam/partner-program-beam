@@ -204,3 +204,16 @@ once when created. Tests call `seedFromCatalog` / `seedPreview`.
 pnpm test
 pnpm test:e2e
 ```
+
+## Security & compliance index
+
+`catalog/compliance.yaml` lists Beam's policies and procedures by what is printed on each
+document (title, version, date, page count, classification). The files themselves never enter
+the repo. Beam staff regenerate the index from the policy folder kept outside the repo:
+
+```bash
+COMPLIANCE_SRC="$HOME/Documents/Beam AI/Beam-Compliance-Policies" node scripts/index-compliance.mjs
+```
+
+Hand-edited fields (`domain`, `availability`, `ndaRequired`, `summary`) survive a re-run. The
+compile step validates the index; `pnpm test` checks every workspace grant resolves.

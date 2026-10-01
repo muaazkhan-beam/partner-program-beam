@@ -14,10 +14,12 @@ allowedEmailDomains:
 enabledSurfaces:
   - home
   - journey
+  - scope
   - use-cases
   - agents
   - tools
   - materials
+  - compliance
   - faq
   - certifications
   - requests
@@ -102,3 +104,63 @@ useCaseSlugs:
   - invoice-exception-handling
   - supplier-communication
   - cv-screening
+complianceSlugs:
+  - acceptable-usage-policy
+  - access-control-policy
+  - anonymization-and-pseudonymization-policy
+  - anti-malware-policy
+  - asset-management-and-media-handling-procedure
+  - asset-management-policy-procedure
+  - backup-policy-procedure
+  - business-continuity-and-disaster-recovery-policy-procedure
+  - byod-bring-your-own-device-policy
+  - change-management-procedure
+  - clear-desk-screen-policy
+  - code-of-conduct-policy
+  - communication-procedure
+  - continual-improvement-procedure
+  - cookie-policy
+  - cryptography-policy
+  - data-and-record-retention-and-deletion-policy
+  - data-and-record-retention-policy
+  - data-breach-management-procedure
+  - data-privacy-policy
+  - data-subject-requests-manual
+  - dpia-guidance-note
+  - gdpr-manual
+  - guidelines-on-uses-and-disclosure-of-protected-health-information-phi
+  - hipaa-breach-notification-policy
+  - hipaa-internal-privacy-policy
+  - hipaa-plan
+  - hr-disciplinary-procedure
+  - human-resource-security-policy
+  - information-classification-policy
+  - information-security-incident-management-policy-and-procedure
+  - information-security-is-policy
+  - information-security-policy
+  - information-security-roles-and-responsibilities
+  - information-transfer-policies-and-procedure
+  - legal-and-regulatory-compliance-policy
+  - limited-data-set-policy-data-minimization-policy
+  - logging-and-monitoring-policy
+  - management-review-meeting-procedure
+  - media-handling-and-disposal-procedure
+  - mobile-devices-and-teleworking-policy
+  - network-security-policy
+  - non-conformity-and-corrective-action-procedure
+  - password-policy
+  - patch-vulnerability-management-policy
+  - personal-data-protection-policy
+  - phi-de-identification-policy-and-procedure
+  - physical-and-environmental-security-policy
+  - physical-security-policy
+  - procedures-to-control-the-installation-of-software-on-operational-systems
+  - risk-management-procedure
+  - ropa-record-of-processing-activities-guidance-note
+  - secure-development-and-maintenance-policy
+  - software-development-lifecycle-procedure
+  - supplier-management-policy
+  - system-acquisition-development-and-maintenance-policy
+  - system-os-database-hardening-policy-procedure
+  - threat-intelligence-policy
+  - whistle-blower-policy

@@ -22,6 +22,55 @@ const workspaces = readdirSync(path.join(catalogDir, "workspaces"))
   .sort((a, b) => String(a.slug).localeCompare(String(b.slug)))
 
 const COMPLEXITIES = new Set(["starter", "standard", "complex"])
+const COMPLIANCE_DOMAINS = new Set([
+  "information-security",
+  "access-and-identity",
+  "data-privacy",
+  "hipaa-and-phi",
+  "continuity-and-backup",
+  "secure-development",
+  "operations-and-suppliers",
+  "people-and-conduct",
+])
+const COMPLIANCE_AVAILABILITY = new Set(["on-request", "under-nda", "confirm-version"])
+
+/**
+ * The compliance index lists documents by what is printed on them and nothing
+ * more. A posture word in a summary, a document with a version but no date
+ * marked as available, or an NDA flag that disagrees with its availability
+ * would each let a partner say something Beam has not signed.
+ */
+function validateCompliance(items) {
+  const problems = []
+  const seen = new Set()
+  for (const item of items) {
+    const at = `compliance.yaml → ${item.slug ?? "(missing slug)"}`
+    if (!item.slug) problems.push(`${at}: needs a slug`)
+    else if (seen.has(item.slug)) problems.push(`${at}: duplicate slug`)
+    else seen.add(item.slug)
+    if (item.kind !== "compliance") problems.push(`${at}: kind must be compliance`)
+    if (!item.title) problems.push(`${at}: missing title`)
+    if (!COMPLIANCE_DOMAINS.has(item.domain)) problems.push(`${at}: unknown domain ${item.domain}`)
+    if (!COMPLIANCE_AVAILABILITY.has(item.availability)) problems.push(`${at}: unknown availability ${item.availability}`)
+    const missingPrint = !item.version || !item.printedDate
+    if (missingPrint !== (item.availability === "confirm-version")) {
+      problems.push(`${at}: availability must be confirm-version exactly when the version or date is not printed`)
+    }
+    if (Boolean(item.ndaRequired) !== (item.availability === "under-nda")) {
+      problems.push(`${at}: ndaRequired must match availability under-nda`)
+    }
+    if (!Number.isInteger(item.pages) || item.pages <= 0) problems.push(`${at}: pages must be a positive integer`)
+    if (typeof item.summary !== "string" || item.summary.length > 200) problems.push(`${at}: summary must be a string of at most 200 characters`)
+    if (/certif|\bISO\b|\bSOC\b|guarantee/i.test(item.summary ?? "")) problems.push(`${at}: summary carries a posture claim`)
+    if (!item.requestLabel) problems.push(`${at}: requestLabel is required`)
+    if (!item.reviewer) problems.push(`${at}: reviewer is required`)
+  }
+  if (problems.length > 0) {
+    console.error("Compliance index is not publishable:\n" + problems.map((p) => `  - ${p}`).join("\n"))
+    process.exit(1)
+  }
+  return items
+}
 
 /**
  * Fail the build rather than let an unsafe use case reach a partner.
@@ -75,6 +124,7 @@ const catalog = {
   faq: loadItems("faq.yaml"),
   playbooks: loadItems("playbooks.yaml"),
   useCases: validateUseCases(loadItems("use-cases.yaml")),
+  compliance: validateCompliance(loadItems("compliance.yaml")),
 }
 
 mkdirSync(outDir, { recursive: true })
@@ -83,5 +133,5 @@ writeFileSync(
   `${JSON.stringify(catalog, null, 2)}\n`
 )
 console.log(
-  `Compiled partner catalog: ${workspaces.length} workspaces, ${catalog.tools.length} tools, ${catalog.materials.length} materials, ${catalog.faq.length} faq, ${catalog.playbooks.length} playbooks, ${catalog.useCases.length} use cases`
+  `Compiled partner catalog: ${workspaces.length} workspaces, ${catalog.tools.length} tools, ${catalog.materials.length} materials, ${catalog.faq.length} faq, ${catalog.playbooks.length} playbooks, ${catalog.useCases.length} use cases, ${catalog.compliance.length} compliance documents`
 )

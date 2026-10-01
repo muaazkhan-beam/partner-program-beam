@@ -733,6 +733,8 @@ export const DEFAULT_ENABLED_SURFACES = [
 // opt-in per workspace while it is a prototype, but it must survive a save.
 export const KNOWN_SURFACES = [
   ...DEFAULT_ENABLED_SURFACES,
+  "compliance",
+  "scope",
   "journey",
 ] as const
 

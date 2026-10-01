@@ -21,6 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { WhereBeamFitsDetail } from "@/components/where-beam-fits"
 import { useWorkspace } from "@/components/workspace-context"
 import { authBypass } from "@/components/providers"
 import type { ContentKind, UseCaseDetail } from "@/convex/catalogTypes"
@@ -199,7 +200,21 @@ function UseCaseDetailView({
         </p>
         <p className="mt-1.5 text-sm leading-6">{detail.humanInLoop}</p>
       </div>
+      <UseCaseScopeAction slug={item.slug} />
     </article>
+  )
+}
+
+function UseCaseScopeAction({ slug }: { slug: string }) {
+  const workspace = useWorkspace()
+  return (
+    <Link
+      className="flex max-w-xl items-center justify-between gap-3 rounded-lg border p-3 text-sm transition-colors hover:bg-muted/40"
+      href={workspacePath(workspace.slug, `/scope?seed=${encodeURIComponent(slug)}`)}
+    >
+      <span>Scope this for a client</span>
+      <RiArrowRightLine className="size-4 shrink-0 text-muted-foreground" />
+    </Link>
   )
 }
 
@@ -781,6 +796,9 @@ function ContentDetailBody({
   }
   if (item.slug === "partner-cli") {
     return <PartnerCliDetail item={item} />
+  }
+  if (kind === "material" && item.slug === "where-beam-fits") {
+    return <WhereBeamFitsDetail item={item} />
   }
   if (kind === "material" || kind === "playbook") {
     return <SharePreviewDetail item={item} kind={kind} />

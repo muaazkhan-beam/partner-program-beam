@@ -267,36 +267,31 @@ test("published Discovery deck renders visible slides", async ({ page }) => {
   await expect(frame.contentFrame().locator(".slide.active")).toBeVisible()
 })
 
-test("materials page offers the approved intro pack and a request path on pending items", async ({
+test("materials page builds a client pack and pending items keep a request path", async ({
   page,
 }) => {
   await page.context().grantPermissions(["clipboard-write"])
   await page.goto("/w/partner-demo/materials")
-  const pack = page
+  const tray = page
     .locator("section")
-    .filter({ has: page.getByRole("heading", { name: "Send the approved intro" }) })
-  await expect(pack).toBeVisible()
+    .filter({ has: page.getByRole("heading", { name: "Send a pack to a client" }) })
+  await expect(tray).toBeVisible()
   await expect(
-    pack.locator('a[href="https://shares.beam.ai/s/5MJ21Et5Hgb0jQuW"]'),
-  ).toHaveText(/Open in Beam Shares/)
+    tray.locator('a[href="https://shares.beam.ai/s/5MJ21Et5Hgb0jQuW"]'),
+  ).toHaveText(/Open/)
   await expect(
-    pack.locator('a[href="https://shares.beam.ai/s/6IyI_AIcNUxrSw75"]'),
-  ).toHaveText(/Open in Beam Shares/)
-  await expect(
-    pack.locator(
-      'a[href="/w/partner-demo/requests?about=material%3Awhere-beam-fits&support=other"]',
-    ),
-  ).toContainText("Where Beam fits")
-  await expect(pack.getByText("Pending")).toHaveCount(0)
-  await pack.getByText("Preview the email").click()
-  await expect(pack.locator("pre")).toContainText(
-    "Subject: Beam: introduction, as discussed",
-  )
-  await expect(pack.locator("pre")).toContainText(
-    "https://shares.beam.ai/s/6IyI_AIcNUxrSw75",
-  )
-  await pack.getByRole("button", { name: "Copy intro email" }).click()
-  await expect(pack.getByRole("button", { name: "Email copied" })).toBeVisible()
+    tray.locator('a[href="https://shares.beam.ai/s/6IyI_AIcNUxrSw75"]'),
+  ).toHaveText(/Open/)
+  await expect(tray.getByText("Pending")).toHaveCount(0)
+  await expect(tray.getByRole("button", { name: "Download cover page" })).toBeDisabled()
+  await tray.locator("#pack-client").fill("Nordbank")
+  const download = page.waitForEvent("download")
+  await tray.getByRole("button", { name: "Download cover page" }).click()
+  expect((await download).suggestedFilename()).toBe("beam-materials-for-nordbank.html")
+  await tray.getByRole("button", { name: "Copy cover note" }).click()
+  await expect(tray.getByRole("button", { name: "Note copied" })).toBeVisible()
+  await tray.getByText("Preview the note").click()
+  await expect(tray.locator("pre")).toContainText("Subject: Beam: materials for Nordbank")
 
   await page.goto("/w/partner-demo/materials/security-compliance-pack")
   await expect(page.getByText("Pending material")).toBeVisible()

@@ -1,4 +1,5 @@
 import type { ContentKind } from "../convex/catalogTypes"
+import { decodeAnswers, evaluate, verdictLabel } from "./fit-check"
 import { getWorkspaceItem } from "./catalog/static"
 import { partnerAgents } from "./partner-agents"
 import { journeyPhases } from "./partner-journey"
@@ -17,6 +18,8 @@ export type RequestContext = {
   /** What the partner was looking at when they asked, as `<kind>:<slug>`. */
   about?: string
   support?: RequestSupportType
+  /** Catalog slugs the request is about, e.g. the documents in a client pack. */
+  items?: readonly string[]
 }
 
 /** Link into the request form with the partner's context carried along. */
@@ -27,6 +30,7 @@ export function requestHref(
   const params = new URLSearchParams()
   if (context.about) params.set("about", context.about)
   if (context.support) params.set("support", context.support)
+  if (context.items?.length) params.set("items", context.items.join(","))
   const query = params.toString()
   return workspacePath(workspaceSlug, query ? `/requests?${query}` : "/requests")
 }
@@ -52,7 +56,7 @@ export function supportForKind(kind: string): RequestSupportType {
   return "other"
 }
 
-export type RequestSubject = { kind: string; label: string }
+export type RequestSubject = { kind: string; label: string; id?: string }
 
 /**
  * Turn an `about` value back into something a person can read. Content is
@@ -76,6 +80,20 @@ export function describeRequestSubject(
   if (kind === "journey") {
     const phase = journeyPhases.find((entry) => entry.slug === slug)
     return phase ? { kind, label: `Journey · ${phase.name} phase` } : null
+  }
+  if (kind === "compliance") {
+    return slug === "pack" ? { kind, label: "Security and compliance pack" } : null
+  }
+  if (kind === "scope") {
+    if (!slug) return null
+    return slug === "no-match"
+      ? { kind, id: slug, label: "A process with no live use case" }
+      : { kind, id: slug, label: "Process brief" }
+  }
+  if (kind === "fit") {
+    const verdict = evaluate(decodeAnswers(slug))
+    if (verdict.kind === "incomplete") return null
+    return { kind, id: slug, label: `Fit check · ${verdictLabel[verdict.kind]}` }
   }
   if (!contentKinds.includes(kind as ContentKind)) return null
   const item = getWorkspaceItem(workspaceSlug, kind as ContentKind, slug)

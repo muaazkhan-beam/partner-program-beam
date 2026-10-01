@@ -27,12 +27,13 @@ const items = lists.flatMap(([listKind, list]) =>
   list.map((item) => ({ listKind, item }))
 )
 
-const grantLists: Array<[keyof PartnerCatalog, ContentKind, string]> = [
+const grantLists: Array<[keyof PartnerCatalog, ContentKind | "compliance", string]> = [
   ["tools", "tool", "toolSlugs"],
   ["materials", "material", "materialSlugs"],
   ["faq", "faq", "faqSlugs"],
   ["playbooks", "playbook", "playbookSlugs"],
   ["useCases", "use-case", "useCaseSlugs"],
+  ["compliance", "compliance", "complianceSlugs"],
 ]
 
 function id(item: CatalogContent) {
@@ -67,7 +68,7 @@ test("every workspace grant resolves to an item of that kind", () => {
   const problems: string[] = []
   for (const workspace of catalog.workspaces) {
     for (const [listName, kind, slugsField] of grantLists) {
-      const list = catalog[listName] as CatalogContent[]
+      const list = catalog[listName] as Array<Pick<CatalogContent, "slug" | "kind" | "allowedBrandModes">>
       const slugs = (workspace as unknown as Record<string, string[] | undefined>)[
         slugsField
       ]
@@ -80,7 +81,7 @@ test("every workspace grant resolves to an item of that kind", () => {
         if (item.kind !== kind) {
           problems.push(`${workspace.slug}: ${slug} has kind ${item.kind}, expected ${kind}`)
         }
-        if (!Array.isArray(item.allowedBrandModes)) {
+        if (kind !== "compliance" && !Array.isArray(item.allowedBrandModes)) {
           problems.push(`${workspace.slug}: ${slug} has no allowedBrandModes list`)
         }
       }
