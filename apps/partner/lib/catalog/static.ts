@@ -1,5 +1,6 @@
 import catalogJson from "../../convex/generated/catalog.json"
 import type {
+  CatalogComplianceDocument,
   CatalogContent,
   CatalogUseCase,
   CatalogWorkspace,
@@ -10,7 +11,7 @@ import type {
 
 const catalog = catalogJson as PartnerCatalog
 
-export type { CatalogWorkspace, CatalogContent }
+export type { CatalogWorkspace, CatalogContent, CatalogComplianceDocument }
 
 export function listWorkspaces() {
   return catalog.workspaces
@@ -87,4 +88,12 @@ export function getWorkspaceItem(
     listWorkspaceItems(slug, kind).find((item) => item.slug === itemSlug) ??
     null
   )
+}
+
+/** The compliance documents granted to a workspace, in catalog order. */
+export function listWorkspaceCompliance(slug: string): CatalogComplianceDocument[] {
+  const workspace = getWorkspaceBySlug(slug)
+  if (!workspace) return []
+  const granted = new Set(workspace.complianceSlugs ?? [])
+  return catalog.compliance.filter((item) => granted.has(item.slug))
 }

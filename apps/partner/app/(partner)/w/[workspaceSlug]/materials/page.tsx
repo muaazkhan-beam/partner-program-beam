@@ -1,7 +1,7 @@
 "use client"
 
 import { MaterialsGrid } from "@/components/content-views"
-import { IntroPack } from "@/components/intro-pack"
+import { PackTray } from "@/components/pack-tray"
 import { PageContainer } from "@/components/page-container"
 import { PageHeading } from "@/components/page-heading"
 
@@ -12,7 +12,7 @@ export default function MaterialsPage() {
         title="Materials"
         description="Reviewed decks, guides, and playbooks. Check audience, forwardability, and brand mode before sending anything to a client."
       />
-      <IntroPack />
+      <PackTray layout="card" />
       <MaterialsGrid empty="No materials are attached to this workspace yet." />
     </PageContainer>
   )

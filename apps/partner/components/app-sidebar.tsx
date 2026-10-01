@@ -10,6 +10,7 @@ import {
   RiMedalLine,
   RiQuestionLine,
   RiSendPlaneLine,
+  RiShieldCheckLine,
   RiShieldUserLine,
   RiStackLine,
   RiToolsLine,
@@ -56,9 +57,9 @@ type NavDefinition = {
 const WORK: NavDefinition[] = [
   {
     title: "Scope",
-    path: "/journey",
+    path: "/scope",
     icon: RiCompass3Line,
-    surface: "journey",
+    surface: "scope",
     children: [
       {
         title: "Agents",
@@ -83,6 +84,12 @@ const REFERENCE: NavDefinition[] = [
     path: "/materials",
     icon: RiFileTextLine,
     surface: "materials",
+  },
+  {
+    title: "Compliance",
+    path: "/compliance",
+    icon: RiShieldCheckLine,
+    surface: "compliance",
   },
   { title: "FAQ", path: "/faq", icon: RiQuestionLine, surface: "faq" },
   {

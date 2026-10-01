@@ -27,6 +27,8 @@ export type JourneyPhase = {
   resources: JourneyResource[]
   requestLabel: string
   requestSupport: "shadow-demo" | "deployment-review" | "faq-escalation" | "other"
+  /** A tool that does this phase's work, e.g. the Scope workbench. */
+  surface?: { label: string; href: string }
 }
 
 // Progress through the phases is gated; content is not. Every resource stays
@@ -85,6 +87,7 @@ export const journeyPhases: JourneyPhase[] = [
     ],
     requestLabel: "Request Beam support",
     requestSupport: "other",
+    surface: { label: "Open Scope", href: "/scope" },
   },
   {
     slug: "build",

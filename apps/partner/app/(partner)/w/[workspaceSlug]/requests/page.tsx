@@ -12,7 +12,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useWorkspace } from "@/components/workspace-context"
+import { listWorkspaceCompliance, listWorkspaceItems } from "@/lib/catalog/static"
 import { getCertification } from "@/lib/certifications"
+import { fitRequestText } from "@/lib/fit-check"
+import { buildPack, packRequestText, parsePackItems } from "@/lib/pack"
+import { readPackState } from "@/lib/pack-store"
+import { briefText, noMatchText } from "@/lib/scope"
+import { readProcessById } from "@/lib/scope-store"
 import {
   describeRequestSubject,
   isRequestSupportType,
@@ -139,13 +145,51 @@ function RequestsForm({
       if (about) {
         setSubject(about)
         if (about.kind === "use-case") setCandidateProcess(about.label)
-        setProblemStatement(`Stuck on: ${about.label}.\n\n`)
+        if (about.kind === "compliance") {
+          // The pack itself stays in this browser; only slugs travel in the URL.
+          const slugs = new Set(parsePackItems(params.get("items")))
+          const stored = readPackState(workspace.slug)
+          const pack = buildPack({
+            workspaceDisplayName: workspace.displayName,
+            brandMode: workspace.brandMode,
+            clientName: stored.clientName,
+            materials: listWorkspaceItems(workspace.slug, "material"),
+            documents: listWorkspaceCompliance(workspace.slug).filter((document) =>
+              slugs.has(document.slug)
+            ),
+          })
+          if (stored.clientName) setAccountName(stored.clientName)
+          setCandidateProcess("Security and compliance pack")
+          setStage("qualify")
+          setProblemStatement(packRequestText(pack))
+        } else if (about.kind === "scope" && about.id === "no-match") {
+          const heard = window.sessionStorage.getItem("beam-scope-heard") ?? ""
+          setCandidateProcess(heard.trim() || "A process with no live use case")
+          setStage("qualify")
+          setProblemStatement(noMatchText(heard))
+        } else if (about.kind === "scope" && about.id) {
+          // The brief is rebuilt from this browser's store; the URL carries only an id.
+          const process = readProcessById(workspace.slug, about.id)
+          const useCase = listWorkspaceItems(workspace.slug, "use-case").find(
+            (item) => item.slug === process?.useCaseSlug
+          )
+          if (process && useCase) {
+            if (process.client) setAccountName(process.client)
+            setCandidateProcess(useCase.title)
+            setStage("qualify")
+            setProblemStatement(briefText(process, useCase as never))
+          }
+        } else if (about.kind === "fit" && about.id) {
+          setProblemStatement(fitRequestText(about.id))
+        } else {
+          setProblemStatement(`Stuck on: ${about.label}.\n\n`)
+        }
       }
       if (isRequestSupportType(support)) setSupportType(support)
     }, 0)
 
     return () => window.clearTimeout(prefill)
-  }, [workspace.slug])
+  }, [workspace.slug, workspace.displayName, workspace.brandMode])
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
