@@ -18,6 +18,7 @@ import {
   RiToolsLine,
 } from "@remixicon/react"
 
+import { AddToPack } from "@/components/add-to-pack"
 import { Badge } from "@/components/ui/badge"
 import { FaqAsk } from "@/components/faq-ask"
 import type { AskCandidate } from "@/lib/faq-answer"
@@ -117,9 +118,12 @@ function UseCaseCatalog({ items }: { items: ContentCard[] }) {
                       {detail.systems.join(" · ")}
                     </p>
                   ) : null}
-                  <span className="mt-auto inline-flex items-center gap-1.5 text-sm font-medium text-primary">
-                    {detail?.outcome ? detail.outcome.value : "Outcome pending"}
-                    <RiArrowRightLine className="size-4" />
+                  <span className="mt-auto flex items-center justify-between gap-3">
+                    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+                      {detail?.outcome ? detail.outcome.value : "Outcome pending"}
+                      <RiArrowRightLine className="size-4" />
+                    </span>
+                    <AddToPack kind="use-case" slug={item.slug} label={item.title} />
                   </span>
                 </Link>
               )
@@ -466,8 +470,11 @@ function MaterialGroups({ items }: { items: ContentCard[] }) {
                 <p className="text-sm leading-6 text-muted-foreground">
                   {lead.summary}
                 </p>
-                <span className="mt-auto inline-flex items-center gap-1.5 text-sm font-medium text-primary">
-                  Open <RiArrowRightLine className="size-4" />
+                <span className="mt-auto flex items-center justify-between gap-3">
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+                    Open <RiArrowRightLine className="size-4" />
+                  </span>
+                  <AddToPack kind={lead.kind} slug={lead.slug} label={lead.title} />
                 </span>
               </Link>
 
@@ -658,19 +665,22 @@ function ToolCatalog({ items }: { items: ContentCard[] }) {
                   <p className="mt-2 min-h-12 text-sm leading-6 text-muted-foreground">
                     {item.summary}
                   </p>
-                  <Link
-                    className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                    href={toolDestination(workspace.slug, item)}
-                    target={external ? "_blank" : undefined}
-                    rel={external ? "noreferrer" : undefined}
-                  >
-                    {item.href ? "Open tool" : "View details"}
-                    {external ? (
-                      <RiExternalLinkLine className="size-4" />
-                    ) : (
-                      <RiArrowRightLine className="size-4" />
-                    )}
-                  </Link>
+                  <div className="mt-5 flex items-center justify-between gap-3">
+                    <Link
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                      href={toolDestination(workspace.slug, item)}
+                      target={external ? "_blank" : undefined}
+                      rel={external ? "noreferrer" : undefined}
+                    >
+                      {item.href ? "Open tool" : "View details"}
+                      {external ? (
+                        <RiExternalLinkLine className="size-4" />
+                      ) : (
+                        <RiArrowRightLine className="size-4" />
+                      )}
+                    </Link>
+                    <AddToPack kind="tool" slug={item.slug} label={item.title} />
+                  </div>
                 </article>
               )
             })}
@@ -764,6 +774,7 @@ function FaqRows({
                       <Badge variant="outline">Restricted</Badge>
                     ) : null}
                     <Badge variant="outline">{tagLabel(item.audience)}</Badge>
+                    <AddToPack kind="faq" slug={item.slug} label={item.title} />
                   </div>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">

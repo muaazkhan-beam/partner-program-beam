@@ -26,10 +26,12 @@ import {
   packDownloadName,
 } from "@/lib/pack"
 import {
+  emptyPack,
   parsePackState,
   readPackRaw,
   subscribeToPack,
   toggleDocument,
+  toggleItem,
   writePackState,
 } from "@/lib/pack-store"
 import { requestHref } from "@/lib/request-links"
@@ -49,9 +51,11 @@ export function usePackState(workspaceSlug: string) {
       writePackState(workspaceSlug, { ...state, clientName }),
     toggle: (slug: string) =>
       writePackState(workspaceSlug, toggleDocument(state, slug)),
+    toggleItem: (kind: string, slug: string) =>
+      writePackState(workspaceSlug, toggleItem(state, kind, slug)),
     setDocuments: (documentSlugs: string[]) =>
       writePackState(workspaceSlug, { ...state, documentSlugs }),
-    clear: () => writePackState(workspaceSlug, { clientName: "", documentSlugs: [] }),
+    clear: () => writePackState(workspaceSlug, emptyPack),
   }
 }
 

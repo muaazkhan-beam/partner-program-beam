@@ -17,6 +17,7 @@
       ],
       "enabledSurfaces": [
         "home",
+        "pack",
         "tools",
         "materials",
         "faq",
@@ -124,6 +125,7 @@
       ],
       "enabledSurfaces": [
         "home",
+        "pack",
         "journey",
         "scope",
         "use-cases",
@@ -317,6 +319,7 @@
       ],
       "enabledSurfaces": [
         "home",
+        "pack",
         "use-cases",
         "agents",
         "tools",
@@ -444,6 +447,7 @@
       ],
       "enabledSurfaces": [
         "home",
+        "pack",
         "use-cases",
         "agents",
         "tools",
@@ -569,6 +573,7 @@
       ],
       "enabledSurfaces": [
         "home",
+        "pack",
         "use-cases",
         "agents",
         "tools",

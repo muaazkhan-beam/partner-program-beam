@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
+import { PackButton } from "@/components/pack-button"
 import { useWorkspace } from "@/components/workspace-context"
 import {
   Breadcrumb,
@@ -24,6 +25,7 @@ const titles: Record<string, string> = {
   compliance: "Security & compliance",
   scope: "Scope",
   prototype: "Prototype",
+  pack: "Client pack",
   faq: "FAQ",
   certifications: "Certifications",
   agents: "Agents",
@@ -72,6 +74,9 @@ export function SiteHeader() {
         ) : (
           <h1 className="text-sm font-medium sm:text-base">{title}</h1>
         )}
+        <div className="ml-auto flex items-center gap-2">
+          <PackButton />
+        </div>
       </div>
     </header>
   )

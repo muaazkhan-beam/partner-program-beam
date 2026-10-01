@@ -13,7 +13,14 @@ import {
   packRequestText,
   parsePackItems,
 } from "../lib/pack"
-import { emptyPack, toggleDocument } from "../lib/pack-store"
+import {
+  emptyPack,
+  hasItem,
+  packCount,
+  parsePackState,
+  toggleDocument,
+  toggleItem,
+} from "../lib/pack-store"
 import { describeRequestSubject, requestHref } from "../lib/request-links"
 
 const materials = listWorkspaceItems("partner-demo", "material") as IntroPackItem[]
@@ -134,4 +141,35 @@ test("toggling a document adds it once and removes it again", () => {
   const added = toggleDocument(emptyPack, "access-control-policy")
   assert.deepEqual(added.documentSlugs, ["access-control-policy"])
   assert.deepEqual(toggleDocument(added, "access-control-policy").documentSlugs, [])
+})
+
+test("the pack holds any kind of content, not only compliance documents", () => {
+  // Jack's cart: a partner picks up a use case, an answer and a deck while
+  // working one client, then assembles them. Compliance documents keep their
+  // own list, which the compliance library already drives.
+  let state = emptyPack
+  state = toggleItem(state, "use-case", "cv-screening")
+  state = toggleItem(state, "faq", "why-not-sap")
+  state = toggleDocument(state, "information-security-policy")
+
+  assert.ok(hasItem(state, "use-case", "cv-screening"))
+  assert.ok(hasItem(state, "faq", "why-not-sap"))
+  assert.deepEqual(state.documentSlugs, ["information-security-policy"])
+  assert.equal(packCount(state), 3, "the badge counts both halves")
+
+  // Adding the same thing twice removes it, as a toggle.
+  state = toggleItem(state, "faq", "why-not-sap")
+  assert.ok(!hasItem(state, "faq", "why-not-sap"))
+  assert.equal(packCount(state), 2)
+})
+
+test("a pack saved before items existed still loads", () => {
+  // Asad's pack shipped without `items`; a partner mid-deal must not lose it.
+  const restored = parsePackState(
+    JSON.stringify({ clientName: "Acme", documentSlugs: ["a", "b"] })
+  )
+  assert.equal(restored.clientName, "Acme")
+  assert.deepEqual(restored.documentSlugs, ["a", "b"])
+  assert.deepEqual(restored.items, [])
+  assert.equal(packCount(restored), 2)
 })
