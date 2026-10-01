@@ -8,10 +8,14 @@ function ThemeProvider({
   ...props
 }: React.ComponentProps<typeof NextThemesProvider>) {
   return (
+    // Light by default rather than following the OS. A partner may open this
+    // in front of a client, and Jack's reason for white was trust — which a
+    // dark portal does not carry for everyone. The toggle still works for
+    // anyone who prefers dark.
     <NextThemesProvider
       attribute="class"
-      defaultTheme="system"
-      enableSystem
+      defaultTheme="light"
+      enableSystem={false}
       disableTransitionOnChange
       {...props}
     >

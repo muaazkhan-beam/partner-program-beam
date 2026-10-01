@@ -7,6 +7,7 @@ import {
   RiTerminalBoxLine,
 } from "@remixicon/react"
 
+import { HomeAsk } from "@/components/content-views"
 import { useWorkspace } from "@/components/workspace-context"
 import { journeyPhases } from "@/lib/partner-journey"
 import { Badge } from "@/components/ui/badge"
@@ -79,6 +80,7 @@ export default function HomePage() {
         />
         <p className="text-sm text-muted-foreground">{workspace.homeTitle}</p>
       </div>
+      <HomeAsk />
       <JourneyStrip slug={workspace.slug} />
       <section className="grid gap-4 lg:grid-cols-[1.35fr_.65fr]">
         <article

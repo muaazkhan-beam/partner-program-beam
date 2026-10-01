@@ -8,6 +8,7 @@ import {
   RiBookOpenLine,
   RiCheckLine,
   RiClipboardLine,
+  RiDownloadLine,
   RiExternalLinkLine,
   RiFileList3Line,
   RiPresentationLine,
@@ -294,6 +295,46 @@ function BypassFaqSurface() {
   const workspace = useWorkspace()
   const items = listWorkspaceItems(workspace.slug, "faq") as ContentCard[]
   return <FaqSurfaceBody items={items} />
+}
+
+function HomeAskBody({ items }: { items: ContentCard[] | undefined }) {
+  const [query, setQuery] = useState("")
+  if (items === undefined) return null
+  return (
+    <FaqAsk
+      items={items as AskCandidate[]}
+      query={query}
+      onQueryChange={setQuery}
+      variant="home"
+    />
+  )
+}
+
+function LiveHomeAsk() {
+  const workspace = useWorkspace()
+  const items = useQuery(api.partner.listContent, {
+    workspaceId: workspace.workspaceId as never,
+    kind: "faq",
+  })
+  return <HomeAskBody items={items as ContentCard[] | undefined} />
+}
+
+function BypassHomeAsk() {
+  const workspace = useWorkspace()
+  return (
+    <HomeAskBody
+      items={listWorkspaceItems(workspace.slug, "faq") as ContentCard[]}
+    />
+  )
+}
+
+/**
+ * Jack asked for the chat on Home: a partner should be able to say what they
+ * need rather than learn where it lives. Same guarded content as the FAQ.
+ */
+export function HomeAsk() {
+  if (authBypass) return <BypassHomeAsk />
+  return <LiveHomeAsk />
 }
 
 /** Same data path as the list, so the answer can never surface what the list hides. */
@@ -1213,19 +1254,32 @@ function SharePreviewDetail({
         </div>
       </section>
       {item.shareUrl ? (
-        <Button
-          variant="outline"
-          render={<a href={item.shareUrl} target="_blank" rel="noreferrer" />}
-        >
-          <RiExternalLinkLine />
-          Open in Beam Shares
-        </Button>
+        // Jack: "nobody cares about BeamShare, nobody cares how to open this."
+        // Two actions named for what they do, not for where the file lives.
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            render={<a href={item.shareUrl} target="_blank" rel="noreferrer" />}
+          >
+            <RiExternalLinkLine />
+            Open
+          </Button>
+          <Button
+            variant="outline"
+            render={
+              <a href={item.shareUrl} target="_blank" rel="noreferrer" download />
+            }
+          >
+            <RiDownloadLine />
+            Download PDF
+          </Button>
+        </div>
       ) : null}
       {hasPublishedShare ? requestLink : null}
       <p className="text-xs leading-5 text-muted-foreground">
         {hasPublishedShare
-          ? "Embedded from the reviewed Beam Share attached to this workspace."
-          : "This preview uses the same presentation shell intended for Beam Shares. When a reviewed Share URL is attached, this frame renders that published page directly."}
+          ? "Reviewed and approved for this workspace."
+          : "Preview only. The reviewed copy is attached once Beam publishes it."}
       </p>
     </div>
   )

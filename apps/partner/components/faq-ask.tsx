@@ -22,6 +22,21 @@ const SUGGESTIONS = [
   "When should I walk away?",
 ]
 
+/**
+ * Openers for Home.
+ *
+ * Deliberately not an empty box. Jack's own objection to chat was "most of the
+ * time I don't know how to ask", and the research says the same: a blank
+ * conversational surface puts the hard part on the user. These are the
+ * questions a partner actually arrives with.
+ */
+const HOME_SUGGESTIONS = [
+  "A client sent us security questions",
+  "Which use case fits a finance client?",
+  "How do we price a delivery engagement?",
+  "What can I send a client today?",
+]
+
 function tag(value: string) {
   return value ? `${value[0]?.toUpperCase()}${value.slice(1)}` : value
 }
@@ -38,10 +53,13 @@ export function FaqAsk({
   items,
   query,
   onQueryChange,
+  variant = "faq",
 }: {
   items: AskCandidate[]
   query: string
   onQueryChange: (value: string) => void
+  /** "home" frames it as the way in; "faq" as the way through the answers. */
+  variant?: "home" | "faq"
 }) {
   const workspace = useWorkspace()
   const question = query
@@ -50,6 +68,8 @@ export function FaqAsk({
   // Answer as they type. Requiring a submit meant a partner could type the
   // whole question, see nothing happen, and conclude it was broken.
   const outcome = useMemo(() => resolveAsk(question, items), [question, items])
+
+  const suggestions = variant === "home" ? HOME_SUGGESTIONS : SUGGESTIONS
 
   const answerHref = (slug: string) =>
     workspacePath(workspace.slug, `/faq/${slug}`)
@@ -66,13 +86,17 @@ export function FaqAsk({
           className="flex items-center gap-2 font-mono text-[11px] tracking-[0.16em] text-muted-foreground uppercase"
         >
           <RiSparkling2Line className="size-3.5" />
-          Ask Beam
+          {variant === "home" ? "Start here — ask Beam" : "Ask Beam"}
         </label>
         <div className="mt-3 flex gap-2">
           <Input
             id="faq-ask"
             className="h-11 flex-1"
-            placeholder="Ask the question your client just asked you…"
+            placeholder={
+              variant === "home"
+                ? "What do you need? Paste a client's question…"
+                : "Ask the question your client just asked you…"
+            }
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
             autoComplete="off"
@@ -89,7 +113,7 @@ export function FaqAsk({
           ) : null}
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          {SUGGESTIONS.map((suggestion) => (
+          {suggestions.map((suggestion) => (
             <button
               key={suggestion}
               type="button"
