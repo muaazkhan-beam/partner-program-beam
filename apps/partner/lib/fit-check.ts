@@ -245,7 +245,7 @@ export function nextSteps(
   if (verdict.kind === "strong") {
     return [
       { label: "Pick a use case", href: workspacePath(workspaceSlug, "/use-cases") },
-      { label: "Start the Scope phase", href: workspacePath(workspaceSlug, "/journey?phase=scope") },
+      { label: "Scope this process", href: workspacePath(workspaceSlug, "/scope") },
     ]
   }
   if (verdict.kind === "potential") {
@@ -259,7 +259,7 @@ export function nextSteps(
   if (verdict.kind === "poor") {
     return [
       {
-        label: "Ask Beam about the edge case",
+        label: "Ask the Beam team about the edge case",
         href: requestHref(workspaceSlug, { about: `fit:${code}`, support: "faq-escalation" }),
       },
     ]

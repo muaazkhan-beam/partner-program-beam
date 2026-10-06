@@ -73,12 +73,12 @@ test("brand mode is the first reason, because waiting cannot fix it", () => {
   assert.equal(packReason(deck("x"), "beam-standard"), null)
 })
 
-test("the demo workspace's pack is the two published decks and nothing pending", () => {
+test("the demo workspace's pack is the published deck and nothing pending", () => {
   const items = listWorkspaceItems("partner-demo", "material") as IntroPackItem[]
   const { pack, notYet } = introPack(items, "beam-standard")
   assert.deepEqual(
     pack.map((item) => item.slug),
-    ["beam-partner-executive-overview", "beam-discovery-sales-deck"]
+    ["beam-partner-executive-overview"]
   )
   assert.ok(notYet.every(({ item }) => !pack.includes(item)))
 })

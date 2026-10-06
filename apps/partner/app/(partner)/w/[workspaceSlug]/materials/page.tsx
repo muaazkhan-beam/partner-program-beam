@@ -1,7 +1,7 @@
 "use client"
 
 import { MaterialsGrid } from "@/components/content-views"
-import { PackTray } from "@/components/pack-tray"
+import { PackSummary } from "@/components/pack-tray"
 import { PageContainer } from "@/components/page-container"
 import { PageHeading } from "@/components/page-heading"
 
@@ -10,9 +10,9 @@ export default function MaterialsPage() {
     <PageContainer className="space-y-8">
       <PageHeading
         title="Materials"
-        description="Reviewed decks, guides, and playbooks. Check audience, forwardability, and brand mode before sending anything to a client."
+        description="Decks, guides and playbooks, in the order you use them with a client. Anything marked Can go to a client can be sent as it is."
       />
-      <PackTray layout="card" />
+      <PackSummary />
       <MaterialsGrid empty="No materials are attached to this workspace yet." />
     </PageContainer>
   )

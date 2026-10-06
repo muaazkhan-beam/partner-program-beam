@@ -4,7 +4,7 @@ Sibling application to Beam Core. Consulting and channel partners use it;
 `@beam.ai` staff keep Core. Do not add partner domains to Core
 `STAFF_EMAIL_DOMAIN`.
 
-Canonical product contract: [`../../specs/apps/partner-portal.md`](../../specs/apps/partner-portal.md).
+Canonical product contract: [`../../docs/specs/partner-portal.md`](../../docs/specs/partner-portal.md) (a copy; the source is `specs/apps/partner-portal.md` in beam-library).
 
 ## Topology
 

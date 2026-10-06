@@ -8,7 +8,6 @@ import {
   RiBookOpenLine,
   RiCheckLine,
   RiClipboardLine,
-  RiDownloadLine,
   RiExternalLinkLine,
   RiFileList3Line,
   RiPresentationLine,
@@ -19,15 +18,22 @@ import {
 } from "@remixicon/react"
 
 import { AddToPack } from "@/components/add-to-pack"
+import { SendBadge, useSendLabel } from "@/components/send-badge"
 import { Badge } from "@/components/ui/badge"
 import { FaqAsk } from "@/components/faq-ask"
-import type { AskCandidate } from "@/lib/faq-answer"
+import { rankAnswers, type AskCandidate } from "@/lib/faq-answer"
+import { holdReason } from "@/lib/pack"
+import { groupByLifecycle } from "@/lib/lifecycle"
 import { Button } from "@/components/ui/button"
 import { WhereBeamFitsDetail } from "@/components/where-beam-fits"
 import { useWorkspace } from "@/components/workspace-context"
 import { authBypass } from "@/components/providers"
 import type { ContentKind, UseCaseDetail } from "@/convex/catalogTypes"
-import { getWorkspaceItem, listWorkspaceItems } from "@/lib/catalog/static"
+import {
+  getWorkspaceItem,
+  listWorkspaceCompliance,
+  listWorkspaceItems,
+} from "@/lib/catalog/static"
 import { requestHref, supportForKind } from "@/lib/request-links"
 import { workspacePath } from "@/lib/workspace-resolver"
 import { api } from "@partner/convex/_generated/api"
@@ -93,10 +99,9 @@ function UseCaseCatalog({ items }: { items: ContentCard[] }) {
             {groupItems.map((item) => {
               const detail = item.useCase
               return (
-                <Link
+                <div
                   key={item.slug}
-                  href={workspacePath(workspace.slug, `/use-cases/${item.slug}`)}
-                  className="group flex flex-col gap-3 rounded-2xl border bg-card p-5 transition-colors hover:border-primary/40"
+                  className="group relative flex flex-col gap-3 rounded-2xl border bg-card p-5 transition-colors focus-within:border-primary/40 hover:border-primary/40"
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     {detail?.complexity ? (
@@ -104,14 +109,16 @@ function UseCaseCatalog({ items }: { items: ContentCard[] }) {
                         {COMPLEXITY_LABEL[detail.complexity] ?? detail.complexity}
                       </Badge>
                     ) : null}
-                    {detail?.timeToProduction ? (
-                      <Badge variant="outline">{detail.timeToProduction}</Badge>
-                    ) : null}
-                    <Badge variant="outline">
-                      {item.forwardable ? "Client-forwardable" : "Partner-internal"}
-                    </Badge>
+                    <SendBadge item={item} />
                   </div>
-                  <h3 className="text-lg font-medium tracking-tight">{item.title}</h3>
+                  <h3 className="text-lg font-medium tracking-tight">
+                    <Link
+                      href={workspacePath(workspace.slug, `/use-cases/${item.slug}`)}
+                      className="after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-none focus-visible:after:ring-3 focus-visible:after:ring-ring/50"
+                    >
+                      {item.title}
+                    </Link>
+                  </h3>
                   <p className="text-sm text-muted-foreground">{item.summary}</p>
                   {detail?.systems?.length ? (
                     <p className="font-mono text-[11px] text-muted-foreground">
@@ -119,13 +126,21 @@ function UseCaseCatalog({ items }: { items: ContentCard[] }) {
                     </p>
                   ) : null}
                   <span className="mt-auto flex items-center justify-between gap-3">
-                    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
-                      {detail?.outcome ? detail.outcome.value : "Outcome pending"}
-                      <RiArrowRightLine className="size-4" />
+                    <span className="flex flex-col gap-0.5">
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+                        View <RiArrowRightLine className="size-4" aria-hidden="true" />
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {detail?.outcome
+                          ? `${detail.outcome.metric}: ${detail.outcome.value}`
+                          : "No cited result yet"}
+                      </span>
                     </span>
-                    <AddToPack kind="use-case" slug={item.slug} label={item.title} />
+                    <span className="relative z-10">
+                      <AddToPack kind="use-case" slug={item.slug} label={item.title} />
+                    </span>
                   </span>
-                </Link>
+                </div>
               )
             })}
           </div>
@@ -156,10 +171,7 @@ function UseCaseDetailView({
   return (
     <article className="max-w-3xl space-y-5">
       <div className="flex flex-wrap gap-2">
-        <Badge variant="outline">{tagLabel(item.audience)}</Badge>
-        <Badge variant="outline">
-          {item.status === "pending" ? "Pending" : tagLabel(item.claimState)}
-        </Badge>
+        <SendBadge item={item} />
         {detail.complexity ? (
           <Badge variant="outline">
             {COMPLEXITY_LABEL[detail.complexity] ?? detail.complexity}
@@ -179,7 +191,12 @@ function UseCaseDetailView({
           <span className="font-mono text-[13px]">{detail.systems.join(" · ")}</span>
         </UseCaseRow>
         {detail.timeToProduction ? (
-          <UseCaseRow label="To production">{detail.timeToProduction}</UseCaseRow>
+          <UseCaseRow label="Typical time to production">
+            {detail.timeToProduction}
+            <span className="block text-xs text-muted-foreground">
+              Beam&apos;s estimate for planning, not a client result.
+            </span>
+          </UseCaseRow>
         ) : null}
         <UseCaseRow label="Outcome">
           {detail.outcome ? (
@@ -206,7 +223,10 @@ function UseCaseDetailView({
         </p>
         <p className="mt-1.5 text-sm leading-6">{detail.humanInLoop}</p>
       </div>
-      <UseCaseScopeAction slug={item.slug} />
+      <div className="flex flex-wrap items-center gap-3">
+        <AddToPack kind="use-case" slug={item.slug} label={item.title} />
+        <UseCaseScopeAction slug={item.slug} />
+      </div>
     </article>
   )
 }
@@ -215,13 +235,20 @@ function UseCaseScopeAction({ slug }: { slug: string }) {
   const workspace = useWorkspace()
   return (
     <Link
-      className="flex max-w-xl items-center justify-between gap-3 rounded-lg border p-3 text-sm transition-colors hover:bg-muted/40"
+      className="flex max-w-xl flex-1 items-center justify-between gap-3 rounded-lg border p-3 text-sm transition-colors hover:bg-muted/40"
       href={workspacePath(workspace.slug, `/scope?seed=${encodeURIComponent(slug)}`)}
     >
       <span>Scope this for a client</span>
       <RiArrowRightLine className="size-4 shrink-0 text-muted-foreground" />
     </Link>
   )
+}
+
+/** Who an item is written for, in words a partner uses. */
+function audienceLabel(audience: string) {
+  if (audience === "client-forwardable") return "Written for clients"
+  if (audience === "technical") return "Technical"
+  return "For partners"
 }
 
 function tagLabel(value: string) {
@@ -265,9 +292,9 @@ function BypassContentGrid({
  * One question box, not two.
  *
  * The ask panel and the list each had their own input, so a partner could type
- * into the lower one and get filtering when they expected an answer. Jack asked
- * for one thing — ask a question — so a single query now drives both: the
- * answer above, the narrowed list below.
+ * into the lower one and get filtering when they expected an answer. A partner
+ * wants one thing, to ask a question, so a single query now drives both: the
+ * answer above, the ranked list below.
  */
 function FaqSurfaceBody({ items }: { items: ContentCard[] | undefined }) {
   const [query, setQuery] = useState("")
@@ -333,8 +360,8 @@ function BypassHomeAsk() {
 }
 
 /**
- * Jack asked for the chat on Home: a partner should be able to say what they
- * need rather than learn where it lives. Same guarded content as the FAQ.
+ * The ask on Home: a partner should be able to say what they need rather than
+ * learn where it lives. Same guarded content as the FAQ.
  */
 export function HomeAsk() {
   if (authBypass) return <BypassHomeAsk />
@@ -418,80 +445,109 @@ function MaterialsGridBody({
  */
 function MaterialGroups({ items }: { items: ContentCard[] }) {
   const workspace = useWorkspace()
-  const groups = new Map<string, ContentCard[]>()
-  for (const item of items) {
-    const key = item.group ?? "More material"
-    groups.set(key, [...(groups.get(key) ?? []), item])
-  }
+  const sendLabelFor = useSendLabel()
+  // Grouped by the lifecycle on Home, so scoping material never
+  // sits below selling material it follows.
+  const groups = groupByLifecycle(items, { slug: "more", name: "More material" })
 
+  // The old pack record lists 8 policies by hand; the library holds all of
+  // them as printed, so the card leads there instead of to a stale copy.
+  const libraryCount = listWorkspaceCompliance(workspace.slug).length
+  const isLibrary = (item: ContentCard) =>
+    item.slug === "security-compliance-pack" && libraryCount > 0
   const href = (item: ContentCard) =>
-    workspacePath(workspace.slug, `/${contentSurface(item.kind)}/${item.slug}`)
+    isLibrary(item)
+      ? workspacePath(workspace.slug, "/compliance")
+      : workspacePath(workspace.slug, `/${contentSurface(item.kind)}/${item.slug}`)
+  const summaryOf = (item: ContentCard) =>
+    isLibrary(item)
+      ? `All ${libraryCount} policies, as printed. Start from the client's questions.`
+      : item.summary
+  const published = (item: ContentCard) => item.status !== "pending" || isLibrary(item)
 
   return (
     <div className="space-y-12">
-      {[...groups.entries()].map(([group, groupItems]) => {
-        const lead = groupItems.find((item) => item.highlight) ?? groupItems[0]
+      {groups.map(({ slug: group, name, number, items: groupItems }) => {
+        // "Start here" belongs on something a partner can use today.
+        const lead =
+          groupItems.find((item) => item.highlight && published(item)) ??
+          groupItems.find(published) ??
+          groupItems.find((item) => item.highlight) ??
+          groupItems[0]
         if (!lead) return null
         const rest = groupItems.filter((item) => item !== lead)
         return (
           <section key={group} className="space-y-4">
             <div className="flex items-baseline justify-between gap-3 border-b pb-2">
-              <h2 className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                {group}
+              <h2 className="text-sm font-medium">
+                {number ? (
+                  <span className="mr-2 font-mono text-xs text-muted-foreground">{number}</span>
+                ) : null}
+                {name}
               </h2>
-              <span className="font-mono text-[11px] text-muted-foreground">
-                {groupItems.length}
+              <span className="text-xs text-muted-foreground">
+                {groupItems.length} {groupItems.length === 1 ? "item" : "items"}
               </span>
             </div>
 
             <div className="grid gap-5 lg:grid-cols-[1.1fr_.9fr]">
-              <Link
-                href={href(lead)}
-                className="group flex flex-col gap-4 rounded-2xl border bg-card p-6 transition-colors hover:border-primary/40"
-              >
+              <div className="group relative flex flex-col gap-4 self-start rounded-2xl border bg-card p-6 transition-colors focus-within:border-primary/40 hover:border-primary/40">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="outline">Start here</Badge>
+                  {published(lead) ? <Badge variant="outline">Start here</Badge> : null}
                   <Badge variant="outline">
                     {tagLabel(
                       lead.format ??
                         (lead.kind === "playbook" ? "Playbook" : "Material"),
                     )}
                   </Badge>
-                  <Badge variant="outline">
-                    {lead.forwardable ? "Forwardable" : "Internal"}
-                  </Badge>
-                  {lead.status === "pending" ? (
-                    <Badge variant="outline">Pending</Badge>
-                  ) : null}
+                  {isLibrary(lead) ? (
+                    <Badge variant="outline">Library</Badge>
+                  ) : (
+                    <SendBadge item={lead} />
+                  )}
                 </div>
                 <h3 className="text-xl font-medium tracking-tight">
-                  {lead.title}
+                  <Link
+                    href={href(lead)}
+                    className="after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-none focus-visible:after:ring-3 focus-visible:after:ring-ring/50"
+                  >
+                    {lead.title}
+                  </Link>
                 </h3>
                 <p className="text-sm leading-6 text-muted-foreground">
-                  {lead.summary}
+                  {summaryOf(lead)}
                 </p>
                 <span className="mt-auto flex items-center justify-between gap-3">
                   <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
-                    Open <RiArrowRightLine className="size-4" />
+                    {isLibrary(lead) ? "Open the library" : "View"}{" "}
+                    <RiArrowRightLine className="size-4" aria-hidden="true" />
                   </span>
-                  <AddToPack kind={lead.kind} slug={lead.slug} label={lead.title} />
+                  <span className="relative z-10">
+                    {isLibrary(lead) ? null : (
+                      <AddToPack kind={lead.kind} slug={lead.slug} label={lead.title} />
+                    )}
+                  </span>
                 </span>
-              </Link>
+              </div>
 
               {rest.length > 0 ? (
                 <ul className="flex flex-col divide-y rounded-2xl border bg-card">
                   {rest.map((item) => (
-                    <li key={item.slug}>
-                      <Link
-                        href={href(item)}
-                        className="flex items-start gap-3 p-4 transition-colors hover:bg-accent/40"
-                      >
+                    <li
+                      key={item.slug}
+                      className="relative flex items-start gap-3 p-4 transition-colors focus-within:bg-accent/40 hover:bg-accent/40"
+                    >
                         <div className="min-w-0 flex-1 space-y-1">
                           <p className="text-sm font-medium tracking-tight">
-                            {item.title}
+                            <Link
+                              href={href(item)}
+                              className="after:absolute after:inset-0 focus-visible:outline-none"
+                            >
+                              {item.title}
+                            </Link>
                           </p>
                           <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                            {item.summary}
+                            {summaryOf(item)}
                           </p>
                           <div className="flex flex-wrap gap-1.5 pt-1">
                             <span className="font-mono text-[10px] text-muted-foreground">
@@ -506,22 +562,15 @@ function MaterialGroups({ items }: { items: ContentCard[] }) {
                               ·
                             </span>
                             <span className="font-mono text-[10px] text-muted-foreground">
-                              {item.forwardable ? "Forwardable" : "Internal"}
+                              {isLibrary(item) ? "Library" : sendLabelFor(item)}
                             </span>
-                            {item.status === "pending" ? (
-                              <>
-                                <span className="font-mono text-[10px] text-muted-foreground">
-                                  ·
-                                </span>
-                                <span className="font-mono text-[10px] text-muted-foreground">
-                                  Pending
-                                </span>
-                              </>
-                            ) : null}
                           </div>
                         </div>
-                        <RiArrowRightLine className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                      </Link>
+                        <span className="relative z-10 shrink-0">
+                          {isLibrary(item) ? null : (
+                            <AddToPack kind={item.kind} slug={item.slug} label={item.title} />
+                          )}
+                        </span>
                     </li>
                   ))}
                 </ul>
@@ -564,6 +613,24 @@ function ContentGridBody({
 
 const featuredToolSlugs = ["partner-cli", "partner-faq", "operating-diagnostic"]
 
+/**
+ * A tool's button says where it goes. Several tools point at Beam Core, which
+ * needs a Beam login; saying so beats a partner discovering it.
+ */
+function toolAction(item: ContentCard): { label: string; note?: string } {
+  const href = item.href
+  if (!href) return { label: "View details" }
+  if (href.startsWith("https://core.beam.ai/")) {
+    return { label: "Open in Beam Core", note: "Needs a Beam login" }
+  }
+  if (href.startsWith("https://")) return { label: `Open ${new URL(href).hostname}` }
+  if (href === "/faq") return { label: "Open the FAQ" }
+  if (href === "/materials") return { label: "Open materials" }
+  if (href.startsWith("/materials/")) return { label: "Open the playbook" }
+  if (href.startsWith("/requests")) return { label: "Request it from Beam" }
+  return { label: "Open" }
+}
+
 function ToolIcon({ item }: { item: ContentCard }) {
   const className = "size-5"
   if (item.slug === "partner-cli")
@@ -585,11 +652,7 @@ function ToolCatalog({ items }: { items: ContentCard[] }) {
     .filter((item): item is ContentCard => Boolean(item))
   const featuredSlugs = new Set(featured.map((item) => item.slug))
   const remaining = items.filter((item) => !featuredSlugs.has(item.slug))
-  const grouped = new Map<string, ContentCard[]>()
-  for (const item of remaining) {
-    const key = item.group ?? "Library"
-    grouped.set(key, [...(grouped.get(key) ?? []), item])
-  }
+  const grouped = groupByLifecycle(remaining, { slug: "anytime", name: "Any time" })
 
   return (
     <div className="space-y-10">
@@ -599,52 +662,54 @@ function ToolCatalog({ items }: { items: ContentCard[] }) {
           return (
             <article
               key={item.slug}
-              className="partner-feature-card group relative isolate flex min-h-80 overflow-hidden rounded-3xl border border-white/10 p-6 text-white shadow-xl"
-              data-tone={
-                index === 0 ? "cli" : index === 1 ? "knowledge" : "scope"
-              }
+              className="flex min-h-64 flex-col justify-between gap-5 rounded-3xl border bg-card p-6 transition-colors hover:border-primary/40"
+              data-tone={index === 0 ? "cli" : index === 1 ? "knowledge" : "scope"}
             >
-              <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(255,255,255,.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.07)_1px,transparent_1px)] [background-size:36px_36px] [mask-image:linear-gradient(to_bottom,black,transparent_75%)]" />
-              <div className="relative mt-auto w-full space-y-5">
-                <div className="flex size-11 items-center justify-center rounded-2xl border border-white/15 bg-white/10 backdrop-blur">
-                  <ToolIcon item={item} />
-                </div>
-                <div className="space-y-2">
-                  <p className="font-mono text-[10px] tracking-[0.2em] text-white/50 uppercase">
-                    {item.group ?? "Partner tool"}
-                  </p>
-                  <h2 className="text-2xl font-medium tracking-tight">
-                    {item.title}
-                  </h2>
-                  <p className="text-sm leading-6 text-white/65">
-                    {item.summary}
-                  </p>
-                </div>
-                <Link
-                  className="flex items-center justify-between rounded-xl bg-white px-4 py-3 text-sm font-medium text-black transition-colors hover:bg-white/90"
-                  href={toolDestination(workspace.slug, item)}
-                  target={external ? "_blank" : undefined}
-                  rel={external ? "noreferrer" : undefined}
+              <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/8 text-primary">
+                <ToolIcon item={item} />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-xl font-medium tracking-tight">{item.title}</h2>
+                <p className="text-sm leading-6 text-muted-foreground">{item.summary}</p>
+              </div>
+              <div className="space-y-1.5">
+                <Button
+                  className="w-full justify-between"
+                  render={
+                    <Link
+                      href={toolDestination(workspace.slug, item)}
+                      target={external ? "_blank" : undefined}
+                      rel={external ? "noreferrer" : undefined}
+                    />
+                  }
                 >
-                  {item.href ? "Open tool" : "View details"}
+                  {toolAction(item).label}
                   {external ? (
-                    <RiExternalLinkLine className="size-4" />
+                    <RiExternalLinkLine aria-hidden="true" />
                   ) : (
-                    <RiArrowRightLine className="size-4" />
+                    <RiArrowRightLine aria-hidden="true" />
                   )}
-                </Link>
+                </Button>
+                {toolAction(item).note ? (
+                  <p className="text-xs text-muted-foreground">{toolAction(item).note}</p>
+                ) : null}
               </div>
             </article>
           )
         })}
       </section>
 
-      {[...grouped.entries()].map(([group, groupItems]) => (
+      {grouped.map(({ slug: group, name, number, items: groupItems }) => (
         <section key={group} className="space-y-4">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-medium">{group}</h2>
+            <h2 className="text-lg font-medium">
+              {number ? (
+                <span className="mr-2 font-mono text-sm text-muted-foreground">{number}</span>
+              ) : null}
+              {name}
+            </h2>
             <span className="text-xs text-muted-foreground">
-              {groupItems.length} tools
+              {groupItems.length} {groupItems.length === 1 ? "tool" : "tools"}
             </span>
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -659,24 +724,27 @@ function ToolCatalog({ items }: { items: ContentCard[] }) {
                     <div className="flex size-10 items-center justify-center rounded-xl bg-primary/8 text-primary">
                       <ToolIcon item={item} />
                     </div>
-                    <Badge variant="outline">{tagLabel(item.audience)}</Badge>
+                    <Badge variant="outline">{audienceLabel(item.audience)}</Badge>
                   </div>
                   <h3 className="mt-5 font-medium">{item.title}</h3>
                   <p className="mt-2 min-h-12 text-sm leading-6 text-muted-foreground">
                     {item.summary}
                   </p>
-                  <div className="mt-5 flex items-center justify-between gap-3">
+                  {toolAction(item).note ? (
+                    <p className="mt-2 text-xs text-muted-foreground">{toolAction(item).note}</p>
+                  ) : null}
+                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
                     <Link
-                      className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                      className="inline-flex items-center gap-1.5 text-sm font-medium whitespace-nowrap text-primary hover:underline"
                       href={toolDestination(workspace.slug, item)}
                       target={external ? "_blank" : undefined}
                       rel={external ? "noreferrer" : undefined}
                     >
-                      {item.href ? "Open tool" : "View details"}
+                      {toolAction(item).label}
                       {external ? (
-                        <RiExternalLinkLine className="size-4" />
+                        <RiExternalLinkLine className="size-4" aria-hidden="true" />
                       ) : (
-                        <RiArrowRightLine className="size-4" />
+                        <RiArrowRightLine className="size-4" aria-hidden="true" />
                       )}
                     </Link>
                     <AddToPack kind="tool" slug={item.slug} label={item.title} />
@@ -700,40 +768,39 @@ function FaqRows({
   query: string
 }) {
   const workspace = useWorkspace()
-  const [filter, setFilter] = useState<
-    "all" | "partner" | "technical" | "pending" | "restricted"
-  >("all")
-  const normalizedQuery = query.trim().toLowerCase()
-  const visibleItems = items.filter((item) => {
-    const matchesQuery =
-      !normalizedQuery ||
-      `${item.title} ${item.summary} ${item.body}`
-        .toLowerCase()
-        .includes(normalizedQuery)
-    const matchesFilter =
-      filter === "all" ||
-      (filter === "partner" && item.audience === "partner-internal") ||
-      (filter === "technical" && item.audience === "technical") ||
-      (filter === "pending" && item.status === "pending") ||
-      (filter === "restricted" && item.claimState === "restricted")
-    return matchesQuery && matchesFilter
-  })
+  const [filter, setFilter] = useState<"all" | "client" | "internal" | "beam">("all")
+  // The list ranks by the same terms the ask box answers from, so the two can
+  // never disagree (an answer above, "no matching questions" below).
+  const matched = query.trim()
+    ? rankAnswers(query, items as AskCandidate[]).map(
+        (candidate) => items.find((item) => item.slug === candidate.slug)!
+      )
+    : items
+  const bucket = (item: ContentCard) => {
+    const reason = holdReason(item, workspace.brandMode)
+    if (reason === null) return "client"
+    if (reason === "pending" || reason === "restricted") return "beam"
+    return "internal"
+  }
+  const visibleItems = matched.filter(
+    (item) => filter === "all" || bucket(item) === filter
+  )
   const filters = [
     ["all", "All"],
-    ["partner", "Partner"],
-    ["technical", "Technical"],
-    ["pending", "Pending"],
-    ["restricted", "Restricted"],
+    ["client", "Can go to a client"],
+    ["internal", "For you only"],
+    ["beam", "Waiting on Beam"],
   ] as const
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <div className="rounded-2xl border bg-muted/25 p-3 sm:p-4">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter answers">
           {filters.map(([value, label]) => (
             <button
               key={value}
               type="button"
+              aria-pressed={filter === value}
               className={
                 filter === value
                   ? "rounded-full bg-foreground px-3 py-1.5 text-xs font-medium text-background"
@@ -744,84 +811,115 @@ function FaqRows({
               {label}
             </button>
           ))}
-          <span className="ml-auto self-center px-1 text-xs text-muted-foreground">
-            {visibleItems.length}{" "}
-            {visibleItems.length === 1 ? "answer" : "answers"}
+          <span
+            className="ml-auto self-center px-1 text-xs text-muted-foreground"
+            aria-live="polite"
+          >
+            {visibleItems.length} {visibleItems.length === 1 ? "answer" : "answers"}
           </span>
         </div>
       </div>
 
       <div className="space-y-3">
-        {visibleItems.map((item) => (
-          <details
-            key={item.slug}
-            className="group overflow-hidden rounded-2xl border bg-card open:shadow-sm"
-          >
-            <summary className="flex cursor-pointer list-none items-start gap-4 p-5 marker:content-none sm:p-6">
-              <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                <RiQuestionLine className="size-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <h2 className="max-w-2xl font-medium leading-6">
-                    {item.title}
-                  </h2>
-                  <div className="flex items-center gap-2">
-                    {item.status === "pending" ? (
-                      <Badge variant="outline">Pending</Badge>
-                    ) : null}
-                    {item.claimState === "restricted" ? (
-                      <Badge variant="outline">Restricted</Badge>
-                    ) : null}
-                    <Badge variant="outline">{tagLabel(item.audience)}</Badge>
-                    <AddToPack kind="faq" slug={item.slug} label={item.title} />
-                  </div>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {item.summary}
-                </p>
-              </div>
-              <RiArrowDownSLine className="mt-1 size-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
-            </summary>
-            <div className="border-t px-5 py-5 sm:pr-16 sm:pl-[5.25rem]">
-              <p className="whitespace-pre-wrap text-sm leading-7 text-foreground/85">
-                {item.status === "pending"
-                  ? (item.requestBeamLabel ??
-                    "This answer is pending Beam review.")
-                  : item.claimState === "restricted"
-                    ? (item.requestBeamLabel ??
-                      "Request Beam for an approved answer.")
-                    : item.body}
-              </p>
-              {item.status === "pending" || item.claimState === "restricted" ? (
-                <Link
-                  className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                  href={requestHref(workspace.slug, {
-                    about: `faq:${item.slug}`,
-                    support: "faq-escalation",
-                  })}
-                >
-                  Ask Beam about this <RiArrowRightLine className="size-4" />
-                </Link>
-              ) : null}
-              <Link
-                className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                href={workspacePath(workspace.slug, `/faq/${item.slug}`)}
-              >
-                Open full answer <RiArrowRightLine className="size-4" />
-              </Link>
-            </div>
-          </details>
+        {(query.trim()
+          ? [{ slug: "matches", name: "", number: undefined, items: visibleItems }]
+          : groupByLifecycle(visibleItems, { slug: "partnership", name: "About the partnership" })
+        ).map((section) => (
+          <section key={section.slug} className="space-y-3">
+            {section.name ? (
+              <h2 className="pt-3 text-sm font-medium">
+                {section.number ? (
+                  <span className="mr-2 font-mono text-xs text-muted-foreground">{section.number}</span>
+                ) : null}
+                {section.name}
+              </h2>
+            ) : null}
+            {section.items.map((item) => (
+              <FaqRow key={item.slug} item={item} />
+            ))}
+          </section>
         ))}
         {visibleItems.length === 0 ? (
           <div className="rounded-2xl border border-dashed p-10 text-center">
-            <p className="font-medium">No matching questions</p>
+            <p className="font-medium">
+              {query.trim() ? "No other answers mention that" : "No answers here"}
+            </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Try another search or reset the filter.
+              {filter === "all"
+                ? "Try fewer words, or ask the Beam team."
+                : "Try another filter."}
             </p>
           </div>
         ) : null}
       </div>
+    </div>
+  )
+}
+
+function FaqRow({ item }: { item: ContentCard }) {
+  const workspace = useWorkspace()
+  const [open, setOpen] = useState(false)
+  const panelId = `faq-panel-${item.slug}`
+  const unpublished = item.status === "pending" || item.claimState === "restricted"
+  return (
+    <div className={`overflow-hidden rounded-2xl border bg-card ${open ? "shadow-sm" : ""}`}>
+      <div className="flex items-start gap-3 p-5 sm:gap-4 sm:p-6">
+        <div className="mt-0.5 hidden size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground sm:flex">
+          <RiQuestionLine className="size-4" aria-hidden="true" />
+        </div>
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={panelId}
+          onClick={() => setOpen((value) => !value)}
+          className="min-w-0 flex-1 rounded-md text-left focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+        >
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="max-w-2xl font-medium leading-6">{item.title}</span>
+          </span>
+          <span className="mt-2 block text-sm leading-6 text-muted-foreground">
+            {item.summary}
+          </span>
+        </button>
+        <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
+          <SendBadge item={item} />
+          <AddToPack kind="faq" slug={item.slug} label={item.title} />
+        </div>
+        <RiArrowDownSLine
+          aria-hidden="true"
+          className={`mt-1 hidden size-5 shrink-0 text-muted-foreground transition-transform sm:block ${open ? "rotate-180" : ""}`}
+        />
+      </div>
+      {open ? (
+        <div id={panelId} className="border-t px-5 py-5 sm:pr-16 sm:pl-[5.25rem]">
+          <p className="whitespace-pre-wrap text-sm leading-7 text-foreground/85">
+            {item.status === "pending"
+              ? (item.requestBeamLabel ?? "Beam has not published this answer yet.")
+              : item.claimState === "restricted"
+                ? (item.requestBeamLabel ?? "Ask Beam for an approved answer.")
+                : item.body}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+            {unpublished ? (
+              <Link
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                href={requestHref(workspace.slug, {
+                  about: `faq:${item.slug}`,
+                  support: "faq-escalation",
+                })}
+              >
+                Ask the Beam team <RiArrowRightLine className="size-4" aria-hidden="true" />
+              </Link>
+            ) : null}
+            <Link
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+              href={workspacePath(workspace.slug, `/faq/${item.slug}`)}
+            >
+              Open full answer <RiArrowRightLine className="size-4" aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -884,13 +982,7 @@ function PreviewCatalog({
           </div>
           <div className="space-y-4 p-5">
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">{tagLabel(item.audience)}</Badge>
-              <Badge variant="outline">
-                {item.forwardable ? "Forwardable" : "Internal"}
-              </Badge>
-              {item.status === "pending" ? (
-                <Badge variant="outline">Pending</Badge>
-              ) : null}
+              <SendBadge item={item} />
             </div>
             <div>
               <h2 className="font-medium">{item.title}</h2>
@@ -1029,17 +1121,23 @@ function ContentDetailBody({
   return (
     <article className="max-w-3xl space-y-4">
       <div className="flex flex-wrap gap-2">
-        <Badge variant="outline">{tagLabel(item.audience)}</Badge>
-        <Badge variant="outline">
-          {item.status === "pending" ? "Pending" : tagLabel(item.claimState)}
-        </Badge>
+        <SendBadge item={item} />
         {item.format ? (
           <Badge variant="outline">{tagLabel(item.format)}</Badge>
         ) : null}
       </div>
       <h2 className="text-3xl font-medium tracking-tight">{item.title}</h2>
       <p className="text-muted-foreground">{item.summary}</p>
-      <div className="whitespace-pre-wrap text-sm leading-7">{item.body}</div>
+      <div className="whitespace-pre-wrap text-sm leading-7">
+        {item.claimState === "restricted"
+          ? "Only Beam can answer this for a client."
+          : item.status === "pending"
+            ? "Beam has not published this answer yet."
+            : item.body}
+      </div>
+      {kind === "faq" || kind === "tool" ? (
+        <AddToPack kind={kind} slug={item.slug} label={item.title} />
+      ) : null}
       {item.href ? (
         <Link
           className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
@@ -1047,7 +1145,7 @@ function ContentDetailBody({
           target={item.href.startsWith("https://") ? "_blank" : undefined}
           rel={item.href.startsWith("https://") ? "noreferrer" : undefined}
         >
-          Open tool
+          {toolAction(item).label}
           {item.href.startsWith("https://") ? (
             <RiExternalLinkLine className="size-4" />
           ) : (
@@ -1063,7 +1161,7 @@ function ContentDetailBody({
             support: supportForKind(item.kind),
           })}
         >
-          <span>{item.requestBeamLabel ?? "Request Beam"}</span>
+          <span>{item.requestBeamLabel ?? "Ask the Beam team"}</span>
           <RiArrowRightLine className="size-4 shrink-0 text-muted-foreground" />
         </Link>
       ) : null}
@@ -1111,7 +1209,7 @@ function PartnerCliDetail({ item }: { item: ContentCard }) {
       <div className="max-w-3xl space-y-4">
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline">Partner-safe</Badge>
-          <Badge variant="outline">{tagLabel(item.audience)}</Badge>
+          <Badge variant="outline">{audienceLabel(item.audience)}</Badge>
         </div>
         <h2 className="text-3xl font-medium tracking-tight sm:text-4xl">
           Start with Beam Partner.
@@ -1192,7 +1290,7 @@ function SharePreviewDetail({
           support: supportForKind(item.kind),
         })}
       >
-        <span>{item.requestBeamLabel ?? "Request this from Beam"}</span>
+        <span>{item.requestBeamLabel ?? "Ask the Beam team"}</span>
         <RiArrowRightLine className="size-4 shrink-0 text-muted-foreground" />
       </Link>
     ) : null
@@ -1201,12 +1299,7 @@ function SharePreviewDetail({
     <div className="space-y-6">
       <div className="max-w-3xl space-y-4">
         <div className="flex flex-wrap gap-2">
-          <Badge variant="outline">{tagLabel(item.audience)}</Badge>
-          {kind === "material" && item.status === "pending" ? (
-            <Badge variant="outline">Pending</Badge>
-          ) : (
-            <Badge variant="outline">{tagLabel(item.claimState)}</Badge>
-          )}
+          <SendBadge item={item} />
           <Badge variant="outline">
             {tagLabel(
               item.format ?? (kind === "playbook" ? "playbook" : "material")
@@ -1219,6 +1312,7 @@ function SharePreviewDetail({
         <p className="text-base leading-7 text-muted-foreground">
           {item.summary}
         </p>
+        <AddToPack kind={item.kind} slug={item.slug} label={item.title} />
         {hasPublishedShare ? null : requestLink}
       </div>
       <section className="overflow-hidden rounded-3xl border bg-muted/25 p-3 shadow-sm sm:p-5">
@@ -1227,7 +1321,7 @@ function SharePreviewDetail({
             <iframe
               className="h-full min-h-[32rem] w-full bg-background"
               src={`/api/share-preview/${encodeURIComponent(item.slug)}`}
-              title={`${item.title} Beam Share`}
+              title={`${item.title} preview`}
               loading="lazy"
               sandbox="allow-scripts allow-popups"
             />
@@ -1236,11 +1330,9 @@ function SharePreviewDetail({
               <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/95 px-5 py-3 backdrop-blur">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="size-2 rounded-full bg-emerald-500" />
-                  Beam Share preview
+                  Preview
                 </div>
-                <Badge variant="outline">
-                  {item.forwardable ? "Forwardable" : "Partner internal"}
-                </Badge>
+                <SendBadge item={item} />
               </div>
               <div className="mx-auto max-w-3xl px-6 py-10 sm:px-10 sm:py-14">
                 <p className="font-mono text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
@@ -1265,24 +1357,15 @@ function SharePreviewDetail({
         </div>
       </section>
       {item.shareUrl ? (
-        // Jack: "nobody cares about BeamShare, nobody cares how to open this."
-        // Two actions named for what they do, not for where the file lives.
+        // One action, named for what it does. A share is a web page, not a file the portal can download; the
+        // PDF a client receives comes from the client pack.
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             render={<a href={item.shareUrl} target="_blank" rel="noreferrer" />}
           >
-            <RiExternalLinkLine />
+            <RiExternalLinkLine aria-hidden="true" />
             Open
-          </Button>
-          <Button
-            variant="outline"
-            render={
-              <a href={item.shareUrl} target="_blank" rel="noreferrer" download />
-            }
-          >
-            <RiDownloadLine />
-            Download PDF
           </Button>
         </div>
       ) : null}

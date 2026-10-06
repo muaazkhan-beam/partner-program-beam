@@ -16,6 +16,7 @@ const catalog = rawCatalog as PartnerCatalog
 const retiredCatalogContent = [
   { kind: "faq" as const, slug: "other-firms" },
   { kind: "faq" as const, slug: "what-each-side-wants" },
+  { kind: "material" as const, slug: "beam-discovery-sales-deck" },
 ]
 
 async function removeRetiredCatalogContent(ctx: MutationCtx) {

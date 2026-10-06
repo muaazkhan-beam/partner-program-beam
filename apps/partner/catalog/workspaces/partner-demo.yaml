@@ -6,8 +6,8 @@ canonicalPath: /w/partner-demo
 brandMode: beam-standard
 brandHeader: Beam Partner
 homeTitle: Future of AI-Native Companies
-homeHeadline: Take one client process from discovery to production
-homeDescription: Qualify a client outcome, map one process, show a governed shadow workflow, and agree success criteria. The partner owns the client relationship; Beam owns the platform and agent factory.
+homeHeadline: Take one client process from first conversation to handover
+homeDescription: You own the client relationship. Beam owns the platform and the agents.
 supportOwner: partner-success@beam.ai
 allowedEmailDomains:
   - partner.example
@@ -73,7 +73,6 @@ materialSlugs:
   - joint-motion-one-pager
   - proof-pack-placeholder
   - beam-partner-executive-overview
-  - beam-discovery-sales-deck
   - who-we-are
   - ideal-client-profile
   - partner-discovery-kit
@@ -99,6 +98,8 @@ faqSlugs:
   - support-and-escalation
   - accuracy
   - leadership-pack
+  # Granted so the demo can show a restricted answer going to Beam.
+  - deployment-ksa-kuwait
 playbookSlugs:
   - one-workflow-shadow
 useCaseSlugs:

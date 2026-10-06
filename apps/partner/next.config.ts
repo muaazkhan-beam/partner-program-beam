@@ -4,12 +4,15 @@ import type { NextConfig } from "next"
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? ""
 const convexSiteUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL ?? ""
 const convexWebSocketUrl = convexUrl.replace(/^https:/, "wss:")
+// React's dev runtime uses eval for its debugging aids; without it a page
+// served by `next dev` never hydrates. Production builds never get it.
+const devEval = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
   "frame-ancestors 'none'",
   "object-src 'none'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${devEval}`,
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self'",
   "img-src 'self' data: blob: https://lh3.googleusercontent.com",
@@ -31,7 +34,7 @@ const contentSecurityPolicy = [
 
 const previewContentSecurityPolicy = [
   "default-src 'self' data: blob:",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${devEval}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",

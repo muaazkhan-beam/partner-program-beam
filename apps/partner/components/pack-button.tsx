@@ -3,23 +3,18 @@
 import Link from "next/link"
 import { RiShoppingBag3Line } from "@remixicon/react"
 
-import { usePackState } from "@/components/pack-tray"
+import { usePackContents } from "@/components/pack-tray"
 import { useWorkspace } from "@/components/workspace-context"
-import { packCount } from "@/lib/pack-store"
 import { workspacePath } from "@/lib/workspace-resolver"
 
 /**
- * The pack, always in reach.
- *
- * Jack asked for a cart icon in the top corner, for the reason e-commerce has
- * one: what you have collected should follow you across the pages you collect
- * it from. Without it the tray only exists on the pages that happen to embed
- * it, and a partner has no sense of carrying anything.
+ * The pack, always in reach: what a partner has collected follows them across
+ * the pages they collect it from, as a cart does. The count is of entries
+ * that resolve in this workspace, so it matches the pack page exactly.
  */
 export function PackButton() {
   const workspace = useWorkspace()
-  const { state } = usePackState(workspace.slug)
-  const count = packCount(state)
+  const { count } = usePackContents()
 
   return (
     <Link
@@ -29,11 +24,12 @@ export function PackButton() {
           ? "Client pack, empty"
           : `Client pack, ${count} ${count === 1 ? "item" : "items"}`
       }
-      className="relative inline-flex size-9 items-center justify-center rounded-lg border transition-colors hover:bg-accent"
+      className="relative inline-flex h-9 items-center gap-2 rounded-lg border px-2.5 text-sm font-medium transition-colors hover:bg-accent"
     >
       <RiShoppingBag3Line className="size-4" aria-hidden="true" />
+      <span className="hidden sm:inline">Pack</span>
       {count > 0 ? (
-        <span className="absolute -top-1.5 -right-1.5 inline-flex min-w-4.5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground tabular-nums">
+        <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground tabular-nums">
           {count}
         </span>
       ) : null}

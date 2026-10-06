@@ -51,7 +51,7 @@ test("an unmatched process asks Beam whether it is covered", async ({ page }) =>
   await page
     .getByLabel("What the client described")
     .fill("Reconciling statements across two ledgers")
-  await page.getByRole("link", { name: "Ask Beam if this is covered" }).click()
+  await page.getByRole("link", { name: "Ask the Beam team if it is covered" }).click()
   await expect(page.getByText("About:")).toBeVisible()
   await expect(page.getByLabel("Candidate process")).toHaveValue(
     "Reconciling statements across two ledgers",

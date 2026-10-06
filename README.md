@@ -54,6 +54,22 @@ pnpm dev
 
 The app listens on `http://127.0.0.1:3001`. Open a workspace at `/w/partner-demo/home`.
 
+For a demo, or to check the app as a partner sees it, use a production build in
+preview-bypass mode. It needs no Convex and no login, and it is what the e2e
+suite runs. From `apps/partner/`:
+
+```bash
+export VERCEL_ENV=preview NEXT_PUBLIC_DEPLOYMENT_ENV=preview \
+  NEXT_PUBLIC_PREVIEW_AUTH_BYPASS=true \
+  NEXT_PUBLIC_PARTNER_BYPASS_WORKSPACE=partner-demo \
+  NEXT_PUBLIC_PARTNER_BYPASS_EMAIL=demo@partner.example
+pnpm build && pnpm start --hostname 127.0.0.1 --port 3001
+```
+
+`NEXT_PUBLIC_*` values are inlined at build time, so rebuild after changing them.
+`pnpm test:e2e` builds into the same `.next` folder, so stop a running demo
+server before running it, and rebuild the demo afterwards.
+
 For local work without auth, set in `apps/partner/.env.local`:
 
 ```bash

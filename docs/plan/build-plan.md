@@ -102,11 +102,11 @@ The bulk of Phase 1's effort, and it is writing, not coding. Depth in **finance*
 
 Source material already in the repo, which is better than anything researched externally:
 
-- `docs/reference/partner-pain.md` — real PwC ME, BID and Roland Berger call synthesis.
-  Named examples: Fraisa-style order processing from a unified inbox with evals, exception
-  branches, CRM write-back and SharePoint audit log; Mizan with 37 SAP variants on
-  source-to-pay and invoice exceptions; Americana on 30-year on-prem Oracle.
-- `docs/reference/faq-seed.md`, `docs/reference/tool-map.md`
+- `skills/general/partner-portal/references/partner-pain.md` in beam-library (private):
+  PwC ME, BID and Roland Berger call synthesis, with named client examples of order
+  processing from a unified inbox, source-to-pay exceptions across many SAP variants, and
+  long-lived on-premise ERP. Not copied here because it names clients.
+- `faq-seed.md` and `tool-map.md` in the same beam-library folder
 - `catalog/faq.yaml` — 22 answers already carrying approved claims
 
 **Start each record from an approved claim, not from a blank page.** Anything without

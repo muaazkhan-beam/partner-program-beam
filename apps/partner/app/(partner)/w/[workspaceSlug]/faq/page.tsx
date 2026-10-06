@@ -9,8 +9,8 @@ export default function FaqPage() {
     <PageContainer className="space-y-8">
       <div className="mx-auto w-full max-w-4xl">
         <PageHeading
-          title="Partner FAQ"
-          description="Staff-published answers. Restricted deployment, exclusivity, independence, and pricing questions route to Beam."
+          title="FAQ"
+          description="Answers Beam has approved for partners. Pricing, exclusivity and deployment questions go to the Beam team."
         />
       </div>
       <FaqSurface />

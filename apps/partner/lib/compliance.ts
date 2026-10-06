@@ -37,24 +37,40 @@ export function printedLine(document: CatalogComplianceDocument) {
   return `Version ${document.version}, ${document.printedDate}`
 }
 
+/** A client's word for what a policy title calls something else. */
+const SEARCH_SYNONYMS: Array<[RegExp, string[]]> = [
+  [/encrypt|tls|\bkeys?\b/, ["cryptograph"]],
+  [/breach/, ["breach", "incident"]],
+  [/\bbcp\b|\bdr\b|outage|resilien|disaster/, ["continuity", "recovery", "backup"]],
+  [/pen ?test|penetration|vulnerab/, ["vulnerab", "patch"]],
+  [/\bmfa\b|\bsso\b|authenticat|permission/, ["access", "password"]],
+  [/sub-?processor|vendor|third[- ]part/, ["supplier"]],
+  [/antivirus|virus/, ["malware"]],
+  [/\bsdlc\b|software development/, ["development"]],
+  [/\blogs?\b|audit trail/, ["logging"]],
+  [/training|awareness|background check/, ["human resource"]],
+]
+
 export function filterDocuments(
   documents: readonly CatalogComplianceDocument[],
   { query, domain }: { query: string; domain: ComplianceDomain | "all" }
 ) {
   const needle = query.trim().toLowerCase()
-  return documents.filter(
-    (document) =>
-      (domain === "all" || document.domain === domain) &&
-      (!needle ||
-        `${document.title} ${document.summary} ${domainLabel(document.domain)}`
-          .toLowerCase()
-          .includes(needle))
-  )
+  const targets = [
+    needle,
+    ...SEARCH_SYNONYMS.filter(([pattern]) => pattern.test(needle)).flatMap(([, words]) => words),
+  ]
+  return documents.filter((document) => {
+    if (domain !== "all" && document.domain !== domain) return false
+    if (!needle) return true
+    const haystack = `${document.title} ${document.summary} ${domainLabel(document.domain)}`.toLowerCase()
+    return targets.some((target) => haystack.includes(target))
+  })
 }
 
 /**
  * The questions a client's security reviewer actually asks, each answered by
- * documents from the library. Used by the questionnaire-first prototype.
+ * documents from the library. Drives the client's-questions view and the ask box.
  */
 export const reviewerQuestions: ReadonlyArray<{
   id: string

@@ -2,7 +2,7 @@
 #
 # Answers the first question a partner asks: what exactly can I sell?
 #
-# Every record is a live Beam deployment shape, confirmed by Derya Firat on
+# Every record is a live Beam deployment shape, confirmed by GTM on
 # 2026-09-11 as running rather than pitched. Two rules the compile script
 # enforces, because they are what keep the catalog honest:
 #

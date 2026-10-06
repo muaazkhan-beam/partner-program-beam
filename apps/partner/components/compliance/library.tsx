@@ -7,7 +7,7 @@ import {
   RiSearchLine,
 } from "@remixicon/react"
 
-import { PackTray, usePackState } from "@/components/pack-tray"
+import { PackAside, usePackState } from "@/components/pack-tray"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { useWorkspace } from "@/components/workspace-context"
@@ -19,12 +19,13 @@ import {
   filterDocuments,
 } from "@/lib/compliance"
 import { requestHref } from "@/lib/request-links"
+import { workspacePath } from "@/lib/workspace-resolver"
 
 const PAGE_SIZE = 12
 
 /**
- * Variant A: the library as a list a security reviewer can scan, with the
- * client pack beside it. Reads the static catalog in both modes until a
+ * The library as a list a security reviewer can scan, with the client pack
+ * beside it. Reads the static catalog in both modes until a
  * Convex query exists; grants are still per workspace.
  */
 export function ComplianceLibrary() {
@@ -109,8 +110,26 @@ export function ComplianceLibrary() {
           <div className="rounded-2xl border border-dashed p-10 text-center">
             <p className="font-medium">No matching documents</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Try another search or reset the filter.
+              Certifications, audit reports and contract documents such as a
+              DPA are not in the library; the Beam team answers those.
             </p>
+            <div className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm font-medium">
+              <a
+                className="text-primary hover:underline"
+                href={workspacePath(workspace.slug, "/compliance?view=questions")}
+              >
+                Start from the client&apos;s questions
+              </a>
+              <a
+                className="text-primary hover:underline"
+                href={requestHref(workspace.slug, {
+                  support: "deployment-review",
+                  question: `Security review: ${query}`,
+                })}
+              >
+                Ask the Beam team
+              </a>
+            </div>
           </div>
         ) : (
           <ul className="divide-y rounded-2xl border bg-card px-4 sm:px-5">
@@ -131,6 +150,7 @@ export function ComplianceLibrary() {
                       <span className="block text-sm font-medium">{document.title}</span>
                       <span className="block text-xs text-muted-foreground">
                         {domainLabel(document.domain)}
+                        {document.ndaRequired ? " · once an NDA is in place" : ""}
                       </span>
                     </span>
                     <span className="hidden w-28 shrink-0 text-right text-xs text-muted-foreground tabular-nums sm:block">
@@ -193,7 +213,7 @@ export function ComplianceLibrary() {
           </nav>
         ) : null}
       </div>
-      <PackTray layout="aside" />
+      <PackAside />
     </div>
   )
 }

@@ -93,7 +93,7 @@ test("a verdict becomes a request subject and a request body", () => {
   assert.ok(text.includes("Is there an API or an export path"))
   assert.deepEqual(
     nextSteps("partner-demo", evaluate(decodeAnswers("yyyyyyyn")), "yyyyyyyn").map((step) => step.label),
-    ["Ask Beam about the edge case"]
+    ["Ask the Beam team about the edge case"]
   )
 })
 

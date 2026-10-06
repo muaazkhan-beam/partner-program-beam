@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import type { ContentKind } from "@/convex/catalogTypes"
+import { getWorkspaceItem } from "@/lib/catalog/static"
+import { getCertification } from "@/lib/certifications"
 import { workspacePath } from "@/lib/workspace-resolver"
 
 const titles: Record<string, string> = {
@@ -24,13 +27,30 @@ const titles: Record<string, string> = {
   materials: "Materials",
   compliance: "Security & compliance",
   scope: "Scope",
-  prototype: "Prototype",
   pack: "Client pack",
   faq: "FAQ",
   certifications: "Certifications",
   agents: "Agents",
-  requests: "Requests",
+  requests: "Ask the Beam team",
+  "use-cases": "Use cases",
+  playbooks: "Playbooks",
   admin: "Admin",
+}
+
+const detailKind: Record<string, ContentKind> = {
+  materials: "material",
+  faq: "faq",
+  tools: "tool",
+  playbooks: "playbook",
+  "use-cases": "use-case",
+}
+
+/** The item's title in the breadcrumb, never its URL slug. */
+function detailTitle(workspaceSlug: string, surface: string | undefined, detail: string) {
+  const slug = decodeURIComponent(detail)
+  if (surface === "certifications") return getCertification(slug)?.name ?? slug
+  const kind = surface ? detailKind[surface] : undefined
+  return (kind && getWorkspaceItem(workspaceSlug, kind, slug)?.title) || slug
 }
 
 export function SiteHeader() {
@@ -66,7 +86,7 @@ export function SiteHeader() {
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbPage className="font-medium">
-                  {decodeURIComponent(detail)}
+                  {detailTitle(workspace.slug, surface, detail)}
                 </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>

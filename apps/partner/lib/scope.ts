@@ -1,7 +1,7 @@
 import type { CatalogUseCase, UseCaseDetail } from "../convex/catalogTypes"
 
 /**
- * Scope answers the question Derya named as the one partners cannot answer:
+ * Scope answers the question GTM named as the one partners cannot answer:
  * "when does Beam get in?" A client describes a process; the partner matches it
  * against what Beam already runs, then records only what is different at this
  * client. The catalog supplies the standard shape, so the partner types four

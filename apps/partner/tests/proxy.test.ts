@@ -59,4 +59,12 @@ test("signed-in named partner entries open their workspace", () => {
     ),
     "https://partner.beam.ai/w/pwc-me/tools",
   )
+  assert.equal(
+    redirectedTo("https://partner.beam.ai/cisco"),
+    "https://partner.beam.ai/w/cisco/home",
+  )
+  assert.equal(
+    redirectedTo("https://partner.beam.ai/netapp"),
+    "https://partner.beam.ai/w/netapp/home",
+  )
 })

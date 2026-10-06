@@ -71,8 +71,8 @@ items:
     printedDate: 01-Jan-2025
     pages: 4
     classification: Internal
-    availability: on-request
-    ndaRequired: false
+    availability: under-nda
+    ndaRequired: true
     summary: ""
     requestLabel: Request the reviewed copy for a named client and deployment.
     reviewer: Partner Success
@@ -253,8 +253,8 @@ items:
     printedDate: 01-Jan-2025
     pages: 8
     classification: Internal
-    availability: on-request
-    ndaRequired: false
+    availability: under-nda
+    ndaRequired: true
     summary: ""
     requestLabel: Request the reviewed copy for a named client and deployment.
     reviewer: Partner Success
@@ -344,8 +344,8 @@ items:
     printedDate: 01-01-2025
     pages: 11
     classification: Internal
-    availability: on-request
-    ndaRequired: false
+    availability: under-nda
+    ndaRequired: true
     summary: ""
     requestLabel: Request the reviewed copy for a named client and deployment.
     reviewer: Partner Success
@@ -376,8 +376,8 @@ items:
     printedDate: 23-Jun-2025
     pages: 5
     classification: Internal
-    availability: on-request
-    ndaRequired: false
+    availability: under-nda
+    ndaRequired: true
     summary: ""
     requestLabel: Request the reviewed copy for a named client and deployment.
     reviewer: Partner Success
@@ -391,8 +391,8 @@ items:
     printedDate: 01-Dev-2024
     pages: 5
     classification: Internal
-    availability: on-request
-    ndaRequired: false
+    availability: under-nda
+    ndaRequired: true
     summary: ""
     requestLabel: Request the reviewed copy for a named client and deployment.
     reviewer: Partner Success
@@ -483,8 +483,8 @@ items:
     printedDate: 22-June-2025
     pages: 8
     classification: Internal
-    availability: on-request
-    ndaRequired: false
+    availability: under-nda
+    ndaRequired: true
     summary: ""
     requestLabel: Request the reviewed copy for a named client and deployment.
     reviewer: Partner Success
@@ -748,8 +748,8 @@ items:
     printedDate: 01-Jan-2025
     pages: 5
     classification: Internal
-    availability: on-request
-    ndaRequired: false
+    availability: under-nda
+    ndaRequired: true
     summary: ""
     requestLabel: Request the reviewed copy for a named client and deployment.
     reviewer: Partner Success
@@ -811,8 +811,8 @@ items:
     printedDate: 22-June-2025
     pages: 7
     classification: Internal
-    availability: on-request
-    ndaRequired: false
+    availability: under-nda
+    ndaRequired: true
     summary: ""
     requestLabel: Request the reviewed copy for a named client and deployment.
     reviewer: Partner Success
@@ -890,8 +890,8 @@ items:
     printedDate: 01-Jan-2025
     pages: 4
     classification: Internal
-    availability: on-request
-    ndaRequired: false
+    availability: under-nda
+    ndaRequired: true
     summary: ""
     requestLabel: Request the reviewed copy for a named client and deployment.
     reviewer: Partner Success
@@ -905,8 +905,8 @@ items:
     printedDate: 01-Jan-2025
     pages: 9
     classification: Internal
-    availability: on-request
-    ndaRequired: false
+    availability: under-nda
+    ndaRequired: true
     summary: ""
     requestLabel: Request the reviewed copy for a named client and deployment.
     reviewer: Partner Success

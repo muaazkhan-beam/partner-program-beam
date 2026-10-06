@@ -9,7 +9,7 @@ export default function ToolsPage() {
     <PageContainer className="space-y-8">
       <PageHeading
         title="Tools"
-        description="Partner-safe catalog. v1 is documentation plus a request path into Beam, not live write access."
+        description="Tools for each stage of a deal, and the ones the Beam team runs for you."
       />
       <ContentGrid kind="tool" empty="No tools are attached to this workspace yet." />
     </PageContainer>

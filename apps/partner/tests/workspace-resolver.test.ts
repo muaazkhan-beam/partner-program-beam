@@ -34,6 +34,20 @@ test("canonical path and approved partner hosts resolve to the same slug", () =>
     }),
     { ok: true, slug: "roboyo", source: "host" },
   )
+  assert.deepEqual(
+    resolveWorkspaceSlug({
+      host: "cisco.partner.beam.ai",
+      pathname: "/home",
+    }),
+    { ok: true, slug: "cisco", source: "host" },
+  )
+  assert.deepEqual(
+    resolveWorkspaceSlug({
+      host: "netapp.partner.beam.ai",
+      pathname: "/home",
+    }),
+    { ok: true, slug: "netapp", source: "host" },
+  )
 })
 
 test("Vercel preview hosts are apex, not unknown", () => {
@@ -88,10 +102,20 @@ test("only reviewed named partner entries resolve outside canonical /w routes", 
     { ok: true, slug: "roland-berger", source: "entry" },
   )
   assert.deepEqual(
+    resolveWorkspaceSlug({ host: "partner.beam.ai", pathname: "/cisco" }),
+    { ok: true, slug: "cisco", source: "entry" },
+  )
+  assert.deepEqual(
+    resolveWorkspaceSlug({ host: "partner.beam.ai", pathname: "/netapp" }),
+    { ok: true, slug: "netapp", source: "entry" },
+  )
+  assert.deepEqual(
     resolveWorkspaceSlug({ host: "partner.beam.ai", pathname: "/unreviewed" }),
     { ok: true, slug: null, source: "apex" },
   )
   assert.equal(slugFromPartnerEntryPath("/pwc/tools"), "pwc-me")
+  assert.equal(slugFromPartnerEntryPath("/cisco/tools"), "cisco")
+  assert.equal(slugFromPartnerEntryPath("/netapp/tools"), "netapp")
   assert.equal(isPartnerLoginEntryPath("/pwc"), true)
   assert.equal(isPartnerLoginEntryPath("/pwc/tools"), false)
   assert.equal(slugFromPartnerEntryPath("/pwcx"), null)
@@ -99,5 +123,13 @@ test("only reviewed named partner entries resolve outside canonical /w routes", 
   assert.equal(
     rewritePartnerEntryPath("/roland-berger/materials", "roland-berger"),
     "/w/roland-berger/materials",
+  )
+  assert.equal(
+    rewritePartnerEntryPath("/cisco/materials", "cisco"),
+    "/w/cisco/materials",
+  )
+  assert.equal(
+    rewritePartnerEntryPath("/netapp/materials", "netapp"),
+    "/w/netapp/materials",
   )
 })

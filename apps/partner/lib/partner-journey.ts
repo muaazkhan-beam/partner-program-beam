@@ -31,14 +31,63 @@ export type JourneyPhase = {
   surface?: { label: string; href: string }
 }
 
-// Progress through the phases is gated; content is not. Every resource stays
-// open to approved partners in every phase.
+// Every phase is open. A partner arrives wherever their client is and uses
+// what helps; ticking deliverables is a personal checklist, never a gate.
 export const journeyPhases: JourneyPhase[] = [
   {
-    slug: "scope",
+    slug: "win",
     number: "01",
+    name: "Win the client",
+    eyebrow: "Phase 1 · Get to a first process",
+    goal: "Explain where Beam fits, check the client is a fit, and agree to scope one process.",
+    exit: "The client has agreed to scope one named process with you and Beam.",
+    deliverables: [
+      {
+        id: "position",
+        title: "Explain where Beam fits",
+        detail:
+          "Run the fit check on Where Beam fits, and use the published answers to place Beam beside the systems the client already runs.",
+      },
+      {
+        id: "fit",
+        title: "Check the client is a fit",
+        detail:
+          "Run the fit check on one candidate process. Walk away early when it fails; a weak first process costs more than no process.",
+      },
+      {
+        id: "introduce",
+        title: "Send an introduction",
+        detail:
+          "Send the client pack with the executive overview and anything else marked Can go to a client.",
+      },
+      {
+        id: "agree-scope",
+        title: "Agree to scope one process",
+        detail:
+          "Get the client to agree a scoping session on one named process, with the person who owns it in the room.",
+      },
+    ],
+    resources: [
+      { kind: "material", slug: "where-beam-fits" },
+      { kind: "material", slug: "beam-partner-executive-overview" },
+      { kind: "material", slug: "ideal-client-profile" },
+      { kind: "material", slug: "joint-motion-one-pager" },
+      { kind: "material", slug: "who-we-are" },
+      { kind: "faq", slug: "why-not-sap" },
+      { kind: "faq", slug: "vs-epm" },
+      { kind: "faq", slug: "not-another-ai-tool" },
+      { kind: "tool", slug: "competitive-battlecards" },
+      { kind: "tool", slug: "call-prep" },
+    ],
+    requestLabel: "Ask Beam to join a client call",
+    requestSupport: "other",
+    surface: { label: "Run the fit check", href: "/materials/where-beam-fits" },
+  },
+  {
+    slug: "scope",
+    number: "02",
     name: "Scope",
-    eyebrow: "Phase 1 · Qualify and agree success",
+    eyebrow: "Phase 2 · Qualify and agree success",
     goal: "Qualify one client process and agree what success means before anything is built.",
     exit: "A named process with an accountable owner, a measured baseline, and success criteria agreed in writing.",
     deliverables: [
@@ -74,7 +123,6 @@ export const journeyPhases: JourneyPhase[] = [
       },
     ],
     resources: [
-      { kind: "material", slug: "where-beam-fits" },
       { kind: "use-case", slug: "invoice-exception-handling" },
       { kind: "use-case", slug: "supplier-communication" },
       { kind: "use-case", slug: "cv-screening" },
@@ -91,9 +139,9 @@ export const journeyPhases: JourneyPhase[] = [
   },
   {
     slug: "build",
-    number: "02",
+    number: "03",
     name: "Build",
-    eyebrow: "Phase 2 · Shadow on test data",
+    eyebrow: "Phase 3 · Shadow on test data",
     goal: "Build the first agent for the scoped process with Beam, safely, on representative test data.",
     exit: "A shadow workflow running on test data, with evals, exception paths, and the human approval points in place.",
     deliverables: [
@@ -135,9 +183,9 @@ export const journeyPhases: JourneyPhase[] = [
   },
   {
     slug: "deploy",
-    number: "03",
+    number: "04",
     name: "Deploy",
-    eyebrow: "Phase 3 · Clear production",
+    eyebrow: "Phase 4 · Clear production",
     goal: "Move the agent from shadow to production with the client's security, access, and brand questions answered.",
     exit: "Reviewed security evidence shared, environments and access agreed, and go-live approved against the success criteria.",
     deliverables: [
@@ -175,12 +223,13 @@ export const journeyPhases: JourneyPhase[] = [
     ],
     requestLabel: "Request a deployment review",
     requestSupport: "deployment-review",
+    surface: { label: "Open security & compliance", href: "/compliance" },
   },
   {
     slug: "monitor",
-    number: "04",
+    number: "05",
     name: "Monitor & test",
-    eyebrow: "Phase 4 · Prove it holds",
+    eyebrow: "Phase 5 · Prove it holds",
     goal: "Show the agent meets the success criteria in production, and keep accuracy from decaying.",
     exit: "The agreed outcome measured against the baseline, with production feedback feeding regression-tested fixes.",
     deliverables: [
@@ -214,9 +263,9 @@ export const journeyPhases: JourneyPhase[] = [
   },
   {
     slug: "deliver",
-    number: "05",
+    number: "06",
     name: "Deliver",
-    eyebrow: "Phase 5 · Hand over and expand",
+    eyebrow: "Phase 6 · Hand over and expand",
     goal: "Hand over a running workflow, report the outcome, and line up the next process along the value chain.",
     exit: "Support ownership agreed, the outcome reported against the baseline, and the next workflow named.",
     deliverables: [
@@ -242,8 +291,6 @@ export const journeyPhases: JourneyPhase[] = [
       { kind: "faq", slug: "support-and-escalation" },
       { kind: "faq", slug: "first-engagement" },
       { kind: "faq", slug: "leadership-pack" },
-      { kind: "material", slug: "joint-motion-one-pager" },
-      { kind: "material", slug: "beam-partner-executive-overview" },
     ],
     requestLabel: "Ask Beam about support coverage",
     requestSupport: "faq-escalation",

@@ -738,6 +738,7 @@ export const KNOWN_SURFACES = [
   "compliance",
   "scope",
   "journey",
+  "pack",
 ] as const
 
 const workspaceConfigurationValidator = v.object({
@@ -958,7 +959,7 @@ export const attachContent = mutation({
     await requireStaffActor(ctx)
     const workspace = await ctx.db.get(args.workspaceId)
     const content = await ctx.db.get(args.contentId)
-    if (!workspace || !content) {
+    if (!workspace || !content || !isVisibleToPartner(content, true)) {
       throw new PartnerAccessError("Workspace or content not found")
     }
     const existing = await ctx.db
@@ -1220,7 +1221,7 @@ export const listAllContentForStaff = query({
   handler: async (ctx) => {
     await requireStaffActor(ctx)
     const items = await ctx.db.query("contentItems").take(200)
-    return items.map(toContentCard)
+    return items.filter((item) => isVisibleToPartner(item, true)).map(toContentCard)
   },
 })
 
@@ -1242,7 +1243,7 @@ export const listContentForStaff = query({
         .take(300),
     ])
     const attached = new Set(grants.map((grant) => String(grant.contentId)))
-    return items.map((item) => ({
+    return items.filter((item) => isVisibleToPartner(item, true)).map((item) => ({
       content: toContentCard(item),
       attached: attached.has(String(item._id)),
     }))

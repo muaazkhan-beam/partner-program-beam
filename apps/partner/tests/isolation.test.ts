@@ -161,6 +161,99 @@ test("neither tenant can read the other's materials, requests, or memberships", 
   )
 })
 
+test("inactive Discovery deck stays hidden across workspaces until its catalog record is retired", async () => {
+  const t = await seeded()
+  const workspaceSlugs = [
+    "partner-demo",
+    "pwc-me",
+    "roboyo",
+    "roland-berger",
+    "grant-thornton-sa",
+    "cisco",
+    "netapp",
+  ]
+  const workspaces = await Promise.all(
+    workspaceSlugs.map((slug) =>
+      t.query(api.partner.resolveWorkspace, { slug }),
+    ),
+  )
+  assert.ok(workspaces.every(Boolean))
+
+  const staleContentId = await t.run(async (ctx) => {
+    const contentId = await ctx.db.insert("contentItems", {
+      kind: "material",
+      slug: "beam-discovery-sales-deck",
+      title: "Beam Discovery | Process Discovery Sales Deck",
+      summary: "Unavailable Share",
+      body: "Unavailable",
+      contentClass: "shared-partner-safe",
+      audience: "client-forwardable",
+      forwardable: true,
+      allowedBrandModes: ["beam-standard", "co-branded"],
+      claimState: "approved",
+      shareUrl: "https://shares.beam.ai/s/6IyI_AIcNUxrSw75",
+      createdAt: now,
+    })
+    for (const workspace of workspaces) {
+      if (!workspace) continue
+      await ctx.db.insert("contentGrants", {
+        contentId,
+        workspaceId: workspace._id,
+        createdAt: now,
+      })
+    }
+    return contentId
+  })
+
+  for (const workspace of workspaces) {
+    assert.ok(workspace)
+    const staff = await memberAs(t, "reviewer@beam.ai", workspace.slug, "staff")
+    const materials = await staff.query(api.partner.listContent, {
+      workspaceId: workspace._id,
+      kind: "material",
+    })
+    assert.ok(!materials.some((item) => item.slug === "beam-discovery-sales-deck"))
+    assert.equal(
+      await staff.query(api.partner.getContent, {
+        workspaceId: workspace._id,
+        kind: "material",
+        slug: "beam-discovery-sales-deck",
+      }),
+      null,
+    )
+  }
+
+  const staff = await memberAs(t, "reviewer@beam.ai", "roland-berger", "staff")
+  const catalogForStaff = await staff.query(api.partner.listAllContentForStaff, {})
+  assert.ok(!catalogForStaff.some((item) => item.slug === "beam-discovery-sales-deck"))
+  const workspaceContentForStaff = await staff.query(api.partner.listContentForStaff, {
+    workspaceId: workspaces[3]!._id,
+  })
+  assert.ok(
+    !workspaceContentForStaff.some(
+      (entry) => entry.content.slug === "beam-discovery-sales-deck",
+    ),
+  )
+  await assert.rejects(
+    staff.mutation(api.partner.attachContent, {
+      workspaceId: workspaces[0]!._id,
+      contentId: staleContentId,
+    }),
+    /Workspace or content not found/,
+  )
+
+  await t.mutation(internal.seed.seedFromCatalog, { now: now + 1 })
+  const retired = await t.run(async (ctx) =>
+    ctx.db
+      .query("contentItems")
+      .withIndex("by_kind_and_slug", (q) =>
+        q.eq("kind", "material").eq("slug", "beam-discovery-sales-deck"),
+      )
+      .unique(),
+  )
+  assert.equal(retired, null)
+})
+
 test("an invited user only sees their workspace and unknown email fails closed", async () => {
   const t = await seeded()
   const pwcWorkspace = await t.query(api.partner.resolveWorkspace, {
@@ -367,10 +460,10 @@ test("restricted deployment FAQ returns request-Beam instead of an unreviewed cl
   assert.doesNotMatch(faq?.body ?? "", /on-prem/i)
 })
 
-test("preview seed loads the demo and reviewed partner workspaces without staff auth", async () => {
+test("preview seed loads the demo and catalogued partner workspaces without staff auth", async () => {
   const t = convexTest(schema, convexModules)
   const result = await t.mutation(internal.seed.seedPreview, {})
-  assert.equal(result.workspaceCount, 5)
+  assert.equal(result.workspaceCount, 7)
   assert.ok(result.contentCount > 0)
   const demo = await t.query(api.partner.resolveWorkspace, {
     slug: "partner-demo",
@@ -385,12 +478,113 @@ test("preview seed loads the demo and reviewed partner workspaces without staff 
   const grantThornton = await t.query(api.partner.resolveWorkspace, {
     slug: "grant-thornton-sa",
   })
+  const cisco = await t.query(api.partner.resolveWorkspace, { slug: "cisco" })
+  const netapp = await t.query(api.partner.resolveWorkspace, { slug: "netapp" })
   assert.equal(demo?.slug, "partner-demo")
   assert.equal(pwc?.slug, "pwc-me")
   assert.equal(roboyo?.slug, "roboyo")
   assert.equal(rolandBerger?.slug, "roland-berger")
   assert.equal(grantThornton?.slug, "grant-thornton-sa")
   assert.deepEqual(grantThornton?.allowedEmailDomains, ["sa.gt.com"])
+  assert.equal(cisco?.slug, "cisco")
+  assert.equal(netapp?.slug, "netapp")
+  assert.deepEqual(cisco?.allowedEmailDomains, ["cisco.com"])
+  assert.deepEqual(netapp?.allowedEmailDomains, ["netapp.com"])
+  for (const workspace of [cisco, netapp]) {
+    assert.ok(workspace)
+    assert.equal(workspace.brandMode, "beam-standard")
+    assert.equal(workspace.brandHeader, "Beam Partner")
+    assert.deepEqual(workspace.enabledSurfaces, [
+      "home",
+      "tools",
+      "materials",
+      "faq",
+      "requests",
+    ])
+  }
+  const ciscoStaff = await memberAs(t, "reviewer@beam.ai", "cisco", "staff")
+  const netappStaff = await memberAs(t, "reviewer@beam.ai", "netapp", "staff")
+  const ciscoMaterials = await ciscoStaff.query(api.partner.listContent, {
+    workspaceId: cisco!._id,
+    kind: "material",
+  })
+  const netappMaterials = await netappStaff.query(api.partner.listContent, {
+    workspaceId: netapp!._id,
+    kind: "material",
+  })
+  for (const materials of [ciscoMaterials, netappMaterials]) {
+    assert.ok(materials.length > 0)
+    assert.ok(
+      materials.every((material) => material.contentClass === "shared-partner-safe"),
+    )
+    assert.ok(
+      materials.every((material) => material.slug !== "shared-services-packaging"),
+    )
+    assert.ok(
+      materials.every((material) => material.slug !== "beam-discovery-sales-deck"),
+    )
+  }
+  const ciscoTools = await ciscoStaff.query(api.partner.listContent, {
+    workspaceId: cisco!._id,
+    kind: "tool",
+  })
+  const netappTools = await netappStaff.query(api.partner.listContent, {
+    workspaceId: netapp!._id,
+    kind: "tool",
+  })
+  for (const items of [ciscoTools, netappTools]) {
+    assert.ok(
+      items.every((item) => item.contentClass === "shared-partner-safe"),
+    )
+    assert.ok(items.every((item) => !item.href?.startsWith("https://core.beam.ai/")))
+    assert.ok(
+      items.every(
+        (item) =>
+          ![
+            "partner-cli",
+            "partner-faq",
+            "call-prep",
+            "operating-diagnostic",
+            "proof-pack",
+            "one-workflow-playbook",
+            "beam-interfaces",
+            "success-criteria",
+          ].includes(item.slug),
+      ),
+    )
+  }
+  const ciscoFaq = await ciscoStaff.query(api.partner.listContent, {
+    workspaceId: cisco!._id,
+    kind: "faq",
+  })
+  const netappFaq = await netappStaff.query(api.partner.listContent, {
+    workspaceId: netapp!._id,
+    kind: "faq",
+  })
+  for (const items of [ciscoFaq, netappFaq]) {
+    assert.ok(
+      items.every(
+        (item) =>
+          !["partner-vs-beam", "brand-shapes", "how-we-make-money"].includes(
+            item.slug,
+          ),
+      ),
+    )
+  }
+  assert.deepEqual(
+    await ciscoStaff.query(api.partner.listContent, {
+      workspaceId: cisco!._id,
+      kind: "playbook",
+    }),
+    [],
+  )
+  assert.deepEqual(
+    await netappStaff.query(api.partner.listContent, {
+      workspaceId: netapp!._id,
+      kind: "playbook",
+    }),
+    [],
+  )
 })
 
 test("use cases are granted per workspace and carry their guardrails", async () => {

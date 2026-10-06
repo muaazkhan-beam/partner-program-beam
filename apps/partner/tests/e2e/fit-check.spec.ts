@@ -53,6 +53,6 @@ test("a shared Not yet result names what to obtain and prefills a shadow-demo re
 test("a single-module process walks away and routes the edge case to Beam", async ({ page }) => {
   await page.goto("/w/partner-demo/materials/where-beam-fits?fit=yyyyyyyn")
   await expect(page.getByRole("heading", { name: "Walk away", exact: true })).toBeVisible()
-  await page.getByRole("link", { name: "Ask Beam about the edge case" }).click()
+  await page.getByRole("link", { name: "Ask the Beam team about the edge case" }).click()
   await expect(page.locator("select").nth(1)).toHaveValue("faq-escalation")
 })

@@ -184,7 +184,7 @@ function VerdictPanel({ answers, code }: { answers: Answers; code: string }) {
       {verdict.kind !== "incomplete" ? (
         <div className="mt-4 flex items-center justify-between gap-3">
           <p className="text-xs leading-5 text-muted-foreground">
-            Two minutes, not a qualification. Scope confirms it.
+            A quick check. Scoping confirms it.
           </p>
           <Button variant="ghost" size="sm" onClick={copyLink}>
             {copied ? <RiCheckLine aria-hidden="true" /> : <RiLinkM aria-hidden="true" />}
@@ -225,76 +225,6 @@ export function FitCheckChecklist() {
         ))}
       </div>
       <VerdictPanel answers={answers} code={code} />
-    </div>
-  )
-}
-
-/** Variant B: one question at a time with a progress rail; the verdict at the end. */
-export function FitCheckStepper() {
-  const { answers, code, setAnswer } = useAnswers()
-  const firstOpen = fitQuestions.findIndex((question) => !answers[question.id])
-  const [index, setIndex] = useState(firstOpen === -1 ? fitQuestions.length : firstOpen)
-  const question = fitQuestions[index]
-  const done = index >= fitQuestions.length
-
-  return (
-    <div className="mx-auto max-w-xl">
-      <ol className="flex items-center gap-1.5" aria-label="Progress">
-        {fitQuestions.map((entry, position) => (
-          <li
-            key={entry.id}
-            aria-current={position === index ? "step" : undefined}
-            className={
-              answers[entry.id]
-                ? "h-1.5 flex-1 rounded-full bg-foreground"
-                : position === index
-                  ? "h-1.5 flex-1 rounded-full bg-foreground/40"
-                  : "h-1.5 flex-1 rounded-full bg-muted"
-            }
-          />
-        ))}
-      </ol>
-      <p className="mt-2 text-xs text-muted-foreground">
-        {done ? "All eight answered" : `Question ${index + 1} of ${fitQuestions.length}`}
-      </p>
-      {done ? (
-        <div className="mt-4">
-          <VerdictPanel answers={answers} code={code} />
-          <Button variant="ghost" size="sm" className="mt-3" onClick={() => setIndex(0)}>
-            Change an answer
-          </Button>
-        </div>
-      ) : question ? (
-        <div className="mt-4 rounded-2xl border bg-card px-5 sm:px-6">
-          <QuestionField
-            key={question.id}
-            question={question}
-            value={answers[question.id]}
-            onChange={(answer) => setAnswer(question.id, answer)}
-            autoFocus
-          />
-          <div className="flex items-center justify-between gap-3 border-t py-4">
-            <Button variant="ghost" size="sm" disabled={index === 0} onClick={() => setIndex(index - 1)}>
-              Back
-            </Button>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setAnswer(question.id, "u")
-                  setIndex(index + 1)
-                }}
-              >
-                Skip, I&apos;m unsure
-              </Button>
-              <Button size="sm" disabled={!answers[question.id]} onClick={() => setIndex(index + 1)}>
-                {index === fitQuestions.length - 1 ? "See the verdict" : "Next"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }

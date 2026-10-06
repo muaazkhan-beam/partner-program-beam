@@ -9,7 +9,7 @@ export default function JourneyPage() {
     <PageContainer className="space-y-8">
       <PageHeading
         title="Partner journey"
-        description="Take one client process from scope to delivery. Complete each phase's deliverables to unlock the next, using the tools, materials, and answers attached to it."
+        description="Six phases for one client process, from the first conversation to handover. Open the one you are in."
       />
       <PartnerJourney />
     </PageContainer>

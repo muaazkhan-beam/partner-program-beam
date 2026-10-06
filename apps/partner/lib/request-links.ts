@@ -20,7 +20,12 @@ export type RequestContext = {
   support?: RequestSupportType
   /** Catalog slugs the request is about, e.g. the documents in a client pack. */
   items?: readonly string[]
+  /** The client's own question(s), so the Beam team sees what was asked. */
+  question?: string
 }
+
+/** Longest question text carried in a link; the rest is cut, not dropped silently. */
+export const MAX_QUESTION_LENGTH = 1500
 
 /** Link into the request form with the partner's context carried along. */
 export function requestHref(
@@ -31,6 +36,17 @@ export function requestHref(
   if (context.about) params.set("about", context.about)
   if (context.support) params.set("support", context.support)
   if (context.items?.length) params.set("items", context.items.join(","))
+  if (context.question?.trim()) {
+    const question = context.question.trim()
+    if (question.length > MAX_QUESTION_LENGTH) {
+      // Cut at a line break so no question is split, and say so.
+      const head = question.slice(0, MAX_QUESTION_LENGTH)
+      const cut = head.lastIndexOf("\n") > 0 ? head.slice(0, head.lastIndexOf("\n")) : head
+      params.set("q", `${cut}\n[Cut to fit the link; paste the rest below.]`)
+    } else {
+      params.set("q", question)
+    }
+  }
   const query = params.toString()
   return workspacePath(workspaceSlug, query ? `/requests?${query}` : "/requests")
 }

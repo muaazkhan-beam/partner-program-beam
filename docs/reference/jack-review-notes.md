@@ -2,7 +2,7 @@
 
 Meeting: **Beam Partner Dashboard (Follow-Up)**, 18 September 2026, 37 min.
 Present: Jack Li (Zhichao Li), Asad Raza, Muaaz Khan.
-Recording: <https://fathom.video/calls/826477795>
+Recording: in Fathom (internal).
 
 Asad demoed the branch; Jack gave direction throughout. This is his direction, not a
 summary of the demo.
@@ -149,18 +149,18 @@ currently built.
 > *"My feeling about partner here is it should not be a linear journey… I want to start
 > with some purpose."*
 
-**Different partners arrive with different purposes**, and Jack used two real ones:
+**Different partners arrive with different purposes**, and Jack used two real ones (names left out here):
 
 | Partner | Situation | What they need |
 | --- | --- | --- |
-| **Hudson** | Already has the clients; wants to implement Beam into them. Already paying. | Business logic, compliance steps, references, names — proof it works |
-| **Alloyed** | Wants to win *new* clients selling Beam together. Has a technical team. | Marketing, branding, big names, confidence, "who are we" |
+| **A services partner** | Already has the clients; wants to implement Beam into them. | Business logic, compliance steps, references, names — proof it works |
+| **A selling partner** | Wants to win *new* clients selling Beam together. Has a technical team. | Marketing, branding, big names, confidence, "who are we" |
 
 So a five-step checklist fits neither. Some partners never build an agent themselves; some
 want discovery with us; some do not.
 
-> *"Maybe they don't need to build the agent by themselves. For Hudson, they don't care at
-> all — they just want to know whether it's working. But Alloyed have a tech team, they can
+> *"Maybe they don't need to build the agent by themselves. For [that partner], they don't care at
+> all — they just want to know whether it's working. But [the other partner] have a tech team, they can
 > build something themselves."*
 
 **Start from purpose**, not from step one: *sell with us* · *know us* · *market with us*.

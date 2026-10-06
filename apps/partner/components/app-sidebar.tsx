@@ -86,7 +86,7 @@ const REFERENCE: NavDefinition[] = [
     surface: "materials",
   },
   {
-    title: "Compliance",
+    title: "Security & compliance",
     path: "/compliance",
     icon: RiShieldCheckLine,
     surface: "compliance",
@@ -174,7 +174,10 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                   {workspace.brandHeader}
                 </span>
                 <span className="truncate text-xs text-muted-foreground">
-                  Beam Partner
+                  {/* Beam-branded workspaces already say "Beam Partner" above. */}
+                  {workspace.brandHeader === "Beam Partner"
+                    ? workspace.displayName
+                    : "Beam Partner"}
                 </span>
               </span>
             </SidebarMenuButton>
@@ -210,13 +213,13 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
-                tooltip="Ask Beam for help on a deal"
+                tooltip="Get Beam's help on a deal"
                 isActive={isActive(requestsUrl)}
                 className="justify-center border bg-sidebar-accent/60 font-medium"
                 render={<Link href={requestsUrl} />}
               >
                 <RiSendPlaneLine />
-                <span>Request Beam</span>
+                <span>Ask the Beam team</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

@@ -5,6 +5,12 @@ Research for the direction Jack set on 29 September. Written 1 October 2026.
 He asked for research before implementation, twice, and explicitly not for a round of
 colour changes. This is that research, and what it says to build.
 
+> **Correction, 6 October.** Two quotes below (in §3, "I want to configure something…",
+> and in §6, "Nobody cares about BeamShare") are not in the 29 September transcript we hold;
+> treat them as paraphrase until checked against the recording. §4 is corrected: Jack asked
+> for a polished PDF, in Beam's style or the partner's own, with the partner's style taken
+> from an uploaded branding asset or PPTX. PPTX output is an editable extra, not his ask.
+
 ---
 
 ## 1. His instinct is the documented pattern
@@ -75,8 +81,8 @@ validation that rejects a posture claim in a summary.
 
 ## 4. Branded output is solved, so we should not invent it
 
-Jack asked for partner-branded output, uploadable branding, and PPTX over PDF because it is
-editable. All standard:
+Jack asked for a polished PDF in Beam's style or the partner's own, with the partner's style
+taken from an uploaded branding asset or PPTX. All standard:
 
 - **SlideSpeak** — upload a PPTX or POTX once; every generated deck inherits master slides,
   theme colours, fonts and logo placement
@@ -85,8 +91,8 @@ editable. All standard:
 - **Deal Room builders** — a branded deck, executive summary and business case assembled from
   approved content in under 30 seconds
 
-His instinct that PPTX beats PDF is right for the same reason these tools support it: the
-partner will want to change a line before sending.
+Offering an editable PPTX as well is worth it for the reason these tools support it: the
+partner will want to change a line before sending. But the ask was the PDF.
 
 **Implication:** the workspace needs branding fields — logo, colours, and an uploaded
 template. Worth noting the Phase 1 scope flagged this in September as a cheap decision to

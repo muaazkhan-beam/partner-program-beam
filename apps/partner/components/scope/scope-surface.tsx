@@ -287,7 +287,7 @@ function MatchStep({
                 window.sessionStorage.setItem("beam-scope-heard", heard)
               }
             >
-              Ask Beam if this is covered
+              Ask the Beam team if it is covered
               <RiArrowRightLine className="size-4" aria-hidden="true" />
             </Link>
           </div>
@@ -639,7 +639,7 @@ function BriefAside({
           className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
           href={workspacePath(workspace.slug, "/journey?phase=scope")}
         >
-          Open the Scope phase
+          See all Scope steps
           <RiArrowRightLine className="size-4" aria-hidden="true" />
         </Link>
       </div>

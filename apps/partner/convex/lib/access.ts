@@ -105,6 +105,11 @@ export function isVisibleToPartner(
   item: Doc<"contentItems">,
   actorIsStaff: boolean,
 ) {
+  // Production catalog records can outlive the source catalog until a staff
+  // seed runs. Never show an inactive Share during that interval.
+  if (item.kind === "material" && item.slug === "beam-discovery-sales-deck") {
+    return false
+  }
   if (
     item.claimState === "staff-draft" ||
     item.contentClass === "staff-draft"

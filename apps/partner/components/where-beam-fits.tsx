@@ -3,7 +3,9 @@
 import Link from "next/link"
 import { RiArrowRightLine } from "@remixicon/react"
 
+import { AddToPack } from "@/components/add-to-pack"
 import { FitCheckChecklist } from "@/components/fit-check"
+import { SendBadge } from "@/components/send-badge"
 import { Badge } from "@/components/ui/badge"
 import { useWorkspace } from "@/components/workspace-context"
 import { parseOnePager } from "@/lib/fit-check"
@@ -17,12 +19,9 @@ type OnePager = {
   body: string
   audience: string
   claimState: string
+  forwardable: boolean
   status?: "pending"
   requestBeamLabel?: string
-}
-
-function tagLabel(value: string) {
-  return value ? `${value[0]?.toUpperCase()}${value.slice(1)}` : value
 }
 
 /**
@@ -40,14 +39,12 @@ export function WhereBeamFitsDetail({ item }: { item: OnePager }) {
     <div className="space-y-8">
       <div className="max-w-3xl space-y-4">
         <div className="flex flex-wrap gap-2">
-          <Badge variant="outline">{tagLabel(item.audience)}</Badge>
-          <Badge variant="outline">
-            {item.status === "pending" ? "Pending" : tagLabel(item.claimState)}
-          </Badge>
+          <SendBadge item={item} />
           <Badge variant="outline">One-pager</Badge>
         </div>
         <h2 className="text-3xl font-medium tracking-tight sm:text-4xl">{item.title}</h2>
         <p className="text-base leading-7 text-muted-foreground">{item.summary}</p>
+        <AddToPack kind={item.kind} slug={item.slug} label={item.title} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -85,8 +82,8 @@ export function WhereBeamFitsDetail({ item }: { item: OnePager }) {
             Is this process a fit?
           </h3>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Eight questions about one client process. Every reason in the verdict is a
-            sentence from the approved answers, and the result is a link you can send a colleague.
+            Eight yes or no questions about one client process. Share the result as
+            a link.
           </p>
         </div>
         <FitCheckChecklist />

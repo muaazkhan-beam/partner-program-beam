@@ -2,8 +2,9 @@
 # type. One item per group is the highlight: it leads the group with a full
 # card, and the rest sit under it as supporting items.
 #
-# GROUPS ARE PROVISIONAL. Jack asked for pre-selected packages — know us,
-# sell with us, marketing — confirmed with Derya and GTM. These are a first
+# GROUPS ARE PROVISIONAL. The program review asked for pre-selected packages
+# (know us, sell with us, marketing), to be confirmed with GTM. The Materials
+# page groups by the lifecycle (lib/lifecycle.ts); a group here is a fallback. These are a first
 # cut against the content we actually hold; replace them once she confirms.
 
 items:
@@ -91,20 +92,6 @@ items:
     summary: Executive partner deck from rising client AI demand through discovery, governed production, joint delivery, and account expansion.
     body: Use this deck to introduce the Beam partner motion, align on the discovery-to-production path, and frame how Beam and the partner deliver and expand accounts together.
     shareUrl: https://shares.beam.ai/s/5MJ21Et5Hgb0jQuW
-    contentClass: shared-partner-safe
-    audience: client-forwardable
-    forwardable: true
-    allowedBrandModes: [beam-standard, co-branded]
-    claimState: approved
-    reviewer: Partner Success
-  - slug: beam-discovery-sales-deck
-    kind: material
-    group: Sell with Beam
-    title: Beam Discovery | Process Discovery Sales Deck
-    format: deck
-    summary: Reusable executive sales deck for mapping operational work, ranking AI opportunities, and moving selected agents into production.
-    body: Use this deck to run the process-discovery conversation, compare opportunities consistently, and move the strongest candidate into a governed production path.
-    shareUrl: https://shares.beam.ai/s/6IyI_AIcNUxrSw75
     contentClass: shared-partner-safe
     audience: client-forwardable
     forwardable: true

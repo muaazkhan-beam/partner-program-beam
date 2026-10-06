@@ -9,7 +9,7 @@ export default function Page() {
     <PageContainer className="space-y-8">
       <PageHeading
         title="Client pack"
-        description="What you are putting together for one client. Add as you go, then send it."
+        description="What you are putting together for a client. Add as you go, then send it as one PDF."
       />
       <PackPage />
     </PageContainer>
