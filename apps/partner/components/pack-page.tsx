@@ -13,27 +13,33 @@ import {
 } from "@remixicon/react"
 
 import { AddToPack } from "@/components/add-to-pack"
+import { useHoldOptions } from "@/components/claim-state"
 import { usePackContents } from "@/components/pack-tray"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useWorkspace } from "@/components/workspace-context"
+import type { BrandMode } from "@/convex/catalogTypes"
 import { listWorkspaceItems } from "@/lib/catalog/static"
 import { printedLine } from "@/lib/compliance"
 import {
   HOLD_LABEL,
+  type ClientPack,
   PACK_RULE,
   buildPack,
   coverNote,
-  coverPageHtml,
   hasClientContent,
   holdReason,
   packTitle,
   type PackContent,
 } from "@/lib/pack"
 import { hasItem, mergePacks, type PackState } from "@/lib/pack-store"
+import { buildPackDocument } from "@/lib/pack-document"
 import { printDocument } from "@/lib/print-document"
+import { renderPackHtml } from "@/lib/render/pack-html"
+import { toDocDefinition } from "@/lib/render/pack-pdf"
+import { renderPdf, saveFile } from "@/lib/render/pdf-client"
 import { requestHref } from "@/lib/request-links"
 import { workspacePath } from "@/lib/workspace-resolver"
 
@@ -61,8 +67,31 @@ function today() {
   })
 }
 
-function logoUrl() {
-  return typeof window === "undefined" ? undefined : `${window.location.origin}/beam-logo.png`
+function documentFor(pack: ClientPack) {
+  return buildPackDocument({
+    pack,
+    style: pack.partnerContext.brandMode as BrandMode,
+    generatedOn: today(),
+  })
+}
+
+/** The preview is the PDF: same document, same page, same type. */
+function previewHtml(pack: ClientPack) {
+  return renderPackHtml(documentFor(pack))
+}
+
+/**
+ * A real PDF with page numbers and the approval line on every page. If the
+ * PDF engine cannot load, the browser's print dialog gets the same document.
+ */
+async function savePdf(pack: ClientPack) {
+  const document = documentFor(pack)
+  try {
+    const blob = await renderPdf(toDocDefinition(document))
+    saveFile(blob, document.fileName)
+  } catch {
+    printDocument(renderPackHtml(document), document.title)
+  }
 }
 
 /**
@@ -88,6 +117,7 @@ export function PackPage() {
   const [cleared, setCleared] = useState<PackState | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
 
+  const hold = useHoldOptions()
   const items = picked.map(({ item }) => item)
   const base = buildPack({
     workspaceDisplayName: workspace.displayName,
@@ -95,6 +125,7 @@ export function PackPage() {
     clientName: "",
     items,
     documents,
+    hold,
   })
   const ready = hasClientContent(base)
   const previewClient =
@@ -106,13 +137,14 @@ export function PackPage() {
       clientName,
       items,
       documents,
+      hold,
     })
 
   const suggestions = listWorkspaceItems(workspace.slug, "material")
     .map((item) => item as PackContent)
     .filter(
       (item) =>
-        holdReason(item, workspace.brandMode) === null &&
+        holdReason(item, workspace.brandMode, hold) === null &&
         !hasItem(state, item.kind, item.slug)
     )
 
@@ -230,7 +262,7 @@ export function PackPage() {
                         {item.summary}
                       </p>
                     </div>
-                    <AddToPack kind={item.kind} slug={item.slug} label={item.title} />
+                    <AddToPack kind={item.kind} slug={item.slug} label={item.title} item={item} />
                   </li>
                 ))}
               </ul>
@@ -263,13 +295,7 @@ export function PackPage() {
                   selected={client === previewClient}
                   onSelect={() => setSelected(client)}
                   onRemove={() => removeClient(client)}
-                  makePdf={() => {
-                    const pack = packFor(client)
-                    printDocument(
-                      coverPageHtml(pack, { generatedOn: today(), logoUrl: logoUrl() }),
-                      packTitle(pack)
-                    )
-                  }}
+                  makePdf={() => void savePdf(packFor(client))}
                   note={() => coverNote(packFor(client))}
                 />
               ))}
@@ -314,10 +340,7 @@ export function PackPage() {
             title={`Preview of ${packTitle(packFor(previewClient))}`}
             sandbox=""
             className="h-[75vh] w-full rounded-2xl border bg-white"
-            srcDoc={coverPageHtml(packFor(previewClient), {
-              generatedOn: today(),
-              logoUrl: logoUrl(),
-            })}
+            srcDoc={previewHtml(packFor(previewClient))}
           />
         </section>
       ) : null}

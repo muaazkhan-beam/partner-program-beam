@@ -12,9 +12,10 @@ test("the cart collects across pages and sends only what may reach a client", as
   await expect(page.getByRole("link", { name: "Client pack, 1 item" })).toBeVisible()
 
   await page.goto("/w/partner-demo/faq")
-  await page.getByRole("button", { name: /^Add to pack: Why would a client buy Beam instead of SAP/ }).click()
+  // The verb says what will happen: coaching stays as prep, the deck goes out.
+  await page.getByRole("button", { name: /^Save for prep: Why would a client buy Beam instead of SAP/ }).click()
   await page.goto("/w/partner-demo/use-cases")
-  await page.getByRole("button", { name: "Add to pack: Invoice exception handling" }).click()
+  await page.getByRole("button", { name: "Save for prep: Invoice exception handling" }).click()
   await expect(page.getByRole("link", { name: "Client pack, 3 items" })).toBeVisible()
 
   await page.getByRole("link", { name: "Client pack, 3 items" }).click()
@@ -44,12 +45,10 @@ test("the cart collects across pages and sends only what may reach a client", as
   expect(email).toContain("Subject: Beam for Acme Logistics, as discussed")
   expect(email).not.toContain("Invoice exception handling")
 
-  // Save as PDF prints the same document from a hidden frame.
+  // Save as PDF makes a real file named for the client, from the same document as the preview.
+  const download = page.waitForEvent("download")
   await clients.getByRole("listitem").first().getByRole("button", { name: "Save as PDF" }).click()
-  await expect(page.locator('iframe[aria-hidden="true"]').first()).toHaveAttribute(
-    "srcdoc",
-    /Beam for Nordbank/,
-  )
+  expect((await download).suggestedFilename()).toBe("Beam for Nordbank.pdf")
 
   // Clearing can be undone.
   await page.getByRole("button", { name: "Clear pack" }).click()

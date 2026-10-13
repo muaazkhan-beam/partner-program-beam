@@ -1,7 +1,7 @@
 import type { ContentKind } from "../convex/catalogTypes"
 import { decodeAnswers, evaluate, verdictLabel } from "./fit-check"
 import { getWorkspaceItem } from "./catalog/static"
-import { partnerAgents } from "./partner-agents"
+import { AGENT_STATUS_LABEL, partnerAgents } from "./partner-agents"
 import { journeyPhases } from "./partner-journey"
 import { workspacePath } from "./workspace-resolver"
 
@@ -91,7 +91,10 @@ export function describeRequestSubject(
   if (!slug) return null
   if (kind === "agent") {
     const agent = partnerAgents.find((entry) => entry.id === slug)
-    return agent ? { kind, label: `${agent.name} (planned agent)` } : null
+    if (!agent) return null
+    const status =
+      agent.status === "active" ? AGENT_STATUS_LABEL.active : "planned agent"
+    return { kind, label: `${agent.name} (${status})` }
   }
   if (kind === "journey") {
     const phase = journeyPhases.find((entry) => entry.slug === slug)

@@ -117,6 +117,70 @@ function validateUseCases(items) {
   return items
 }
 
+/**
+ * Demo content (catalog/demo/demo.yaml) is written for the demo, not reviewed
+ * by Beam. It may only reach a workspace marked demo, carries no number and
+ * no posture claim, and every item names the internal answer it came from.
+ * The fixed fields are set here, so the YAML cannot loosen them.
+ */
+const DEMO_REVIEWER = "Demo content, not reviewed by Beam"
+const DEMO_POSTURE =
+  /certif|\bISO\b|\bSOC\b|guarantee|complian|accredit|HIPAA|GDPR|audited|auditor|attest|penetration|encrypt|residen|hosted|hosting|data cent|uptime|\bSLA\b|on-prem|sovereign|retain|retention/i
+
+function loadDemo(real) {
+  const parsed = loadYaml(path.join("demo", "demo.yaml"))
+  const fixed = {
+    contentClass: "workspace-only",
+    audience: "client-forwardable",
+    forwardable: true,
+    claimState: "approved",
+    allowedBrandModes: ["beam-standard", "co-branded", "partner-fronted"],
+    reviewer: DEMO_REVIEWER,
+  }
+  const faq = (parsed.faq ?? []).map((item) => ({ ...item, ...fixed }))
+  const useCases = (parsed.useCases ?? []).map((item) => ({ ...item, ...fixed }))
+  const demoWorkspaces = parsed.workspaces ?? []
+  const problems = []
+  const realSlugs = new Set([...real.faq, ...real.useCases].map((item) => item.slug))
+  const seen = new Set()
+  for (const slug of demoWorkspaces) {
+    const workspace = workspaces.find((entry) => entry.slug === slug)
+    if (!workspace) problems.push(`demo.yaml: workspace ${slug} does not exist`)
+    else if (workspace.demo !== true) problems.push(`demo.yaml: workspace ${slug} is not marked demo: true`)
+  }
+  for (const workspace of workspaces) {
+    const granted = [
+      ...(workspace.faqSlugs ?? []),
+      ...(workspace.useCaseSlugs ?? []),
+      ...(workspace.materialSlugs ?? []),
+      ...(workspace.toolSlugs ?? []),
+    ]
+    for (const slug of granted.filter((entry) => entry.startsWith("demo-"))) {
+      problems.push(`${workspace.slug}.yaml grants ${slug}: demo content is granted only by demo.yaml`)
+    }
+  }
+  for (const item of [...faq, ...useCases]) {
+    const at = `demo.yaml → ${item.slug ?? "(missing slug)"}`
+    if (!item.slug?.startsWith("demo-")) problems.push(`${at}: slug must start with demo-`)
+    else if (seen.has(item.slug)) problems.push(`${at}: duplicate slug`)
+    seen.add(item.slug)
+    if (!realSlugs.has(item.sourceSlug)) problems.push(`${at}: sourceSlug ${item.sourceSlug} is not a real answer or use case`)
+    if (!item.group) problems.push(`${at}: needs a group`)
+    if (item.reviewedOn || item.revalidateOn) problems.push(`${at}: demo content is never dated as reviewed`)
+    const text = ["title", "summary", "body", "trigger", "before", "after", "humanInLoop"]
+      .map((field) => item[field] ?? "")
+      .join("\n")
+    if (/\d/.test(text)) problems.push(`${at}: no numbers in demo content`)
+    const posture = text.match(DEMO_POSTURE)
+    if (posture) problems.push(`${at}: posture word "${posture[0]}" is Beam's to state`)
+  }
+  if (problems.length > 0) {
+    console.error("Demo content is not publishable:\n" + problems.map((p) => `  - ${p}`).join("\n"))
+    process.exit(1)
+  }
+  return { workspaces: demoWorkspaces, faq, useCases: validateUseCases(useCases) }
+}
+
 const catalog = {
   workspaces,
   tools: loadItems("tools.yaml"),
@@ -127,11 +191,18 @@ const catalog = {
   compliance: validateCompliance(loadItems("compliance.yaml")),
 }
 
+const demo = loadDemo(catalog)
+
 mkdirSync(outDir, { recursive: true })
 writeFileSync(
   path.join(outDir, "catalog.json"),
   `${JSON.stringify(catalog, null, 2)}\n`
 )
+// Read only by lib/catalog/static.ts, never by convex/seed.ts.
+writeFileSync(
+  path.join(root, "lib", "catalog", "demo.generated.json"),
+  `${JSON.stringify(demo, null, 2)}\n`
+)
 console.log(
-  `Compiled partner catalog: ${workspaces.length} workspaces, ${catalog.tools.length} tools, ${catalog.materials.length} materials, ${catalog.faq.length} faq, ${catalog.playbooks.length} playbooks, ${catalog.useCases.length} use cases, ${catalog.compliance.length} compliance documents`
+  `Compiled partner catalog: ${workspaces.length} workspaces, ${catalog.tools.length} tools, ${catalog.materials.length} materials, ${catalog.faq.length} faq, ${catalog.playbooks.length} playbooks, ${catalog.useCases.length} use cases, ${catalog.compliance.length} compliance documents; demo: ${demo.faq.length} answers and ${demo.useCases.length} use cases for ${demo.workspaces.join(", ")}`
 )

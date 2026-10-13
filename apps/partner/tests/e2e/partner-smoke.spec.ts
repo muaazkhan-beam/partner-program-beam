@@ -104,13 +104,16 @@ test("scoped preview bypass opens every demo partner surface and interaction", a
   const diagnosticLink = page.locator(
     'a[href="https://core.beam.ai/skills/operating-diagnostic"]',
   )
-  // Beam Core needs a Beam login; the button says where it goes.
+  // Beam Core needs a Beam login; the quiet link says where it goes, and the
+  // one button on the row asks Beam to run it.
   await expect(diagnosticLink).toHaveText(/Open in Beam Core/)
+  await expect(page.getByText("Beam runs it for you")).toBeVisible()
+  await expect(page.getByRole("link", { name: "Ask Beam" })).toHaveCount(6)
   await expect(diagnosticLink).toHaveAttribute(
     "href",
     "https://core.beam.ai/skills/operating-diagnostic",
   )
-  await page.getByRole("link", { name: "View details" }).first().click()
+  await page.getByRole("link", { name: "Partner CLI" }).click()
   await expect(
     page.getByRole("heading", { name: "Start with Beam Partner." }),
   ).toBeVisible()
@@ -170,7 +173,7 @@ test("scoped preview bypass opens every demo partner surface and interaction", a
   await expect(
     page.getByText("What makes a strong first workflow?"),
   ).toBeVisible()
-  await page.getByRole("button", { name: "Waiting on Beam", exact: true }).click()
+  await page.getByRole("button", { name: /^Waiting on Beam/ }).click()
   await expect(page.getByText("6 answers")).toBeVisible()
   await page
     .getByRole("button", { name: /^How do we register and protect a partner-sourced opportunity/ })
@@ -183,7 +186,7 @@ test("scoped preview bypass opens every demo partner surface and interaction", a
   await expect(
     page.locator('a[href*="/requests?about=faq%3Adeal-registration"]'),
   ).toBeVisible()
-  await page.getByRole("button", { name: "All", exact: true }).click()
+  await page.getByRole("button", { name: /^All \d+$/ }).click()
   await ask.fill("accuracy")
   await page
     .getByRole("button", { name: /^How do you keep accuracy from decaying/ })

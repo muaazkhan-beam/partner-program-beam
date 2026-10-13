@@ -165,6 +165,28 @@ test("the hold rule checks restriction, review, forwarding, brand and link, in t
   for (const reason of Object.keys(HOLD_LABEL)) assert.ok(HOLD_LABEL[reason as keyof typeof HOLD_LABEL])
 })
 
+test("an advisory client gets no sales material; nothing else changes", () => {
+  const overview = item("material", "beam-partner-executive-overview")
+  assert.equal(overview.group, "Sell with Beam")
+  assert.equal(holdReason(overview, "beam-standard"), null)
+  assert.equal(holdReason(overview, "beam-standard", { engagement: "build" }), null)
+  assert.equal(holdReason(overview, "beam-standard", { engagement: "advisory" }), "engagement")
+  assert.equal(HOLD_LABEL.engagement, "Left out for an advisory client")
+  // The rule only removes: an answer outside the sales groups still goes.
+  assert.equal(holdReason(clientAnswer, "beam-standard", { engagement: "advisory" }), null)
+})
+
+test("demo content can be sent only from a demo workspace", () => {
+  const demo: PackContent = { ...clientAnswer, slug: "demo-fixture-answer" }
+  assert.equal(holdReason(demo, "beam-standard"), "demo")
+  assert.equal(holdReason(demo, "beam-standard", { demoWorkspace: true }), null)
+  // Being demo content never lifts another hold.
+  assert.equal(
+    holdReason({ ...demo, claimState: "restricted" }, "beam-standard", { demoWorkspace: true }),
+    "restricted"
+  )
+})
+
 test("the PDF is escaped, branded, and prints only approved text and printed numbers", () => {
   const documents = docs("access-control-policy", "gdpr-manual", "backup-policy-procedure")
   const answer = clientAnswer

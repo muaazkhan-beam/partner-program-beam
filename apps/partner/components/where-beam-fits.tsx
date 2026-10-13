@@ -44,7 +44,7 @@ export function WhereBeamFitsDetail({ item }: { item: OnePager }) {
         </div>
         <h2 className="text-3xl font-medium tracking-tight sm:text-4xl">{item.title}</h2>
         <p className="text-base leading-7 text-muted-foreground">{item.summary}</p>
-        <AddToPack kind={item.kind} slug={item.slug} label={item.title} />
+        <AddToPack kind={item.kind} slug={item.slug} label={item.title} item={item} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

@@ -62,7 +62,7 @@ export function SiteHeader() {
   const title = titles[surface ?? "home"] ?? "Beam Partner"
 
   return (
-    <header className="sticky top-0 z-40 flex h-(--header-height) shrink-0 items-center border-b bg-background/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 flex h-(--header-height) shrink-0 items-center border-b bg-background">
       <div className="flex w-full items-center gap-2 px-4 sm:px-5 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator

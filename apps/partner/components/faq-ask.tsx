@@ -1,16 +1,17 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import {
   RiArrowRightLine,
   RiCheckLine,
   RiShieldCheckLine,
-  RiSparkling2Line,
   RiStackLine,
+  RiDownload2Line,
 } from "@remixicon/react"
 
 import { AddToPack } from "@/components/add-to-pack"
+import { useHoldOptions } from "@/components/claim-state"
 import { usePackState } from "@/components/pack-tray"
 import { SendBadge } from "@/components/send-badge"
 import { Badge } from "@/components/ui/badge"
@@ -18,15 +19,18 @@ import { Button } from "@/components/ui/button"
 import { useWorkspace } from "@/components/workspace-context"
 import {
   answerQuestion,
-  splitEmail,
+  splitEmailWithRefs,
   type AskResult,
   type AskUseCase,
 } from "@/lib/ask"
-import { FAQ_OPENERS, HOME_OPENERS } from "@/lib/ask-openers"
+import { routesToBeam } from "@/lib/answer-sheet"
+import { answerQuestions, filledQuestionnaire, newThread, type Intake } from "@/lib/desk/intake"
+import { saveFile } from "@/lib/render/pdf-client"
+import { FAQ_OPENERS, HOME_OPENERS, type Opener } from "@/lib/ask-openers"
 import { listWorkspaceCompliance, listWorkspaceItems } from "@/lib/catalog/static"
 import { printedLine } from "@/lib/compliance"
 import { routeReasonText, type AskCandidate } from "@/lib/faq-answer"
-import { HOLD_LABEL, holdReason, type PackContent } from "@/lib/pack"
+import { HOLD_LABEL, holdReason, type HoldOptions, type PackContent } from "@/lib/pack"
 import { hasItem } from "@/lib/pack-store"
 import { requestHref } from "@/lib/request-links"
 import { workspacePath } from "@/lib/workspace-resolver"
@@ -74,47 +78,67 @@ export function FaqAsk({
   query,
   onQueryChange,
   variant = "faq",
+  openers: givenOpeners,
+  note,
+  extra,
+  afterResults,
+  labelHidden = false,
+  questionnaire = null,
 }: {
   items: AskCandidate[]
   query: string
   onQueryChange: (value: string) => void
   /** "home" frames it as the way in; "faq" as the way through the answers. */
   variant?: "home" | "faq"
+  /** Openers for the client in focus; otherwise the defaults for the page. */
+  openers?: readonly Opener[]
+  /** The line under the box. */
+  note?: ReactNode
+  /** Under the box: the file drop on the desk. */
+  extra?: ReactNode
+  /** After an answer sheet: filing the questions under a client. */
+  afterResults?: (questionCount: number) => ReactNode
+  /** When the page heading already asks the question, the label is for screen readers. */
+  labelHidden?: boolean
+  /** A dropped questionnaire: the sheet offers the client's file back, filled. */
+  questionnaire?: Intake | null
 }) {
   const settled = useSettled(query)
   const sources = useAskSources()
   const faq = items as AskItem[]
   // A pasted email's other lines ("Our client is a Saudi government entity")
   // travel as context: they can only make an answer more cautious.
-  const email = useMemo(() => splitEmail(settled), [settled])
+  // A dropped questionnaire is answered row by row in the client's own
+  // numbering; anything typed or pasted is split into its questions.
+  const email = useMemo(
+    () => (questionnaire ? { questions: questionnaire.questions, context: "" } : splitEmailWithRefs(settled)),
+    [settled, questionnaire]
+  )
   const results = useMemo(
     () =>
       email.questions.map((question) =>
         answerQuestion(
-          question,
+          question.text,
           { faq, documents: sources.documents, useCases: sources.useCases },
           email.context
         )
       ),
     [email, faq, sources]
   )
-  const openers = variant === "home" ? HOME_OPENERS : FAQ_OPENERS
+  const refs = email.questions.map((question) => question.ref)
+  const openers = givenOpeners ?? (variant === "home" ? HOME_OPENERS : FAQ_OPENERS)
   const typing = query !== settled
 
   return (
-    <section className="mx-auto w-full max-w-4xl space-y-4" aria-label="Ask">
+    <section className="w-full space-y-4" aria-label="Ask">
       <form
         onSubmit={(event) => event.preventDefault()}
         className="rounded-2xl border bg-card p-4 sm:p-5"
       >
-        <label
-          htmlFor="faq-ask"
-          className="flex items-center gap-2 text-sm font-medium"
-        >
-          <RiSparkling2Line className="size-4 text-primary" aria-hidden="true" />
+        <label htmlFor="faq-ask" className={labelHidden ? "sr-only" : "text-sm font-medium"}>
           {variant === "home" ? "What does your client need?" : "Ask a question"}
         </label>
-        <div className="mt-3 flex items-start gap-2">
+        <div className={labelHidden ? "flex items-start gap-2" : "mt-3 flex items-start gap-2"}>
           <textarea
             id="faq-ask"
             rows={query.includes("\n") ? 5 : 2}
@@ -146,15 +170,19 @@ export function FaqAsk({
             </button>
           ))}
         </div>
+        {extra ? <div className="mt-3">{extra}</div> : null}
         <p className="mt-3 text-xs text-muted-foreground">
-          Answers come only from what Beam has reviewed. Anything else goes to
-          the Beam team with your question.
+          {note ??
+            "Answers come only from what Beam has reviewed. Anything else goes to the Beam team with your question."}
         </p>
       </form>
 
       <div aria-live="polite" aria-busy={typing}>
         {results.length === 1 ? <SingleAnswer result={results[0]!} /> : null}
-        {results.length > 1 ? <AnswerSheet results={results} /> : null}
+        {results.length > 1 ? (
+          <AnswerSheet results={results} refs={refs} questionnaire={questionnaire} faq={faq} />
+        ) : null}
+        {results.length > 1 && afterResults ? <div className="mt-3">{afterResults(results.length)}</div> : null}
       </div>
     </section>
   )
@@ -196,7 +224,7 @@ function SingleAnswer({ result }: { result: AskResult }) {
         <article className="space-y-3 rounded-2xl border bg-card p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <SendBadge item={faq.answer as AskItem} />
-            <AddToPack kind="faq" slug={faq.answer.slug} label={faq.answer.title} />
+            <AddToPack kind="faq" slug={faq.answer.slug} label={faq.answer.title} item={faq.answer as AskItem} />
           </div>
           <h3 className="text-lg font-medium tracking-tight">{faq.answer.title}</h3>
           <p className="text-sm leading-7 whitespace-pre-wrap">{faq.answer.body}</p>
@@ -376,7 +404,7 @@ function UseCaseCard({ result }: { result: AskResult }) {
               </Link>
               <span className="flex shrink-0 flex-col items-end gap-1.5">
                 <SendBadge item={useCase as unknown as AskItem} />
-                <AddToPack kind="use-case" slug={useCase.slug} label={useCase.title} />
+                <AddToPack kind="use-case" slug={useCase.slug} label={useCase.title} item={useCase as unknown as AskItem} />
               </span>
             </li>
           ))}
@@ -393,10 +421,13 @@ function UseCaseCard({ result }: { result: AskResult }) {
 }
 
 /** What a question in a pasted email resolves to, in one line, in the same order of trust. */
-function sheetRow(result: AskResult, brandMode: string) {
+function sheetRow(result: AskResult, brandMode: string, hold: HoldOptions = {}) {
   const { faq } = result
-  if (faq.kind === "route-to-beam" && faq.reason === "restricted") {
-    return { kind: "beam" as const, label: HOLD_LABEL.restricted, detail: faq.answer.title }
+  // A sensitive topic goes to Beam whatever else matched, including when the
+  // only catalog answer for it is unpublished: policies on the same words
+  // must never stand in for a commercial or contract answer.
+  if (routesToBeam(result)) {
+    return { kind: "beam" as const, label: HOLD_LABEL.restricted, detail: faq.kind === "route-to-beam" ? faq.answer.title : "" }
   }
   if (result.beamOnly) {
     return { kind: "beam" as const, label: "Comes from the Beam team", detail: "Not in the portal" }
@@ -412,7 +443,7 @@ function sheetRow(result: AskResult, brandMode: string) {
     return { kind: "use-cases" as const, useCases: result.useCases }
   }
   if (faq.kind === "answer") {
-    const sendable = holdReason(faq.answer as AskItem, brandMode) === null
+    const sendable = holdReason(faq.answer as AskItem, brandMode, hold) === null
     return { kind: "answer" as const, answer: faq.answer, sendable }
   }
   if (result.security && result.documents.length) {
@@ -424,10 +455,42 @@ function sheetRow(result: AskResult, brandMode: string) {
   return { kind: "none" as const }
 }
 
-function AnswerSheet({ results }: { results: AskResult[] }) {
+function AnswerSheet({
+  results,
+  refs,
+  questionnaire,
+  faq,
+}: {
+  results: AskResult[]
+  refs: string[]
+  questionnaire: Intake | null
+  faq: AskItem[]
+}) {
   const workspace = useWorkspace()
   const { state, addItems, addDocuments } = usePackState(workspace.slug)
-  const rows = results.map((result) => ({ result, row: sheetRow(result, workspace.brandMode) }))
+  const hold = useHoldOptions()
+  const sources = useAskSources()
+  // The client's questionnaire back, in their columns, with three added: a
+  // quote, a policy as printed, or the fixed line, through the same rule as
+  // the PDF. Only once the sheet has settled on their questions.
+  const filled = () => {
+    if (!questionnaire || questionnaire.questions.length !== results.length) return null
+    const answered = answerQuestions(questionnaire.questions, "", {
+      sources: { faq: faq as AskCandidate[], documents: sources.documents, useCases: sources.useCases },
+      find: (slug) => faq.find((item) => item.slug === slug) as PackContent | undefined,
+      brandMode: workspace.brandMode,
+      hold,
+    })
+    const thread = newThread(questionnaire, answered, { id: "sheet", workspaceSlug: workspace.slug, now: 0 })
+    return filledQuestionnaire(thread, answered)
+  }
+  function downloadFilled() {
+    const csv = filled()
+    if (!csv || !questionnaire?.questionnaire) return
+    const name = questionnaire.questionnaire.fileName.replace(/\.csv$/i, "")
+    saveFile(new Blob([csv], { type: "text/csv;charset=utf-8" }), `${name} - from Beam.csv`)
+  }
+  const rows = results.map((result) => ({ result, row: sheetRow(result, workspace.brandMode, hold) }))
   const toAdd = rows.flatMap(({ row }) =>
     row.kind === "answer" && row.sendable ? [{ kind: "faq", slug: row.answer.slug }] : []
   )
@@ -470,6 +533,12 @@ function AnswerSheet({ results }: { results: AskResult[] }) {
                 : `Add ${addable} ${addable === 1 ? "item" : "items"} to the pack`}
             </Button>
           ) : null}
+          {questionnaire?.questionnaire?.rows ? (
+            <Button size="sm" variant="outline" onClick={downloadFilled}>
+              <RiDownload2Line aria-hidden="true" />
+              Download the filled questionnaire
+            </Button>
+          ) : null}
           {forBeam.length > 0 ? (
             <Button
               size="sm"
@@ -485,7 +554,7 @@ function AnswerSheet({ results }: { results: AskResult[] }) {
         {rows.map(({ result, row }, index) => (
           <li key={`${index}:${result.question}`} className="grid gap-2 px-5 py-4 sm:grid-cols-[1fr_1fr] sm:gap-6">
             <p className="text-sm">
-              <span className="mr-2 font-mono text-xs text-muted-foreground">{index + 1}</span>
+              <span className="mr-2 text-xs tabular-nums text-muted-foreground">{refs[index] ?? index + 1}</span>
               {result.question}
             </p>
             <div className="text-sm">

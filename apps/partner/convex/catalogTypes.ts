@@ -109,6 +109,13 @@ export type CatalogWorkspace = {
   homeDescription: string
   supportOwner: string
   allowedEmailDomains: string[]
+  /**
+   * Static catalog only: the demo workspace. Demo content may be sent from
+   * here and nowhere else. Convex never reads it.
+   */
+  demo?: boolean
+  /** Static catalog only: output styles offered beyond the brand mode. */
+  allowedOutputStyles?: BrandMode[]
   enabledSurfaces: string[]
   tracks: Array<{
     id: string

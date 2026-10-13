@@ -16,7 +16,14 @@ export type PackState = {
   clients: string[]
   documentSlugs: string[]
   items: PackItem[]
+  /**
+   * The client's own questions, in their numbering, when the pack answers an
+   * email or questionnaire: the reply sheet prints them back in that order.
+   */
+  questions?: PackQuestion[]
 }
+
+export type PackQuestion = { ref: string; text: string; threadId?: string }
 
 export const emptyPack: PackState = {
   clients: [],
@@ -26,8 +33,13 @@ export const emptyPack: PackState = {
 
 const MAX_CLIENT_NAME = 80
 
-export function packStorageKey(workspaceSlug: string) {
-  return `beam-partner-pack:${workspaceSlug}`
+/**
+ * Each client has a pack. Without a client the pack is the workspace's
+ * unassigned one, the key every pack used before clients existed, so older
+ * packs keep loading as they were.
+ */
+export function packStorageKey(workspaceSlug: string, clientId?: string) {
+  return clientId ? `beam-partner-pack:${workspaceSlug}:${clientId}` : `beam-partner-pack:${workspaceSlug}`
 }
 
 export function cleanClientName(value: string) {
@@ -71,6 +83,17 @@ function normalize(value: Partial<PackState> & { clientName?: unknown }): PackSt
           )
           .map((item) => ({ kind: item.kind, slug: item.slug }))
       : [],
+    ...(Array.isArray(value.questions)
+      ? {
+          questions: value.questions
+            .filter((question) => typeof question?.ref === "string" && typeof question?.text === "string")
+            .map((question) => ({
+              ref: question.ref,
+              text: question.text,
+              ...(typeof question.threadId === "string" ? { threadId: question.threadId } : {}),
+            })),
+        }
+      : {}),
   }
 }
 
@@ -79,11 +102,24 @@ function normalize(value: Partial<PackState> & { clientName?: unknown }): PackSt
  * the clear is kept rather than thrown away.
  */
 export function mergePacks(restored: PackState, current: PackState): PackState {
+  const questions = [...(restored.questions ?? []), ...(current.questions ?? [])]
   return normalize({
     clients: [...restored.clients, ...current.clients],
     documentSlugs: [...restored.documentSlugs, ...current.documentSlugs],
     items: [...restored.items, ...current.items],
+    ...(questions.length
+      ? {
+          questions: questions.filter(
+            (question, index) => questions.findIndex((entry) => entry.ref === question.ref && entry.text === question.text) === index
+          ),
+        }
+      : {}),
   })
+}
+
+/** Adds a client's numbered questions, keeping the first copy of each. */
+export function addQuestions(state: PackState, questions: readonly PackQuestion[]): PackState {
+  return mergePacks(state, { ...emptyPack, questions: [...questions] })
 }
 
 export function hasItem(state: PackState, kind: string, slug: string) {
@@ -149,16 +185,16 @@ export function parsePackState(raw: string): PackState {
   return normalize(parseStore<Partial<PackState>>(raw, {}))
 }
 
-export function readPackRaw(workspaceSlug: string) {
-  return readStore(packStorageKey(workspaceSlug), "{}")
+export function readPackRaw(workspaceSlug: string, clientId?: string) {
+  return readStore(packStorageKey(workspaceSlug, clientId), "{}")
 }
 
-export function readPackState(workspaceSlug: string): PackState {
-  return parsePackState(readPackRaw(workspaceSlug))
+export function readPackState(workspaceSlug: string, clientId?: string): PackState {
+  return parsePackState(readPackRaw(workspaceSlug, clientId))
 }
 
-export function writePackState(workspaceSlug: string, state: PackState) {
-  writeStore(packStorageKey(workspaceSlug), normalize(state))
+export function writePackState(workspaceSlug: string, state: PackState, clientId?: string) {
+  writeStore(packStorageKey(workspaceSlug, clientId), normalize(state))
 }
 
 export { subscribeToStore as subscribeToPack }

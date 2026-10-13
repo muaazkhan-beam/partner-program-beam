@@ -4,6 +4,13 @@ displayName: Partner Demo
 primaryHostname: demo.partner.beam.ai
 canonicalPath: /w/partner-demo
 brandMode: beam-standard
+# The demo workspace: demo content (catalog/demo) may be sent from here and
+# nowhere else, and the partner's own style is offered here for review.
+demo: true
+allowedOutputStyles:
+  - beam-standard
+  - co-branded
+  - partner-fronted
 brandHeader: Beam Partner
 homeTitle: Future of AI-Native Companies
 homeHeadline: Take one client process from first conversation to handover
@@ -54,10 +61,8 @@ steps:
     detail: Define the first production outcome, evaluation plan, and expansion path with Beam.
 toolSlugs:
   - partner-cli
-  - partner-faq
   - competitive-battlecards
   - call-prep
-  - materials-library
   - iris
   - operating-diagnostic
   - discovery

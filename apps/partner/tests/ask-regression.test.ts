@@ -5,6 +5,16 @@ import test from "node:test"
 import { answerQuestion, type AskUseCase } from "../lib/ask"
 import { listWorkspaceCompliance, listWorkspaceItems, listWorkspaces } from "../lib/catalog/static"
 import type { AskCandidate } from "../lib/faq-answer"
+import demoCatalog from "../lib/catalog/demo.generated.json"
+
+/**
+ * The demo workspace also holds client versions of real answers. A demo
+ * answer is right wherever the answer it was written from is right.
+ */
+const demoSource = new Map(
+  [...demoCatalog.faq, ...demoCatalog.useCases].map((item) => [item.slug, item.sourceSlug])
+)
+const sourceOf = (slug: string) => demoSource.get(slug) ?? slug
 
 /**
  * 256 realistic partner and client questions from the red-team review of the
@@ -67,7 +77,7 @@ for (const workspace of workspaces) {
       for (const [question, accepted] of questions.everyday) {
         const { faq } = answerQuestion(question, source)
         if (faq.kind === "answer") {
-          assert.ok(accepted.includes(faq.answer.slug), `${workspace}/${mode}: ${question} -> ${faq.answer.slug}`)
+          assert.ok(accepted.includes(sourceOf(faq.answer.slug)), `${workspace}/${mode}: ${question} -> ${faq.answer.slug}`)
         }
       }
     })

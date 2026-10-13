@@ -24,6 +24,7 @@ import {
   writeStore,
 } from "@/lib/browser-store";
 import { listWorkspaceItems } from "@/lib/catalog/static";
+import { isDemoContent } from "@/lib/pack";
 import { requestHref } from "@/lib/request-links";
 import {
   briefText,
@@ -54,7 +55,7 @@ function subscribeToLocation(listener: () => void) {
 function useUseCases(workspaceSlug: string): CatalogUseCase[] {
   return listWorkspaceItems(workspaceSlug, "use-case").filter(
     (item): item is CatalogUseCase =>
-      "useCase" in item && Boolean(item.useCase),
+      "useCase" in item && Boolean(item.useCase) && !isDemoContent(item),
   ) as unknown as CatalogUseCase[];
 }
 

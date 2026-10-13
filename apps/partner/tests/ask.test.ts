@@ -1,9 +1,17 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { CORE_SECURITY_SET, answerQuestion, matchDocuments, splitQuestions, type AskUseCase } from "../lib/ask"
+import {
+  CORE_SECURITY_SET,
+  answerQuestion,
+  matchDocuments,
+  splitEmailWithRefs,
+  splitQuestions,
+  type AskUseCase,
+} from "../lib/ask"
 import { listWorkspaceCompliance, listWorkspaceItems } from "../lib/catalog/static"
-import { FAQ_OPENERS, HOME_OPENERS } from "../lib/ask-openers"
+import { FAQ_OPENERS, HOME_OPENERS, PHASE_OPENERS } from "../lib/ask-openers"
+import demoCatalog from "../lib/catalog/demo.generated.json"
 import { resolveAsk, type AskCandidate } from "../lib/faq-answer"
 
 function sources(workspace: string) {
@@ -19,10 +27,20 @@ function sources(workspace: string) {
 
 const demo = sources("partner-demo")
 
+/** A demo answer counts as the answer it was written from. */
+const demoSource = new Map([...demoCatalog.faq, ...demoCatalog.useCases].map((item) => [item.slug, item.sourceSlug]))
+const sourceOf = (slug: string) => demoSource.get(slug) ?? slug
+
+/** Use cases by the record they were written from: a demo version counts once, as its source. */
+function useCaseSources(slugs: readonly string[]) {
+  const source = new Map(demoCatalog.useCases.map((item) => [item.slug, item.sourceSlug]))
+  return [...new Set(slugs.map((slug) => source.get(slug) ?? slug))]
+}
+
 test("every Home opener lands where a partner needs to go, on the real catalog", () => {
   // The review found all four original openers landed on a wrong or dead-end
   // answer. Each opener now names what it must produce, and is checked here.
-  for (const opener of [...HOME_OPENERS, ...FAQ_OPENERS]) {
+  for (const opener of [...HOME_OPENERS, ...FAQ_OPENERS, ...Object.values(PHASE_OPENERS).flat()]) {
     const result = answerQuestion(opener.text, demo)
     if (opener.expect === "security") {
       assert.ok(result.security, opener.text)
@@ -32,10 +50,10 @@ test("every Home opener lands where a partner needs to go, on the real catalog",
       assert.ok(result.useCases.length > 0, `${opener.text}: use cases`)
     } else if (opener.expect.startsWith("answer:")) {
       assert.equal(result.faq.kind, "answer", opener.text)
-      if (result.faq.kind === "answer") assert.equal(result.faq.answer.slug, opener.expect.slice(7))
+      if (result.faq.kind === "answer") assert.equal(sourceOf(result.faq.answer.slug), opener.expect.slice(7), opener.text)
     } else if (opener.expect.startsWith("beam:")) {
       assert.equal(result.faq.kind, "route-to-beam", opener.text)
-      if (result.faq.kind === "route-to-beam") assert.equal(result.faq.answer.slug, opener.expect.slice(5))
+      if (result.faq.kind === "route-to-beam") assert.equal(sourceOf(result.faq.answer.slug), opener.expect.slice(5), opener.text)
     }
   }
 })
@@ -43,7 +61,7 @@ test("every Home opener lands where a partner needs to go, on the real catalog",
 test("a finance use case question finds the finance use case, not a security answer", () => {
   const result = answerQuestion("Which use case fits a finance client?", demo)
   assert.ok(result.useCase)
-  assert.deepEqual(result.useCases.map((useCase) => useCase.slug), ["invoice-exception-handling"])
+  assert.deepEqual(useCaseSources(result.useCases.map((useCase) => useCase.slug)), ["invoice-exception-handling"])
   assert.notEqual(result.faq.kind === "route-to-beam" ? result.faq.answer.slug : "", "security-review-pack")
 })
 
@@ -100,11 +118,11 @@ test("evidence the library does not hold goes to the Beam team, never to unrelat
 
 test("use case questions find their department, whatever the casing", () => {
   assert.deepEqual(
-    answerQuestion("What could Beam do for an HR team?", demo).useCases.map((useCase) => useCase.slug),
+    useCaseSources(answerQuestion("What could Beam do for an HR team?", demo).useCases.map((useCase) => useCase.slug)),
     ["cv-screening"]
   )
   assert.deepEqual(
-    answerQuestion("Can Beam automate accounts payable?", demo).useCases.map((useCase) => useCase.slug),
+    useCaseSources(answerQuestion("Can Beam automate accounts payable?", demo).useCases.map((useCase) => useCase.slug)),
     ["invoice-exception-handling"]
   )
 })
@@ -173,4 +191,41 @@ test("an email's context makes location questions cautious, and only those", () 
   const encrypted = answerQuestion("Do you encrypt data at rest", demo, context)
   assert.notEqual(encrypted.faq.kind, "route-to-beam")
   assert.ok(encrypted.documents.some((document) => document.slug === "cryptography-policy"))
+})
+
+test("a client's numbered email keeps their numbering, and their sign-off is not a question", () => {
+  const { questions, context } = splitEmailWithRefs(
+    "Hi Mara,\n\nCould you answer these?\n\n1. Is there human approval before an agent acts?\n2. Do you have a business continuity plan? And how often is it tested?\n3. Where will our data be processed\n   and stored?\n\nThanks in advance, could you get back to us by Friday?\n\nBest regards,\nJonah\n\nThis email is confidential and intended solely for the addressee.\n\nOn Mon, 5 Oct 2026, Mara <mara@partner.example> wrote:\n> Happy to help."
+  )
+  assert.deepEqual(questions, [
+    { ref: "1", text: "Is there human approval before an agent acts?" },
+    { ref: "2a", text: "Do you have a business continuity plan?" },
+    { ref: "2b", text: "How often is it tested?" },
+    { ref: "3", text: "Where will our data be processed and stored?" },
+  ])
+  assert.match(context, /get back to us by Friday/)
+  assert.doesNotMatch(context, /confidential|Happy to help/)
+})
+
+test("a forward is read from the client's email, not the forwarder's note", () => {
+  const gmail = splitEmailWithRefs(
+    "Can Beam help with these?\n\n---------- Forwarded message ---------\nFrom: Jonah <jonah@client.example>\nSubject: Review\n\n1. Do you encrypt data at rest?\n2. Is MFA enforced?\n\nThanks"
+  )
+  assert.deepEqual(gmail.questions.map((question) => question.ref), ["1", "2"])
+  const outlook = splitEmailWithRefs(
+    "FYI\n\n________________________________\nFrom: Jonah <jonah@client.example>\nSent: Monday\nSubject: Review\n\na) Do you encrypt data at rest?\nb) Is MFA enforced?"
+  )
+  assert.deepEqual(outlook.questions.map((question) => question.ref), ["a", "b"])
+  const reply = splitEmailWithRefs(
+    "Two more:\n1. Is MFA enforced?\n2. Who reviews access?\n\n________________________________\nFrom: Mara <mara@partner.example>\nSent: Monday\n\n1. An older question?"
+  )
+  assert.deepEqual(reply.questions.map((question) => question.text), ["Is MFA enforced?", "Who reviews access?"])
+})
+
+test("prose emails are numbered in order", () => {
+  const { questions } = splitEmailWithRefs("Can you explain how approvals work? Also where is data stored?")
+  assert.deepEqual(questions, [
+    { ref: "1", text: "Can you explain how approvals work?" },
+    { ref: "2", text: "where is data stored?" },
+  ])
 })

@@ -14,7 +14,7 @@ import {
   WorkspaceProvider,
   type PartnerSession,
 } from "@/components/workspace-context"
-import { getWorkspaceBySlug } from "@/lib/catalog/static"
+import { getWorkspaceBySlug, isDemoWorkspace } from "@/lib/catalog/static"
 import { authClient } from "@/lib/auth-client"
 import { getLoginPath, shouldRedirectPartnerLogin } from "@/lib/auth-redirect"
 
@@ -58,6 +58,9 @@ export function PartnerGate({
       steps: workspace.steps,
       enabledSurfaces: workspace.enabledSurfaces,
       supportOwner: workspace.supportOwner,
+      allowedEmailDomains: workspace.allowedEmailDomains,
+      allowedOutputStyles: workspace.allowedOutputStyles ?? [workspace.brandMode],
+      isDemo: isDemoWorkspace(workspace.slug),
       email: membership.email,
       role: "partner_seller",
       isStaff: membership.email.endsWith("@beam.ai"),
@@ -232,6 +235,10 @@ function PartnerGateInner({
     steps: session.workspace.steps,
     enabledSurfaces: session.workspace.enabledSurfaces,
     supportOwner: session.workspace.supportOwner,
+    allowedEmailDomains: session.workspace.allowedEmailDomains ?? [],
+    // Styles beyond the brand mode and demo content are static-catalog only.
+    allowedOutputStyles: [session.workspace.brandMode],
+    isDemo: false,
     email: session.user.email,
     role: session.membership.role,
     isStaff: session.user.isStaff,

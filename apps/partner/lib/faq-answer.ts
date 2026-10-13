@@ -293,6 +293,18 @@ const CONTRACT =
  * government entity.") and counts only for where the data lives.
  */
 const PLACES_IN_CAPITALS = /\b(US|U\.S\.?|USA|UK|EU|EEA|UAE|KSA|GCC)\b/
+/**
+ * The place names in a piece of text, lower-cased: all that is kept of an
+ * email's context once its questions are stored. They are what makes a later
+ * question about data location cautious, and they name no person.
+ */
+export function placeCues(text: string) {
+  const cues = new Set<string>()
+  for (const match of text.matchAll(new RegExp(PLACES.source, "gi"))) cues.add(match[0].toLowerCase())
+  for (const match of text.matchAll(new RegExp(PLACES_IN_CAPITALS.source, "g"))) cues.add(match[0])
+  return [...cues]
+}
+
 const LOCATED_IN_PLACE =
   /\b(stored|hosted|processed|kept|located|run|runs|deployed|held|based)\s+(in|inside|within|outside|on)\s+(the\s+)?[A-Z]/
 

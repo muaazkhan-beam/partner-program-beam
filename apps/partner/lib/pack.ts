@@ -4,7 +4,9 @@ import type {
   CatalogContent,
   UseCaseDetail,
 } from "../convex/catalogTypes"
-import { PUBLISHED_SHARE_PREFIX } from "./intro-pack"
+
+/** Only a published Beam Share is a link a partner may hand to a client. */
+export const PUBLISHED_SHARE_PREFIX = "https://shares.beam.ai/s/"
 
 /**
  * Anything a partner can pick up: a catalog item, with a use case's structured
@@ -23,16 +25,46 @@ export type PackContent = {
   audience: string
   forwardable: boolean
   allowedBrandModes?: readonly string[]
+  group?: string
   useCase?: UseCaseDetail
 } & Partial<UseCaseDetail>
 
+/**
+ * What the partner does for this client. An advisory firm that audits or
+ * advises the client may not sell to it, so sales material stays out of its
+ * packs. This only ever removes items; independence questions still go to
+ * Beam, and the partner's firm decides its own independence.
+ */
+export type Engagement = "advisory" | "build" | "resell"
+
+/** Catalog groups that are about selling Beam. */
+const SALES_GROUPS = new Set(["Sell with Beam", "Sell"])
+
+/**
+ * Demo content lives in the demo workspace only and was written for the demo,
+ * not reviewed by Beam. Its slugs carry the prefix so the rule survives every
+ * copy of the catalog.
+ */
+export function isDemoContent(item: { slug: string }) {
+  return item.slug.startsWith("demo-")
+}
+
 /** Why a picked item stays with the partner instead of going to the client. */
 export type HoldReason =
+  | "demo"
   | "restricted"
   | "pending"
   | "internal"
   | "brand mode"
+  | "engagement"
   | "no published link"
+
+export type HoldOptions = {
+  /** The client's engagement, when the pack is for a known client. */
+  engagement?: Engagement
+  /** True only in a demo workspace, the one place demo content may be sent. */
+  demoWorkspace?: boolean
+}
 
 /**
  * The one rule for what may reach a client, used by every badge, the pack
@@ -42,7 +74,12 @@ export type HoldReason =
  * fight inside…") is forwardable to a colleague, never printable for a
  * client. Tools and playbooks are for the partner.
  */
-export function holdReason(item: PackContent, brandMode: string): HoldReason | null {
+export function holdReason(
+  item: PackContent,
+  brandMode: string,
+  { engagement, demoWorkspace = false }: HoldOptions = {}
+): HoldReason | null {
+  if (isDemoContent(item) && !demoWorkspace) return "demo"
   if (item.claimState === "restricted") return "restricted"
   // A use case's `pending` means no cited outcome yet, not an unpublished record.
   const unpublished = item.status === "pending" && item.kind !== "use-case"
@@ -52,6 +89,9 @@ export function holdReason(item: PackContent, brandMode: string): HoldReason | n
   if (item.allowedBrandModes && !item.allowedBrandModes.includes(brandMode)) {
     return "brand mode"
   }
+  if (engagement === "advisory" && item.group && SALES_GROUPS.has(item.group)) {
+    return "engagement"
+  }
   if (item.kind === "material" && !item.shareUrl?.startsWith(PUBLISHED_SHARE_PREFIX)) {
     return "no published link"
   }
@@ -59,17 +99,19 @@ export function holdReason(item: PackContent, brandMode: string): HoldReason | n
 }
 
 export const HOLD_LABEL: Record<HoldReason, string> = {
+  demo: "Demo content, demo workspace only",
   restricted: "Only Beam can answer this",
   pending: "Not published yet",
   internal: "For you only",
   "brand mode": "Not cleared for your brand",
+  engagement: "Left out for an advisory client",
   "no published link": "No client link yet",
 }
 
 export const CLIENT_READY_LABEL = "Can go to a client"
 
-export function sendLabel(item: PackContent, brandMode: string) {
-  const reason = holdReason(item, brandMode)
+export function sendLabel(item: PackContent, brandMode: string, options: HoldOptions = {}) {
+  const reason = holdReason(item, brandMode, options)
   return reason ? HOLD_LABEL[reason] : CLIENT_READY_LABEL
 }
 
@@ -99,12 +141,15 @@ export function buildPack({
   clientName,
   items,
   documents,
+  hold = {},
 }: {
   workspaceDisplayName: string
   brandMode: string
   clientName: string
   items: readonly PackContent[]
   documents: readonly CatalogComplianceDocument[]
+  /** The client's engagement, and whether demo content may be sent from here. */
+  hold?: HoldOptions
 }): ClientPack {
   const pack: ClientPack = {
     account: { company: clientName.trim() },
@@ -120,7 +165,7 @@ export function buildPack({
     held: [],
   }
   for (const item of items) {
-    const reason = holdReason(item, brandMode)
+    const reason = holdReason(item, brandMode, hold)
     if (reason) pack.held.push({ item, reason })
     else if (item.kind === "material") pack.decks.push(item)
     else if (item.kind === "use-case") pack.useCases.push(item)

@@ -178,7 +178,7 @@ export function PackSummary() {
       <p className="flex items-center gap-2 text-sm text-muted-foreground" aria-live="polite">
         <RiShoppingBag3Line className="size-4 shrink-0" aria-hidden="true" />
         {count === 0
-          ? "Use Add to pack as you work a client. What can go to the client goes in the PDF; the rest stays as your prep."
+          ? "Add to pack or save for prep as you work a client. What can go to the client goes in the PDF; the rest stays as your prep."
           : `Your client pack has ${count} ${count === 1 ? "item" : "items"}.`}
       </p>
       {count > 0 ? (

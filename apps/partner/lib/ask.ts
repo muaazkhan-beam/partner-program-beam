@@ -31,7 +31,7 @@ const SECURITY_WORDS = new Set([
 ])
 
 const SECURITY_PHRASES =
-  /\b(pen(etration)?[- ]?test\w*|security review|due diligence|data protection|information security|business continuity|disaster recovery|access control|access rights|admin access|who (can|has|have) access|access to (our|the|client) data|data breach|personal data|third[- ]part(y|ies)|vendor risk|background (check|checks|screening)|awareness training|least privilege|code reviews?|change management|in transit|at rest|subject (access )?requests?|record of processing|processing activities|asset inventory|threat intelligence|key management)\b/i
+  /\b(pen(etration)?[- ]?test\w*|security review|due diligence|data protection|information security|business continuity|disaster recovery|access control|access rights|admin access|who (can|has|have) access|access to (our|the|client) data|data breach|personal data|third[- ]part(y|ies)|vendor risk|background (check|checks|screening)|awareness training|least privilege|code reviews?|change management|changes? to (production|live|our)|production (changes?|systems?|environment)|in transit|at rest|subject (access )?requests?|record of processing|processing activities|asset inventory|threat intelligence|key management)\b/i
 
 export function isSecurityQuestion(question: string) {
   if (SECURITY_PHRASES.test(question)) return true
@@ -128,6 +128,7 @@ const DOCUMENT_SYNONYMS: Record<string, string[]> = {
   cis: ["hardening"], threat: ["threat"], intelligence: ["threat"],
   waf: ["network"], ddos: ["network"], byok: ["cryptography"], saml: ["access"],
   devices: ["devices", "byod"], remote: ["teleworking", "mobile"], laptops: ["devices", "mobile"],
+  changes: ["change"], releases: ["change"], deployments: ["change"],
 }
 
 /** Request verbs and filler that name no topic a policy title could match. */
@@ -208,6 +209,13 @@ export function matchDocuments(
   const add = (slug: string) => {
     const document = bySlug.get(slug)
     if (document && !picked.includes(document)) picked.push(document)
+  }
+
+  // A reviewer who names a document ("an information security policy") gets
+  // that document first, even when its title words are common to the library.
+  const lowered = question.toLowerCase()
+  for (const document of documents) {
+    if (lowered.includes(document.title.toLowerCase())) add(document.slug)
   }
 
   if (targets.size > 0) {
@@ -346,4 +354,112 @@ export function splitEmail(text: string) {
 /** The questions alone, for callers that do not need the context. */
 export function splitQuestions(text: string) {
   return splitEmail(text).questions
+}
+
+export type NumberedQuestion = { ref: string; text: string }
+
+const capitalise = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
+
+const MARKER = /^\s*(?:(q?\d+)[.):]|\(?([a-h])[.)]|\(?(i{1,3}|iv|v|vi{1,3}|ix|x)[.)]|([-*•–]))\s+/i
+const SIGN_OFF =
+  /^(thanks|thank you|many thanks|thanks in advance|best|best regards|kind regards|warm regards|regards|cheers|sincerely|br|all the best)\b[\s,.!]*([a-z]+[\s,.!]*)?$/i
+const SIGNATURE_DELIMITER = /^--\s*$/
+const FORWARD_HEADER = /^(from|to|cc|bcc|subject|date|sent|reply-to|mime-version|content-[a-z-]+):\s/i
+const FORWARD_MARKER = /^(-{3,}\s*forwarded message\s*-{3,}|begin forwarded message:)$/i
+const QUOTED_HISTORY = /^(on .+ wrote:|from: .+@.+)$/i
+const SEPARATOR = /^(-{2,}\s*original message\s*-{2,}|_{10,})$/i
+const DISCLAIMER =
+  /\b(confidential|intended (solely )?for the (named )?(addressee|recipient)|if you (have )?received this (e-?mail|message) in error|privileged|disclaimer)\b/i
+
+/**
+ * A client's email, split into their questions in their own numbering. When
+ * two or more items carry list markers, those items are the questions and
+ * everything else is context; otherwise the questions are found as in
+ * `splitEmail` and numbered in order. Reading stops at the sign-off or the
+ * quoted history below it, and a disclaimer is never a question. One list
+ * item asking two things becomes 4a and 4b, so the reply still lines up with
+ * the client's list.
+ */
+export function splitEmailWithRefs(text: string): {
+  questions: NumberedQuestion[]
+  context: string
+} {
+  const lines = text.split(/\r?\n/)
+  const nextIsHeader = (index: number) =>
+    FORWARD_HEADER.test(lines.slice(index + 1).find((line) => line.trim())?.trim() ?? "")
+  let kept: string[] = []
+  let inHeader = false
+  for (const [index, raw] of lines.entries()) {
+    const line = raw.trim()
+    const asked = kept.filter((entry) => MARKER.test(entry) || entry.trim().endsWith("?")).length
+    // A forward starts the client's own email: the forwarder's note above it
+    // is theirs, not the client's, and the header block below it is skipped.
+    // A separator line counts as a forward only when little has been asked
+    // above it; under a list of questions it starts quoted history.
+    if (FORWARD_MARKER.test(line) || (SEPARATOR.test(line) && nextIsHeader(index) && asked < 2)) {
+      kept = []
+      inHeader = true
+      continue
+    }
+    if (inHeader) {
+      if (!line || FORWARD_HEADER.test(line)) continue
+      inHeader = false
+    }
+    if (asked === 0 && FORWARD_HEADER.test(line)) continue
+    if (SIGNATURE_DELIMITER.test(raw) || SEPARATOR.test(line) || QUOTED_HISTORY.test(line)) break
+    if (kept.some((entry) => entry.trim()) && SIGN_OFF.test(line)) break
+    if (line.startsWith(">") || DISCLAIMER.test(line)) continue
+    kept.push(raw)
+  }
+
+  const items: Array<{ ref: string; text: string }> = []
+  const loose: string[] = []
+  let bullets = 0
+  let current: { ref: string; text: string } | null = null
+  for (const raw of kept) {
+    const marker = raw.match(MARKER)
+    const line = raw.replace(MARKER, "").trim()
+    if (marker) {
+      const ref = marker[1] ?? marker[2] ?? marker[3] ?? String(++bullets)
+      current = { ref: ref.replace(/^q/i, "Q"), text: line }
+      items.push(current)
+    } else if (!line) {
+      current = null
+    } else if (current && !/[.?!:]$/.test(current.text)) {
+      // A list item wrapped onto the next line continues it.
+      current.text = `${current.text} ${line}`
+    } else {
+      current = null
+      loose.push(line)
+    }
+  }
+
+  if (items.length < 2) {
+    const { questions, context } = splitEmail(kept.join("\n"))
+    return {
+      questions: questions.map((question, index) => ({ ref: String(index + 1), text: question })),
+      context,
+    }
+  }
+
+  const questions: NumberedQuestion[] = []
+  for (const item of items) {
+    const sentences = item.text
+      .split(/(?<=[.?!])\s+/)
+      .map((sentence) => sentence.trim())
+      .filter(Boolean)
+    const asking = sentences.filter((sentence) => sentence.endsWith("?") || REQUEST.test(sentence))
+    if (asking.length <= 1) {
+      questions.push({ ref: item.ref, text: asking[0] ?? item.text })
+    } else {
+      asking.forEach((sentence, index) =>
+        questions.push({
+          ref: `${item.ref}${String.fromCharCode(97 + index)}`,
+          text: capitalise(sentence.replace(/^(and|also|plus)\s+/i, "")),
+        })
+      )
+    }
+  }
+  const context = loose.filter((line) => !(GREETING.test(line) && line.length < 40))
+  return { questions, context: context.join(" ") }
 }

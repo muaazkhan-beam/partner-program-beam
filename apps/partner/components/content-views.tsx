@@ -1,40 +1,54 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, type CSSProperties } from "react"
 import {
   RiArrowDownSLine,
   RiArrowRightLine,
   RiBookOpenLine,
   RiCheckLine,
   RiClipboardLine,
+  RiCornerDownRightLine,
   RiExternalLinkLine,
   RiFileList3Line,
+  RiFileTextLine,
+  RiFolderLine,
   RiPresentationLine,
   RiQuestionLine,
   RiRobot2Line,
+  RiSendPlaneLine,
+  RiShieldCheckLine,
   RiTerminalBoxLine,
   RiToolsLine,
 } from "@remixicon/react"
 
 import { AddToPack } from "@/components/add-to-pack"
-import { SendBadge, useSendLabel } from "@/components/send-badge"
+import { ItemClaimBadge, useClaimState } from "@/components/claim-state"
+import { SendBadge } from "@/components/send-badge"
 import { Badge } from "@/components/ui/badge"
 import { FaqAsk } from "@/components/faq-ask"
+import { FileDrop, type DroppedFile } from "@/components/file-drop"
 import { rankAnswers, type AskCandidate } from "@/lib/faq-answer"
 import { holdReason } from "@/lib/pack"
-import { groupByLifecycle } from "@/lib/lifecycle"
-import { Button } from "@/components/ui/button"
+import { type ClaimStateKey } from "@/lib/claim-state"
+import { foldClientVersions, rowsInOrder, type VersionedRow } from "@/lib/client-versions"
+import { groupByLifecycle, phaseOf } from "@/lib/lifecycle"
+import { journeyPhases } from "@/lib/partner-journey"
+import { cn } from "@/lib/utils"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { WhereBeamFitsDetail } from "@/components/where-beam-fits"
 import { useWorkspace } from "@/components/workspace-context"
 import { authBypass } from "@/components/providers"
 import type { ContentKind, UseCaseDetail } from "@/convex/catalogTypes"
 import {
   getWorkspaceItem,
+  isLibraryPack,
   listWorkspaceCompliance,
   listWorkspaceItems,
 } from "@/lib/catalog/static"
 import { requestHref, supportForKind } from "@/lib/request-links"
+import { IntakeError, readIntake, sourceKind, type Intake } from "@/lib/desk/intake"
+import { EmailParseError, parseEml } from "@/lib/intake/eml"
 import { workspacePath } from "@/lib/workspace-resolver"
 import { api } from "@partner/convex/_generated/api"
 import { useQuery } from "convex/react"
@@ -66,6 +80,8 @@ type ContentCard = {
   href?: string
   status?: "pending"
   useCase?: UseCaseDetail
+  /** Set on a client version: the answer or use case it was written from. */
+  sourceSlug?: string
 }
 
 
@@ -75,75 +91,148 @@ const COMPLEXITY_LABEL: Record<string, string> = {
   complex: "Complex",
 }
 
+/** One filter row for every list: chips with their counts, and what is showing. */
+function FilterChips<K extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  readout,
+}: {
+  label: string
+  options: ReadonlyArray<{ key: K; label: string; count: number }>
+  value: K
+  onChange: (key: K) => void
+  readout: string
+}) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap items-center gap-2">
+      {options.map((option) => {
+        const selected = value === option.key
+        return (
+          <button
+            key={option.key}
+            type="button"
+            aria-pressed={selected}
+            onClick={() => onChange(option.key)}
+            className={cn(
+              "pressable inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+              selected
+                ? "border-foreground bg-foreground text-background"
+                : "bg-background text-foreground hover:bg-muted"
+            )}
+          >
+            {option.label}{" "}
+            <span className={selected ? "text-background/70" : "text-muted-foreground"}>
+              {option.count}
+            </span>
+          </button>
+        )
+      })}
+      <span className="ml-auto text-xs text-muted-foreground" aria-live="polite">
+        {readout}
+      </span>
+    </div>
+  )
+}
+
+/** The client-voice version of the row above it, with its own state and pack button. */
+function ClientVersionLine({ item }: { item: ContentCard }) {
+  const workspace = useWorkspace()
+  return (
+    <div className="relative z-10 flex flex-wrap items-center gap-x-3 gap-y-2 px-4 pb-3 pl-12 sm:pl-16">
+      <RiCornerDownRightLine className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <p className="min-w-0 flex-1 basis-48 text-sm">
+        <span className="text-muted-foreground">Client version: </span>
+        <Link
+          className="font-medium underline-offset-4 hover:underline"
+          href={workspacePath(workspace.slug, `/${contentSurface(item.kind)}/${item.slug}`)}
+        >
+          {item.title}
+        </Link>
+      </p>
+      <ItemClaimBadge item={item} />
+      <AddToPack kind={item.kind} slug={item.slug} label={item.title} item={item} />
+    </div>
+  )
+}
+
 /**
  * Use cases are structured records, not documents, so they get their own
- * renderer rather than the share-preview one. The systems and the
- * human-approval step are what a partner is actually scanning for.
+ * renderer rather than the share-preview one: by department, one row each,
+ * with the systems it touches and whether a result is cited. A client version
+ * sits under the use case it was written from, never as a second entry.
  */
 function UseCaseCatalog({ items }: { items: ContentCard[] }) {
   const workspace = useWorkspace()
-  const grouped = new Map<string, ContentCard[]>()
-  for (const item of items) {
-    const key = item.group ?? "Other"
-    grouped.set(key, [...(grouped.get(key) ?? []), item])
+  const grouped = new Map<string, VersionedRow<ContentCard>[]>()
+  for (const row of foldClientVersions(items)) {
+    const key = row.item.group ?? "Other"
+    grouped.set(key, [...(grouped.get(key) ?? []), row])
   }
 
   return (
-    <div className="space-y-10">
-      {[...grouped.entries()].map(([department, groupItems]) => (
-        <section key={department} className="space-y-4">
-          <h2 className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-            {department}
-          </h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            {groupItems.map((item) => {
+    <div className="space-y-8">
+      {[...grouped.entries()].map(([department, rows]) => (
+        <section key={department} className="space-y-3">
+          <div className="flex items-baseline justify-between gap-3 border-b pb-2">
+            <h2 className="text-sm font-medium">{department}</h2>
+            <span className="text-xs text-muted-foreground">
+              {rows.length} {rows.length === 1 ? "use case" : "use cases"}
+            </span>
+          </div>
+          <ul className="divide-y rounded-xl border bg-card">
+            {rows.map(({ item, clientVersions }, index) => {
               const detail = item.useCase
+              const meta = [
+                detail?.complexity
+                  ? (COMPLEXITY_LABEL[detail.complexity] ?? detail.complexity)
+                  : null,
+                detail?.systems?.length ? detail.systems.join(", ") : null,
+                detail?.outcome
+                  ? `${detail.outcome.metric}: ${detail.outcome.value}`
+                  : "No cited result yet",
+              ]
+                .filter(Boolean)
+                .join(" · ")
               return (
-                <div
+                <li
                   key={item.slug}
-                  className="group relative flex flex-col gap-3 rounded-2xl border bg-card p-5 transition-colors focus-within:border-primary/40 hover:border-primary/40"
+                  className="rise-in relative transition-colors focus-within:bg-muted/40 hover:bg-muted/40"
+                  style={{ "--i": index } as CSSProperties}
                 >
-                  <div className="flex flex-wrap items-center gap-2">
-                    {detail?.complexity ? (
-                      <Badge variant="outline">
-                        {COMPLEXITY_LABEL[detail.complexity] ?? detail.complexity}
-                      </Badge>
-                    ) : null}
-                    <SendBadge item={item} />
+                  <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-6">
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                        <RiFileList3Line className="size-4" aria-hidden="true" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-medium">
+                          <Link
+                            href={workspacePath(workspace.slug, `/use-cases/${item.slug}`)}
+                            className="after:absolute after:inset-0 focus-visible:outline-none"
+                          >
+                            {item.title}
+                          </Link>
+                        </h3>
+                        <p className="mt-0.5 text-sm leading-6 text-muted-foreground">
+                          {item.summary}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">{meta}</p>
+                      </div>
+                    </div>
+                    <div className="relative z-10 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 pl-12 sm:justify-end sm:pl-0">
+                      <ItemClaimBadge item={item} />
+                      <AddToPack kind="use-case" slug={item.slug} label={item.title} item={item} />
+                    </div>
                   </div>
-                  <h3 className="text-lg font-medium tracking-tight">
-                    <Link
-                      href={workspacePath(workspace.slug, `/use-cases/${item.slug}`)}
-                      className="after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-none focus-visible:after:ring-3 focus-visible:after:ring-ring/50"
-                    >
-                      {item.title}
-                    </Link>
-                  </h3>
-                  <p className="text-sm text-muted-foreground">{item.summary}</p>
-                  {detail?.systems?.length ? (
-                    <p className="font-mono text-[11px] text-muted-foreground">
-                      {detail.systems.join(" · ")}
-                    </p>
-                  ) : null}
-                  <span className="mt-auto flex items-center justify-between gap-3">
-                    <span className="flex flex-col gap-0.5">
-                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
-                        View <RiArrowRightLine className="size-4" aria-hidden="true" />
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {detail?.outcome
-                          ? `${detail.outcome.metric}: ${detail.outcome.value}`
-                          : "No cited result yet"}
-                      </span>
-                    </span>
-                    <span className="relative z-10">
-                      <AddToPack kind="use-case" slug={item.slug} label={item.title} />
-                    </span>
-                  </span>
-                </div>
+                  {clientVersions.map((version) => (
+                    <ClientVersionLine key={version.slug} item={version} />
+                  ))}
+                </li>
               )
             })}
-          </div>
+          </ul>
         </section>
       ))}
     </div>
@@ -224,7 +313,7 @@ function UseCaseDetailView({
         <p className="mt-1.5 text-sm leading-6">{detail.humanInLoop}</p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <AddToPack kind="use-case" slug={item.slug} label={item.title} />
+        <AddToPack kind="use-case" slug={item.slug} label={item.title} item={item} />
         <UseCaseScopeAction slug={item.slug} />
       </div>
     </article>
@@ -245,12 +334,6 @@ function UseCaseScopeAction({ slug }: { slug: string }) {
 }
 
 /** Who an item is written for, in words a partner uses. */
-function audienceLabel(audience: string) {
-  if (audience === "client-forwardable") return "Written for clients"
-  if (audience === "technical") return "Technical"
-  return "For partners"
-}
-
 function tagLabel(value: string) {
   return value ? `${value[0]?.toUpperCase()}${value.slice(1)}` : value
 }
@@ -328,15 +411,73 @@ function BypassFaqSurface() {
   return <FaqSurfaceBody items={items} />
 }
 
+/**
+ * The same ask box, with one more way in: drop the client's email or their
+ * questionnaire. An email's text goes into the box as if pasted; a
+ * questionnaire's questions go in numbered, and the sheet offers the file
+ * back, filled. Nothing is uploaded.
+ */
 function HomeAskBody({ items }: { items: ContentCard[] | undefined }) {
+  const workspace = useWorkspace()
   const [query, setQuery] = useState("")
+  const [questionnaire, setQuestionnaire] = useState<Intake | null>(null)
+  const [dropError, setDropError] = useState("")
   if (items === undefined) return null
+
+  function takeFile(file: DroppedFile) {
+    setDropError("")
+    try {
+      const kind = sourceKind(file.name)
+      if (kind === "email") {
+        setQuestionnaire(null)
+        setQuery(parseEml(file.text).body)
+      } else if (kind === "questionnaire") {
+        const intake = readIntake({ kind: "questionnaire", csv: file.text, fileName: file.name })
+        setQuestionnaire(intake)
+        setQuery(intake.questions.map((question, index) => `${index + 1}. ${question.text}`).join("\n"))
+      } else {
+        setQuestionnaire(null)
+        setQuery(file.text)
+      }
+    } catch (error) {
+      if (error instanceof IntakeError || error instanceof EmailParseError) setDropError(error.message)
+      else throw error
+    }
+  }
+
   return (
     <FaqAsk
       items={items as AskCandidate[]}
       query={query}
-      onQueryChange={setQuery}
+      onQueryChange={(value) => {
+        setQuery(value)
+        // Typing over a dropped questionnaire means it is no longer that file.
+        if (questionnaire) setQuestionnaire(null)
+      }}
       variant="home"
+      questionnaire={questionnaire}
+      extra={
+        <div className="space-y-2">
+          <FileDrop
+            compact
+            hint="Or drop the client's email (.eml) or questionnaire (.csv)"
+            samples={
+              workspace.isDemo
+                ? [
+                    { label: "Use the sample email", name: "orvane-vendor-review.eml" },
+                    { label: "Use the sample questionnaire", name: "calderhay-questionnaire.csv" },
+                  ]
+                : []
+            }
+            onFile={takeFile}
+          />
+          {dropError ? (
+            <p role="alert" className="text-xs text-warning-text">
+              {dropError}
+            </p>
+          ) : null}
+        </div>
+      }
     />
   )
 }
@@ -435,26 +576,45 @@ function MaterialsGridBody({
 }
 
 /**
- * Materials are grouped by what a partner is trying to do, and each group leads
- * with one item.
- *
- * Before this, every material rendered as an identical card with a colour
- * picked by list position — so the colours carried no meaning and a partner had
- * to open each one to find out what it was. Now the highlight answers "start
- * here" and the rest say, in a line, how they differ.
+ * Materials in one consistent list, the shape of the compliance library: a
+ * filter row on top, then rows in lifecycle order, each with its format, its
+ * claim state and the one thing a partner can do with it. The first usable
+ * item of each phase is marked "Start here" in words, not a badge.
  */
+type MaterialFilter = "all" | "can-go" | "not-published" | "for-you"
+
+const MATERIAL_FILTERS: Array<{ key: MaterialFilter; label: string }> = [
+  { key: "all", label: "All" },
+  { key: "can-go", label: "Can go to a client" },
+  { key: "not-published", label: "Not published yet" },
+  { key: "for-you", label: "For you only" },
+]
+
+function filterOf(state: ClaimStateKey): MaterialFilter {
+  if (state === "can-go" || state === "demo") return "can-go"
+  if (state === "not-published") return "not-published"
+  return "for-you"
+}
+
+function MaterialIcon({ item }: { item: ContentCard }) {
+  const className = "size-4"
+  if (item.slug === "security-compliance-pack") return <RiShieldCheckLine className={className} />
+  if (item.format === "deck") return <RiPresentationLine className={className} />
+  if (item.format === "pack") return <RiFolderLine className={className} />
+  if (item.kind === "playbook" || item.format === "playbook")
+    return <RiBookOpenLine className={className} />
+  return <RiFileTextLine className={className} />
+}
+
 function MaterialGroups({ items }: { items: ContentCard[] }) {
   const workspace = useWorkspace()
-  const sendLabelFor = useSendLabel()
-  // Grouped by the lifecycle on Home, so scoping material never
-  // sits below selling material it follows.
-  const groups = groupByLifecycle(items, { slug: "more", name: "More material" })
+  const stateOf = useClaimState()
+  const [filter, setFilter] = useState<MaterialFilter>("all")
 
   // The old pack record lists 8 policies by hand; the library holds all of
-  // them as printed, so the card leads there instead of to a stale copy.
+  // them as printed, so the row leads there instead of to a stale copy.
   const libraryCount = listWorkspaceCompliance(workspace.slug).length
-  const isLibrary = (item: ContentCard) =>
-    item.slug === "security-compliance-pack" && libraryCount > 0
+  const isLibrary = (item: ContentCard) => isLibraryPack(workspace.slug, item)
   const href = (item: ContentCard) =>
     isLibrary(item)
       ? workspacePath(workspace.slug, "/compliance")
@@ -464,118 +624,97 @@ function MaterialGroups({ items }: { items: ContentCard[] }) {
       ? `All ${libraryCount} policies, as printed. Start from the client's questions.`
       : item.summary
   const published = (item: ContentCard) => item.status !== "pending" || isLibrary(item)
+  // The library's documents reach the client through Beam, so it answers
+  // "what can I send" even though the pack record itself is pending.
+  const bucket = (item: ContentCard): MaterialFilter =>
+    isLibrary(item) ? "can-go" : filterOf(stateOf(item))
+  const countOf = (key: MaterialFilter) =>
+    key === "all" ? items.length : items.filter((item) => bucket(item) === key).length
+
+  const visible = filter === "all" ? items : items.filter((item) => bucket(item) === filter)
+  const groups = groupByLifecycle(visible, { slug: "more", name: "More material" })
+  const formatLabel = (item: ContentCard) =>
+    tagLabel(item.format ?? (item.kind === "playbook" ? "playbook" : "material"))
 
   return (
-    <div className="space-y-12">
-      {groups.map(({ slug: group, name, number, items: groupItems }) => {
+    <div className="space-y-8">
+      <FilterChips
+        label="Show materials"
+        options={MATERIAL_FILTERS.map((entry) => ({ ...entry, count: countOf(entry.key) }))}
+        value={filter}
+        onChange={setFilter}
+        readout={`${visible.length} of ${items.length} materials`}
+      />
+
+      {groups.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Nothing is marked {MATERIAL_FILTERS.find((entry) => entry.key === filter)?.label.toLowerCase()} yet.
+        </p>
+      ) : null}
+
+      {groups.map(({ slug: group, name, items: groupItems }) => {
         // "Start here" belongs on something a partner can use today.
         const lead =
           groupItems.find((item) => item.highlight && published(item)) ??
           groupItems.find(published) ??
           groupItems.find((item) => item.highlight) ??
           groupItems[0]
-        if (!lead) return null
-        const rest = groupItems.filter((item) => item !== lead)
+        const ordered = lead ? [lead, ...groupItems.filter((item) => item !== lead)] : groupItems
         return (
-          <section key={group} className="space-y-4">
+          <section key={group} className="space-y-3">
             <div className="flex items-baseline justify-between gap-3 border-b pb-2">
-              <h2 className="text-sm font-medium">
-                {number ? (
-                  <span className="mr-2 font-mono text-xs text-muted-foreground">{number}</span>
-                ) : null}
-                {name}
-              </h2>
+              <h2 className="text-sm font-medium">{name}</h2>
               <span className="text-xs text-muted-foreground">
                 {groupItems.length} {groupItems.length === 1 ? "item" : "items"}
               </span>
             </div>
-
-            <div className="grid gap-5 lg:grid-cols-[1.1fr_.9fr]">
-              <div className="group relative flex flex-col gap-4 self-start rounded-2xl border bg-card p-6 transition-colors focus-within:border-primary/40 hover:border-primary/40">
-                <div className="flex flex-wrap items-center gap-2">
-                  {published(lead) ? <Badge variant="outline">Start here</Badge> : null}
-                  <Badge variant="outline">
-                    {tagLabel(
-                      lead.format ??
-                        (lead.kind === "playbook" ? "Playbook" : "Material"),
+            <ul className="divide-y rounded-xl border bg-card">
+              {ordered.map((item, index) => (
+                <li
+                  key={item.slug}
+                  className="rise-in relative flex flex-col gap-3 p-4 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:gap-6"
+                  style={{ "--i": index } as CSSProperties}
+                >
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      <MaterialIcon item={item} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium">
+                        <Link
+                          href={href(item)}
+                          className="after:absolute after:inset-0 focus-visible:outline-none"
+                        >
+                          {item.title}
+                        </Link>
+                      </p>
+                      <p className="mt-0.5 line-clamp-2 text-sm leading-6 text-muted-foreground">
+                        {summaryOf(item)}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {isLibrary(item) ? "Library" : formatLabel(item)}
+                        {item === lead && published(item) ? " · Start here" : null}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="relative z-10 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 pl-12 sm:justify-end sm:pl-0">
+                    {isLibrary(item) ? (
+                      <span
+                        className="inline-flex items-center gap-1 text-sm font-medium text-primary"
+                        aria-hidden="true"
+                      >
+                        Open the library <RiArrowRightLine className="size-4" />
+                      </span>
+                    ) : (
+                      <>
+                        <ItemClaimBadge item={item} />
+                        <AddToPack kind={item.kind} slug={item.slug} label={item.title} item={item} />
+                      </>
                     )}
-                  </Badge>
-                  {isLibrary(lead) ? (
-                    <Badge variant="outline">Library</Badge>
-                  ) : (
-                    <SendBadge item={lead} />
-                  )}
-                </div>
-                <h3 className="text-xl font-medium tracking-tight">
-                  <Link
-                    href={href(lead)}
-                    className="after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-none focus-visible:after:ring-3 focus-visible:after:ring-ring/50"
-                  >
-                    {lead.title}
-                  </Link>
-                </h3>
-                <p className="text-sm leading-6 text-muted-foreground">
-                  {summaryOf(lead)}
-                </p>
-                <span className="mt-auto flex items-center justify-between gap-3">
-                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
-                    {isLibrary(lead) ? "Open the library" : "View"}{" "}
-                    <RiArrowRightLine className="size-4" aria-hidden="true" />
-                  </span>
-                  <span className="relative z-10">
-                    {isLibrary(lead) ? null : (
-                      <AddToPack kind={lead.kind} slug={lead.slug} label={lead.title} />
-                    )}
-                  </span>
-                </span>
-              </div>
-
-              {rest.length > 0 ? (
-                <ul className="flex flex-col divide-y rounded-2xl border bg-card">
-                  {rest.map((item) => (
-                    <li
-                      key={item.slug}
-                      className="relative flex items-start gap-3 p-4 transition-colors focus-within:bg-accent/40 hover:bg-accent/40"
-                    >
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <p className="text-sm font-medium tracking-tight">
-                            <Link
-                              href={href(item)}
-                              className="after:absolute after:inset-0 focus-visible:outline-none"
-                            >
-                              {item.title}
-                            </Link>
-                          </p>
-                          <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                            {summaryOf(item)}
-                          </p>
-                          <div className="flex flex-wrap gap-1.5 pt-1">
-                            <span className="font-mono text-[10px] text-muted-foreground">
-                              {tagLabel(
-                                item.format ??
-                                  (item.kind === "playbook"
-                                    ? "Playbook"
-                                    : "Material"),
-                              )}
-                            </span>
-                            <span className="font-mono text-[10px] text-muted-foreground">
-                              ·
-                            </span>
-                            <span className="font-mono text-[10px] text-muted-foreground">
-                              {isLibrary(item) ? "Library" : sendLabelFor(item)}
-                            </span>
-                          </div>
-                        </div>
-                        <span className="relative z-10 shrink-0">
-                          {isLibrary(item) ? null : (
-                            <AddToPack kind={item.kind} slug={item.slug} label={item.title} />
-                          )}
-                        </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </section>
         )
       })}
@@ -611,154 +750,205 @@ function ContentGridBody({
   return <PreviewCatalog kind={kind} items={items} />
 }
 
-const featuredToolSlugs = ["partner-cli", "partner-faq", "operating-diagnostic"]
-
 /**
- * A tool's button says where it goes. Several tools point at Beam Core, which
- * needs a Beam login; saying so beats a partner discovering it.
+ * A tool is one of three things, and its group says which: a page the partner
+ * opens here, a Beam product that needs a Beam login, or a skill the Beam team
+ * runs on the client's process. One verb per group, so no button has to
+ * explain itself. The lifecycle is a line on the row, not the structure; it
+ * lives on the journey.
  */
-function toolAction(item: ContentCard): { label: string; note?: string } {
-  const href = item.href
-  if (!href) return { label: "View details" }
-  if (href.startsWith("https://core.beam.ai/")) {
-    return { label: "Open in Beam Core", note: "Needs a Beam login" }
-  }
-  if (href.startsWith("https://")) return { label: `Open ${new URL(href).hostname}` }
-  if (href === "/faq") return { label: "Open the FAQ" }
-  if (href === "/materials") return { label: "Open materials" }
-  if (href.startsWith("/materials/")) return { label: "Open the playbook" }
-  if (href.startsWith("/requests")) return { label: "Request it from Beam" }
-  return { label: "Open" }
+type ToolKind = "portal" | "beam-product" | "beam-runs"
+
+function toolKind(item: ContentCard): ToolKind {
+  const href = item.href ?? ""
+  if (href.startsWith("https://core.beam.ai/")) return "beam-runs"
+  if (href.startsWith("/requests")) return "beam-runs"
+  if (href.startsWith("https://")) return "beam-product"
+  return "portal"
+}
+
+const TOOL_GROUPS: Array<{ kind: ToolKind; name: string; lead: string }> = [
+  { kind: "portal", name: "In this portal", lead: "Pages and prompts you use yourself." },
+  {
+    kind: "beam-product",
+    name: "Beam products",
+    lead: "Beam's own apps. They need a Beam login; ask Beam if you do not have one.",
+  },
+  {
+    kind: "beam-runs",
+    name: "Beam runs it for you",
+    lead: "Skills the Beam team runs on your client's process. Ask with the client's name and what you already have.",
+  },
+]
+
+/** The product a link leaves for, named the way Beam names it. */
+const OPEN_LABEL: Record<string, string> = {
+  "iris.beam.ai": "Open in Iris",
+  "discovery.beam.ai": "Open in Discovery",
+  "app.beam.ai": "Open the Beam Platform",
+  "core.beam.ai": "Open in Beam Core",
+}
+
+function openLabel(href: string) {
+  const host = new URL(href).hostname
+  return OPEN_LABEL[host] ?? `Open ${host}`
+}
+
+/** What a portal row opens, since "Open" alone does not say. */
+function portalWhat(item: ContentCard) {
+  if (item.href?.startsWith("/faq/")) return "FAQ answer"
+  if (item.href?.startsWith("/materials/")) return "Playbook"
+  if (!item.href) return "Start prompts"
+  return "Page"
+}
+
+function phaseFor(item: ContentCard) {
+  const slug = phaseOf(item)
+  return journeyPhases.find((phase) => phase.slug === slug) ?? null
 }
 
 function ToolIcon({ item }: { item: ContentCard }) {
-  const className = "size-5"
-  if (item.slug === "partner-cli")
-    return <RiTerminalBoxLine className={className} />
-  if (item.slug === "partner-faq")
-    return <RiQuestionLine className={className} />
-  if (item.slug === "beam-platform")
-    return <RiRobot2Line className={className} />
-  if (item.group === "Prove")
-    return <RiPresentationLine className={className} />
-  if (item.group === "Scope") return <RiFileList3Line className={className} />
+  const className = "size-4"
+  if (item.slug === "partner-cli") return <RiTerminalBoxLine className={className} />
+  if (item.slug === "beam-platform") return <RiRobot2Line className={className} />
+  if (item.href === "/faq") return <RiQuestionLine className={className} />
+  if (item.href?.startsWith("/materials")) return <RiBookOpenLine className={className} />
+  if (toolKind(item) === "beam-product") return <RiPresentationLine className={className} />
+  if (toolKind(item) === "beam-runs") return <RiFileList3Line className={className} />
   return <RiToolsLine className={className} />
 }
 
-function ToolCatalog({ items }: { items: ContentCard[] }) {
+function ToolRow({ item, index }: { item: ContentCard; index: number }) {
   const workspace = useWorkspace()
-  const featured = featuredToolSlugs
-    .map((slug) => items.find((item) => item.slug === slug))
-    .filter((item): item is ContentCard => Boolean(item))
-  const featuredSlugs = new Set(featured.map((item) => item.slug))
-  const remaining = items.filter((item) => !featuredSlugs.has(item.slug))
-  const grouped = groupByLifecycle(remaining, { slug: "anytime", name: "Any time" })
+  const kind = toolKind(item)
+  const phase = phaseFor(item)
+  const destination = toolDestination(workspace.slug, item)
+  const external = item.href?.startsWith("https://") ?? false
+  const askHref = requestHref(workspace.slug, {
+    about: `tool:${item.slug}`,
+    support: item.slug === "platform-demo" ? "shadow-demo" : "other",
+  })
+  const phaseLine = phase ? (
+    <>
+      Used in:{" "}
+      <Link
+        className="relative z-10 underline-offset-4 hover:text-foreground hover:underline"
+        href={workspacePath(workspace.slug, `/journey?phase=${phase.slug}`)}
+      >
+        {phase.name}
+      </Link>
+    </>
+  ) : (
+    "Any phase"
+  )
 
   return (
-    <div className="space-y-10">
-      <section className="grid gap-4 lg:grid-cols-3">
-        {featured.map((item, index) => {
-          const external = item.href?.startsWith("https://")
-          return (
-            <article
-              key={item.slug}
-              className="flex min-h-64 flex-col justify-between gap-5 rounded-3xl border bg-card p-6 transition-colors hover:border-primary/40"
-              data-tone={index === 0 ? "cli" : index === 1 ? "knowledge" : "scope"}
+    <li
+      className="rise-in relative flex flex-col gap-3 p-4 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:gap-6"
+      style={{ "--i": index } as CSSProperties}
+    >
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <ToolIcon item={item} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium">
+            <Link
+              href={kind === "portal" ? destination : workspacePath(workspace.slug, `/tools/${item.slug}`)}
+              className="after:absolute after:inset-0 focus-visible:outline-none"
             >
-              <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/8 text-primary">
-                <ToolIcon item={item} />
-              </div>
-              <div className="space-y-2">
-                <h2 className="text-xl font-medium tracking-tight">{item.title}</h2>
-                <p className="text-sm leading-6 text-muted-foreground">{item.summary}</p>
-              </div>
-              <div className="space-y-1.5">
-                <Button
-                  className="w-full justify-between"
-                  render={
-                    <Link
-                      href={toolDestination(workspace.slug, item)}
-                      target={external ? "_blank" : undefined}
-                      rel={external ? "noreferrer" : undefined}
-                    />
-                  }
-                >
-                  {toolAction(item).label}
-                  {external ? (
-                    <RiExternalLinkLine aria-hidden="true" />
-                  ) : (
-                    <RiArrowRightLine aria-hidden="true" />
-                  )}
-                </Button>
-                {toolAction(item).note ? (
-                  <p className="text-xs text-muted-foreground">{toolAction(item).note}</p>
-                ) : null}
-              </div>
-            </article>
-          )
-        })}
-      </section>
+              {item.title}
+            </Link>
+          </p>
+          <p className="mt-0.5 text-sm leading-6 text-muted-foreground">{item.summary}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {kind === "portal" ? `${portalWhat(item)} · ` : null}
+            {phaseLine}
+            {external ? " · Beam login" : null}
+          </p>
+        </div>
+      </div>
+      <div className="relative z-10 flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 pl-12 sm:justify-end sm:pl-0">
+        {kind === "portal" ? (
+          <span className="inline-flex items-center gap-1 text-sm font-medium text-primary" aria-hidden="true">
+            Open <RiArrowRightLine className="size-4" />
+          </span>
+        ) : null}
+        {kind === "beam-product" && item.href ? (
+          <Link
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+            href={item.href}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {openLabel(item.href)} <RiExternalLinkLine aria-hidden="true" />
+          </Link>
+        ) : null}
+        {kind === "beam-runs" ? (
+          <>
+            {external && item.href ? (
+              <Link
+                className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                href={item.href}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {openLabel(item.href)} <RiExternalLinkLine className="size-3.5" aria-hidden="true" />
+              </Link>
+            ) : null}
+            <Link className={buttonVariants({ size: "sm" })} href={askHref}>
+              <RiSendPlaneLine aria-hidden="true" /> Ask Beam
+            </Link>
+          </>
+        ) : null}
+      </div>
+    </li>
+  )
+}
 
-      {grouped.map(({ slug: group, name, number, items: groupItems }) => (
-        <section key={group} className="space-y-4">
-          <div className="flex items-center gap-3">
-            <h2 className="text-lg font-medium">
-              {number ? (
-                <span className="mr-2 font-mono text-sm text-muted-foreground">{number}</span>
-              ) : null}
-              {name}
-            </h2>
-            <span className="text-xs text-muted-foreground">
-              {groupItems.length} {groupItems.length === 1 ? "tool" : "tools"}
-            </span>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {groupItems.map((item) => {
-              const external = item.href?.startsWith("https://")
-              return (
-                <article
-                  key={item.slug}
-                  className="group rounded-2xl border bg-card p-5 transition-all hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex size-10 items-center justify-center rounded-xl bg-primary/8 text-primary">
-                      <ToolIcon item={item} />
-                    </div>
-                    <Badge variant="outline">{audienceLabel(item.audience)}</Badge>
-                  </div>
-                  <h3 className="mt-5 font-medium">{item.title}</h3>
-                  <p className="mt-2 min-h-12 text-sm leading-6 text-muted-foreground">
-                    {item.summary}
-                  </p>
-                  {toolAction(item).note ? (
-                    <p className="mt-2 text-xs text-muted-foreground">{toolAction(item).note}</p>
-                  ) : null}
-                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-                    <Link
-                      className="inline-flex items-center gap-1.5 text-sm font-medium whitespace-nowrap text-primary hover:underline"
-                      href={toolDestination(workspace.slug, item)}
-                      target={external ? "_blank" : undefined}
-                      rel={external ? "noreferrer" : undefined}
-                    >
-                      {toolAction(item).label}
-                      {external ? (
-                        <RiExternalLinkLine className="size-4" aria-hidden="true" />
-                      ) : (
-                        <RiArrowRightLine className="size-4" aria-hidden="true" />
-                      )}
-                    </Link>
-                    <AddToPack kind="tool" slug={item.slug} label={item.title} />
-                  </div>
-                </article>
-              )
-            })}
-          </div>
-        </section>
-      ))}
+function ToolCatalog({ items }: { items: ContentCard[] }) {
+  return (
+    <div className="space-y-10">
+      {TOOL_GROUPS.map((group) => {
+        const groupItems = items.filter((item) => toolKind(item) === group.kind)
+        if (groupItems.length === 0) return null
+        return (
+          <section key={group.kind} className="space-y-3">
+            <div className="flex items-baseline justify-between gap-3 border-b pb-2">
+              <div>
+                <h2 className="text-sm font-medium">{group.name}</h2>
+                <p className="mt-0.5 text-sm text-muted-foreground">{group.lead}</p>
+              </div>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {groupItems.length} {groupItems.length === 1 ? "tool" : "tools"}
+              </span>
+            </div>
+            <ul className="divide-y rounded-xl border bg-card">
+              {groupItems.map((item, index) => (
+                <ToolRow key={item.slug} item={item} index={index} />
+              ))}
+            </ul>
+          </section>
+        )
+      })}
     </div>
   )
 }
 
+type FaqFilter = "all" | "client" | "internal" | "beam"
+
+const FAQ_FILTERS: Array<{ key: FaqFilter; label: string }> = [
+  { key: "all", label: "All" },
+  { key: "client", label: "Can go to a client" },
+  { key: "internal", label: "For you only" },
+  { key: "beam", label: "Waiting on Beam" },
+]
+
+/**
+ * Every answer once, in the shape of the other lists: a filter row, then rows
+ * by lifecycle phase. A client version sits under the answer it was written
+ * from, and counts toward "Can go to a client" for that row.
+ */
 function FaqRows({
   items,
   query,
@@ -768,159 +958,175 @@ function FaqRows({
   query: string
 }) {
   const workspace = useWorkspace()
-  const [filter, setFilter] = useState<"all" | "client" | "internal" | "beam">("all")
+  const [filter, setFilter] = useState<FaqFilter>("all")
+  const rows = foldClientVersions(items)
   // The list ranks by the same terms the ask box answers from, so the two can
   // never disagree (an answer above, "no matching questions" below).
   const matched = query.trim()
-    ? rankAnswers(query, items as AskCandidate[]).map(
-        (candidate) => items.find((item) => item.slug === candidate.slug)!
+    ? rowsInOrder(
+        rows,
+        rankAnswers(query, items as AskCandidate[]).map((candidate) => candidate.slug)
       )
-    : items
-  const bucket = (item: ContentCard) => {
-    const reason = holdReason(item, workspace.brandMode)
+    : rows
+  const bucket = (item: ContentCard): FaqFilter => {
+    const reason = holdReason(item, workspace.brandMode, { demoWorkspace: workspace.isDemo })
     if (reason === null) return "client"
     if (reason === "pending" || reason === "restricted") return "beam"
     return "internal"
   }
-  const visibleItems = matched.filter(
-    (item) => filter === "all" || bucket(item) === filter
-  )
-  const filters = [
-    ["all", "All"],
-    ["client", "Can go to a client"],
-    ["internal", "For you only"],
-    ["beam", "Waiting on Beam"],
-  ] as const
+  const inFilter = (row: VersionedRow<ContentCard>, key: FaqFilter) =>
+    key === "all" ||
+    bucket(row.item) === key ||
+    (key === "client" && row.clientVersions.some((version) => bucket(version) === "client"))
+  const visible = matched.filter((row) => inFilter(row, filter))
+  const rowOf = new Map(visible.map((row) => [row.item.slug, row] as const))
+  const sections = query.trim()
+    ? [{ slug: "matches", name: "", rows: visible }]
+    : groupByLifecycle(
+        visible.map((row) => row.item),
+        { slug: "partnership", name: "About the partnership" }
+      ).map((group) => ({
+        slug: group.slug,
+        name: group.name,
+        rows: group.items.flatMap((item) => rowOf.get(item.slug) ?? []),
+      }))
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
-      <div className="rounded-2xl border bg-muted/25 p-3 sm:p-4">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter answers">
-          {filters.map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={filter === value}
-              className={
-                filter === value
-                  ? "rounded-full bg-foreground px-3 py-1.5 text-xs font-medium text-background"
-                  : "rounded-full border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-              }
-              onClick={() => setFilter(value)}
-            >
-              {label}
-            </button>
-          ))}
-          <span
-            className="ml-auto self-center px-1 text-xs text-muted-foreground"
-            aria-live="polite"
-          >
-            {visibleItems.length} {visibleItems.length === 1 ? "answer" : "answers"}
-          </span>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <FilterChips
+        label="Filter answers"
+        options={FAQ_FILTERS.map((entry) => ({
+          ...entry,
+          count: matched.filter((row) => inFilter(row, entry.key)).length,
+        }))}
+        value={filter}
+        onChange={setFilter}
+        readout={`${visible.length} ${visible.length === 1 ? "answer" : "answers"}`}
+      />
 
-      <div className="space-y-3">
-        {(query.trim()
-          ? [{ slug: "matches", name: "", number: undefined, items: visibleItems }]
-          : groupByLifecycle(visibleItems, { slug: "partnership", name: "About the partnership" })
-        ).map((section) => (
+      {sections
+        .filter((section) => section.rows.length > 0)
+        .map((section) => (
           <section key={section.slug} className="space-y-3">
             {section.name ? (
-              <h2 className="pt-3 text-sm font-medium">
-                {section.number ? (
-                  <span className="mr-2 font-mono text-xs text-muted-foreground">{section.number}</span>
-                ) : null}
-                {section.name}
-              </h2>
+              <div className="flex items-baseline justify-between gap-3 border-b pb-2">
+                <h2 className="text-sm font-medium">{section.name}</h2>
+                <span className="text-xs text-muted-foreground">
+                  {section.rows.length} {section.rows.length === 1 ? "question" : "questions"}
+                </span>
+              </div>
             ) : null}
-            {section.items.map((item) => (
-              <FaqRow key={item.slug} item={item} />
-            ))}
+            <ul className="divide-y rounded-xl border bg-card">
+              {section.rows.map((row, index) => (
+                <FaqRow key={row.item.slug} row={row} index={index} />
+              ))}
+            </ul>
           </section>
         ))}
-        {visibleItems.length === 0 ? (
-          <div className="rounded-2xl border border-dashed p-10 text-center">
-            <p className="font-medium">
-              {query.trim() ? "No other answers mention that" : "No answers here"}
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {filter === "all"
-                ? "Try fewer words, or ask the Beam team."
-                : "Try another filter."}
-            </p>
-          </div>
-        ) : null}
-      </div>
+
+      {visible.length === 0 ? (
+        <div className="rounded-xl border border-dashed p-10 text-center">
+          <p className="font-medium">
+            {query.trim() ? "No other answers mention that" : "No answers here"}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {filter === "all" ? "Try fewer words, or ask the Beam team." : "Try another filter."}
+          </p>
+        </div>
+      ) : null}
     </div>
   )
 }
 
-function FaqRow({ item }: { item: ContentCard }) {
+function FaqRow({ row, index }: { row: VersionedRow<ContentCard>; index: number }) {
+  const { item, clientVersions } = row
   const workspace = useWorkspace()
   const [open, setOpen] = useState(false)
+  // The answer is rendered the first time the row opens and kept after, so it
+  // can fold shut as smoothly as it opened.
+  const [rendered, setRendered] = useState(false)
   const panelId = `faq-panel-${item.slug}`
   const unpublished = item.status === "pending" || item.claimState === "restricted"
+  const toggle = () => {
+    setRendered(true)
+    setOpen((value) => !value)
+  }
   return (
-    <div className={`overflow-hidden rounded-2xl border bg-card ${open ? "shadow-sm" : ""}`}>
-      <div className="flex items-start gap-3 p-5 sm:gap-4 sm:p-6">
-        <div className="mt-0.5 hidden size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground sm:flex">
-          <RiQuestionLine className="size-4" aria-hidden="true" />
-        </div>
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-controls={panelId}
-          onClick={() => setOpen((value) => !value)}
-          className="min-w-0 flex-1 rounded-md text-left focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-        >
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="max-w-2xl font-medium leading-6">{item.title}</span>
+    <li className="rise-in" style={{ "--i": index } as CSSProperties}>
+      <div className="flex flex-col gap-3 p-4 transition-colors hover:bg-muted/40 sm:flex-row sm:items-start sm:gap-6">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <RiQuestionLine className="size-4" aria-hidden="true" />
           </span>
-          <span className="mt-2 block text-sm leading-6 text-muted-foreground">
-            {item.summary}
-          </span>
-        </button>
-        <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
-          <SendBadge item={item} />
-          <AddToPack kind="faq" slug={item.slug} label={item.title} />
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls={panelId}
+            onClick={toggle}
+            className="min-w-0 flex-1 rounded-md text-left focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+          >
+            <span className="block text-sm font-medium">{item.title}</span>
+            <span className="mt-0.5 block text-sm leading-6 text-muted-foreground">
+              {item.summary}
+            </span>
+          </button>
         </div>
-        <RiArrowDownSLine
-          aria-hidden="true"
-          className={`mt-1 hidden size-5 shrink-0 text-muted-foreground transition-transform sm:block ${open ? "rotate-180" : ""}`}
-        />
+        <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 pl-12 sm:pl-0">
+          <ItemClaimBadge item={item} />
+          <AddToPack kind="faq" slug={item.slug} label={item.title} item={item} />
+          {/* A second place to click for the pointer; the question is the button. */}
+          <span
+            aria-hidden="true"
+            onClick={toggle}
+            className="hidden size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground sm:flex"
+          >
+            <RiArrowDownSLine
+              className={cn(
+                "size-4 transition-transform duration-200 ease-out-quint",
+                open && "rotate-180"
+              )}
+            />
+          </span>
+        </div>
       </div>
-      {open ? (
-        <div id={panelId} className="border-t px-5 py-5 sm:pr-16 sm:pl-[5.25rem]">
-          <p className="whitespace-pre-wrap text-sm leading-7 text-foreground/85">
-            {item.status === "pending"
-              ? (item.requestBeamLabel ?? "Beam has not published this answer yet.")
-              : item.claimState === "restricted"
-                ? (item.requestBeamLabel ?? "Ask Beam for an approved answer.")
-                : item.body}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
-            {unpublished ? (
-              <Link
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                href={requestHref(workspace.slug, {
-                  about: `faq:${item.slug}`,
-                  support: "faq-escalation",
-                })}
-              >
-                Ask the Beam team <RiArrowRightLine className="size-4" aria-hidden="true" />
-              </Link>
-            ) : null}
-            <Link
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-              href={workspacePath(workspace.slug, `/faq/${item.slug}`)}
-            >
-              Open full answer <RiArrowRightLine className="size-4" aria-hidden="true" />
-            </Link>
+      {rendered ? (
+        <div id={panelId} className="expand-grid" data-enter="" data-open={open} inert={!open}>
+          <div>
+            <div className="border-t px-4 py-4 sm:pl-16">
+              <p className="max-w-3xl text-sm leading-7 whitespace-pre-wrap text-foreground/85">
+                {item.status === "pending"
+                  ? (item.requestBeamLabel ?? "Beam has not published this answer yet.")
+                  : item.claimState === "restricted"
+                    ? (item.requestBeamLabel ?? "Ask Beam for an approved answer.")
+                    : item.body}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+                {unpublished ? (
+                  <Link
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                    href={requestHref(workspace.slug, {
+                      about: `faq:${item.slug}`,
+                      support: "faq-escalation",
+                    })}
+                  >
+                    Ask the Beam team <RiArrowRightLine className="size-4" aria-hidden="true" />
+                  </Link>
+                ) : null}
+                <Link
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                  href={workspacePath(workspace.slug, `/faq/${item.slug}`)}
+                >
+                  Open full answer <RiArrowRightLine className="size-4" aria-hidden="true" />
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       ) : null}
-    </div>
+      {clientVersions.map((version) => (
+        <ClientVersionLine key={version.slug} item={version} />
+      ))}
+    </li>
   )
 }
 
@@ -1107,7 +1313,7 @@ function ContentDetailBody({
     )
   }
   if (item.slug === "partner-cli") {
-    return <PartnerCliDetail item={item} />
+    return <PartnerCliDetail />
   }
   if (kind === "material" && item.slug === "where-beam-fits") {
     return <WhereBeamFitsDetail item={item} />
@@ -1135,8 +1341,8 @@ function ContentDetailBody({
             ? "Beam has not published this answer yet."
             : item.body}
       </div>
-      {kind === "faq" || kind === "tool" ? (
-        <AddToPack kind={kind} slug={item.slug} label={item.title} />
+      {kind === "faq" ? (
+        <AddToPack kind={kind} slug={item.slug} label={item.title} item={item} />
       ) : null}
       {item.href ? (
         <Link
@@ -1145,13 +1351,19 @@ function ContentDetailBody({
           target={item.href.startsWith("https://") ? "_blank" : undefined}
           rel={item.href.startsWith("https://") ? "noreferrer" : undefined}
         >
-          {toolAction(item).label}
           {item.href.startsWith("https://") ? (
-            <RiExternalLinkLine className="size-4" />
+            <>
+              {openLabel(item.href)} <RiExternalLinkLine className="size-4" aria-hidden="true" />
+            </>
           ) : (
-            <RiArrowRightLine className="size-4" />
+            <>
+              Open <RiArrowRightLine className="size-4" aria-hidden="true" />
+            </>
           )}
         </Link>
+      ) : null}
+      {item.href?.startsWith("https://") ? (
+        <p className="text-xs text-muted-foreground">Beam login</p>
       ) : null}
       {item.claimState === "restricted" || item.requestBeamLabel ? (
         <Link
@@ -1190,7 +1402,7 @@ const partnerStartProfiles = [
   },
 ] as const
 
-function PartnerCliDetail({ item }: { item: ContentCard }) {
+function PartnerCliDetail() {
   const workspace = useWorkspace()
   const [copied, setCopied] = useState<string | null>(null)
 
@@ -1207,55 +1419,36 @@ function PartnerCliDetail({ item }: { item: ContentCard }) {
   return (
     <div className="space-y-8">
       <div className="max-w-3xl space-y-4">
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="outline">Partner-safe</Badge>
-          <Badge variant="outline">{audienceLabel(item.audience)}</Badge>
-        </div>
         <h2 className="text-3xl font-medium tracking-tight sm:text-4xl">
           Start with Beam Partner.
         </h2>
         <p className="max-w-2xl text-base leading-7 text-muted-foreground">
           Choose where you want to work. Each start profile carries the same
-          reviewed workspace boundaries into your agent.
+          partner-safe, reviewed workspace boundaries into your agent.
         </p>
       </div>
       <section className="grid gap-4 lg:grid-cols-3">
-        {partnerStartProfiles.map((profile) => (
+        {partnerStartProfiles.map((profile, index) => (
           <article
             key={profile.name}
-            className="partner-feature-card relative isolate flex min-h-80 overflow-hidden rounded-3xl border border-white/10 p-6 text-white shadow-xl"
-            data-tone={profile.tone}
+            className="rise-in flex flex-col gap-4 rounded-xl border bg-card p-5"
+            style={{ "--i": index } as CSSProperties}
           >
-            <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(255,255,255,.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.07)_1px,transparent_1px)] [background-size:36px_36px] [mask-image:linear-gradient(to_bottom,black,transparent_75%)]" />
-            <div className="relative mt-auto w-full space-y-5">
-              <div className="flex size-11 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
-                <RiTerminalBoxLine className="size-5" />
-              </div>
-              <div>
-                <p className="font-mono text-[10px] tracking-[0.2em] text-white/50 uppercase">
-                  Start profile
-                </p>
-                <h3 className="mt-2 text-2xl font-medium tracking-tight">
-                  {profile.name}
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-white/65">
-                  {profile.description}
-                </p>
-              </div>
-              <Button
-                className="w-full bg-white text-black hover:bg-white/90"
-                onClick={() => copyPrompt(profile.name)}
-              >
-                {copied === profile.name ? (
-                  <RiCheckLine />
-                ) : (
-                  <RiClipboardLine />
-                )}
-                {copied === profile.name
-                  ? "Prompt copied"
-                  : "Copy start prompt"}
-              </Button>
+            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/8 text-primary">
+              <RiTerminalBoxLine className="size-5" aria-hidden="true" />
             </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-medium tracking-tight">{profile.name}</h3>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">{profile.description}</p>
+            </div>
+            <Button
+              variant="outline"
+              className="pressable w-full"
+              onClick={() => copyPrompt(profile.name)}
+            >
+              {copied === profile.name ? <RiCheckLine /> : <RiClipboardLine />}
+              {copied === profile.name ? "Prompt copied" : "Copy start prompt"}
+            </Button>
           </article>
         ))}
       </section>
@@ -1312,7 +1505,7 @@ function SharePreviewDetail({
         <p className="text-base leading-7 text-muted-foreground">
           {item.summary}
         </p>
-        <AddToPack kind={item.kind} slug={item.slug} label={item.title} />
+        <AddToPack kind={item.kind} slug={item.slug} label={item.title} item={item} />
         {hasPublishedShare ? null : requestLink}
       </div>
       <section className="overflow-hidden rounded-3xl border bg-muted/25 p-3 shadow-sm sm:p-5">

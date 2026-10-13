@@ -45,3 +45,9 @@ skills-lock.json
 
 # compliance PDFs live outside the repo (../Beam-Compliance-Policies); guard in case copied back
 Beam-Compliance-Policies/
+
+# fonts copied at build time: Roboto for PDFs comes from the pdfmake package,
+# Satoshi for the screen from @beam-ai-team/beam-ui (its licence forbids
+# redistribution, so it is never committed)
+apps/partner/public/pdf-fonts/
+apps/partner/public/fonts/

@@ -6,7 +6,6 @@ import {
   RiBookOpenLine,
   RiCheckLine,
   RiFileTextLine,
-  RiMedalLine,
   RiShieldUserLine,
   RiToolsLine,
 } from "@remixicon/react"
@@ -46,28 +45,25 @@ export function CertificationDetail({
         All certifications
       </Link>
 
-      <section className="partner-cert-hero relative isolate overflow-hidden rounded-3xl border border-white/10 p-6 text-white shadow-2xl sm:p-8 lg:p-10">
-        <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.07)_1px,transparent_1px)] [background-size:44px_44px] [mask-image:linear-gradient(to_bottom,black,transparent_82%)]" />
-        <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+      <section className="rounded-xl border bg-card p-6 sm:p-8">
+        <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
-            <div className="flex size-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10 backdrop-blur">
-              <Icon className="size-6" />
+            <div className="flex size-11 items-center justify-center rounded-lg bg-primary/8 text-primary">
+              <Icon className="size-5" aria-hidden="true" />
             </div>
-            <p className="mt-6 font-mono text-[11px] tracking-[0.22em] text-white/55 uppercase">
-              {certification.eyebrow}
-            </p>
-            <h1 className="mt-3 text-4xl font-medium tracking-[-0.04em] text-balance sm:text-6xl">
+            <p className="mt-5 text-sm text-muted-foreground">{certification.eyebrow}</p>
+            <h1 className="mt-1 text-3xl font-medium tracking-tight text-balance sm:text-4xl">
               {certification.name}
             </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-white/65 sm:text-base">
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
               {certification.description}
+            </p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              {certification.duration} · {certification.assessment} · {certification.prerequisite}
             </p>
           </div>
           <Link
-            className={cn(
-              buttonVariants(),
-              "w-fit bg-white text-black hover:bg-white/90"
-            )}
+            className={cn(buttonVariants(), "w-fit")}
             href={workspacePath(
               workspace.slug,
               `/requests?certification=${certification.slug}`
@@ -80,38 +76,16 @@ export function CertificationDetail({
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        {[
-          ["Time", certification.duration],
-          ["Assessment", certification.assessment],
-          ["Prerequisite", certification.prerequisite],
-        ].map(([label, value]) => (
-          <article key={label} className="rounded-2xl border bg-card p-5">
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="mt-2 text-sm font-medium">{value}</p>
-          </article>
-        ))}
-      </section>
-
-      <section className="grid gap-8 rounded-2xl border bg-card p-5 sm:p-7 lg:grid-cols-[.7fr_1.3fr]">
-        <div>
-          <Badge variant="outline">Capability outcomes</Badge>
-          <h2 className="mt-4 text-2xl font-medium tracking-tight">
-            What you will be able to do
-          </h2>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            This credential is awarded for demonstrated capability, not course
-            attendance alone.
-          </p>
-        </div>
-        <ul className="space-y-3">
+      <section className="rounded-xl border bg-card p-5 sm:p-7">
+        <h2 className="text-2xl font-medium tracking-tight">What you will be able to do</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+          This credential is awarded for demonstrated capability, not course attendance alone.
+        </p>
+        <ul className="mt-4 divide-y">
           {certification.outcomes.map((outcome) => (
-            <li
-              key={outcome}
-              className="flex gap-3 rounded-xl border bg-muted/20 p-4 text-sm leading-6"
-            >
+            <li key={outcome} className="flex gap-3 py-3 text-sm leading-6">
               <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <RiCheckLine className="size-3.5" />
+                <RiCheckLine className="size-3.5" aria-hidden="true" />
               </span>
               {outcome}
             </li>
@@ -119,34 +93,25 @@ export function CertificationDetail({
         </ul>
       </section>
 
-      <section className="rounded-2xl border bg-card p-5 sm:p-7">
-        <div className="max-w-2xl">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/8 text-primary">
-            <RiMedalLine className="size-5" />
-          </div>
-          <p className="mt-5 text-xs font-medium text-muted-foreground">
-            Certification syllabus
-          </p>
-          <h2 className="mt-2 text-2xl font-medium tracking-tight">
-            What the certification covers
-          </h2>
-        </div>
-        <ol className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="rounded-xl border bg-card p-5 sm:p-7">
+        <p className="text-xs font-medium text-muted-foreground">Certification syllabus</p>
+        <h2 className="mt-2 text-2xl font-medium tracking-tight">What the certification covers</h2>
+        <ol className="mt-4 divide-y">
           {certification.syllabus.map((module) => (
-            <li key={module.number} className="rounded-xl border bg-muted/20 p-4">
-              <span className="font-mono text-[10px] text-muted-foreground">
+            <li key={module.number} className="flex gap-4 py-3">
+              <span className="w-6 shrink-0 text-sm text-muted-foreground tabular-nums">
                 {module.number}
               </span>
-              <h3 className="mt-3 text-sm font-medium">{module.title}</h3>
-              <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                {module.description}
-              </p>
+              <div>
+                <h3 className="text-sm font-medium">{module.title}</h3>
+                <p className="mt-0.5 text-sm leading-6 text-muted-foreground">{module.description}</p>
+              </div>
             </li>
           ))}
         </ol>
       </section>
 
-      <section className="grid gap-4 rounded-2xl border bg-muted/30 p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-6">
+      <section className="grid gap-4 rounded-xl border bg-muted/30 p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-6">
         <div>
           <p className="font-medium">Assessment</p>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">

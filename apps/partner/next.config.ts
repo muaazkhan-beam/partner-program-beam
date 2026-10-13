@@ -68,6 +68,12 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // The pack preview is a sandboxed frame with no origin of its own, so
+        // it asks for its fonts cross-origin. They are the public Roboto files.
+        source: "/pdf-fonts/:path*",
+        headers: [{ key: "Access-Control-Allow-Origin", value: "*" }],
+      },
+      {
         source: "/api/share-preview/:path*",
         headers: [
           {

@@ -57,3 +57,16 @@ test("certification requests go to the Beam team, not to unrelated policies", as
   await expect(page.getByText("Comes from the Beam team")).toBeVisible()
   await expect(page.getByText("Security documents that cover this")).toHaveCount(0)
 })
+
+test("a dropped questionnaire comes back as the client's own file, filled", async ({ page }) => {
+  await page.goto("/w/partner-demo/home")
+  await page.getByRole("button", { name: "Use the sample questionnaire" }).click()
+  const sheet = page.getByRole("region", { name: "Answer sheet · 30 questions" })
+  await expect(sheet).toBeVisible()
+  // The client's own numbering, not ours.
+  await expect(sheet.getByText("CM-14", { exact: true })).toBeVisible()
+  await expect(sheet.getByText("Only Beam can answer this").first()).toBeVisible()
+  const download = page.waitForEvent("download")
+  await sheet.getByRole("button", { name: "Download the filled questionnaire" }).click()
+  expect((await download).suggestedFilename()).toBe("calderhay-questionnaire - from Beam.csv")
+})

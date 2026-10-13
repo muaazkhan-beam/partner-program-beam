@@ -31,7 +31,7 @@ items:
     group: Sell
     summary: Incumbent vs Beam, and when to walk away.
     body: Use before the internal "why this crew" meeting. Do not pick a fight inside a clean single-module S/4 workflow.
-    href: /faq
+    href: /faq/why-not-sap
     contentClass: shared-partner-safe
     audience: partner-internal
     forwardable: false
@@ -193,7 +193,7 @@ items:
     group: Scope
     summary: Why accuracy holds in production.
     body: Pair with the FAQ answer on evals, clustered training, and regression tests.
-    href: /faq
+    href: /faq/accuracy
     contentClass: shared-partner-safe
     audience: partner-internal
     forwardable: false

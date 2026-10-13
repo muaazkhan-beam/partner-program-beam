@@ -1,0 +1,161 @@
+# Demo content for the demo workspace only.
+#
+# Written by the partner team for the demo, in a client's voice, from the
+# internal answer named in sourceSlug with the partner coaching taken out. It
+# has NOT been reviewed by Beam: every screen and every PDF page says so, and
+# scripts/compile-catalog.mjs refuses to grant it to a workspace that is not
+# marked demo. It compiles to lib/catalog/demo.generated.json, which only the
+# static catalog reads; Convex never sees it and it does not ship upstream.
+#
+# Rules the compile step enforces: slugs start with demo-; no digits; no
+# posture words (certifications, residency, hosting, retention); the reviewer
+# line below; no reviewedOn.
+
+workspaces:
+  - partner-demo
+
+faq:
+  - slug: demo-what-beam-does
+    sourceSlug: why-not-sap
+    kind: faq
+    group: Know Beam
+    title: What does Beam do for a team like ours?
+    summary: Beam runs one business process end to end across the systems your team already uses.
+    body: |-
+      Beam runs one business process end to end across the systems your team already uses, such as email, shared drives and your ERP. An agent gathers what it needs, prepares the work and writes the result back, while your people stay in the tools they know.
+
+      We start with one process that happens often and is full of exceptions, agree how success is measured, and expand only once it works.
+
+  - slug: demo-human-approval
+    sourceSlug: human-approval
+    kind: faq
+    group: Know Beam
+    title: Is there human approval before an agent acts?
+    summary: Yes. A named person on your side approves the steps that matter.
+    body: |-
+      Yes. Agents start by reading and recommending. They gather the evidence, prepare a decision and propose an action, and a named person on your side approves the steps that matter, such as payments, regulated decisions and messages to your customers.
+
+      Where the approval sits is agreed when the process is designed, and every approval is recorded in the audit trail.
+
+  - slug: demo-accuracy-checks
+    sourceSlug: accuracy
+    kind: faq
+    group: Scope and deliver
+    title: How do you check the accuracy of agent work over time?
+    summary: Every step that matters is evaluated in production, and corrections become improvements.
+    body: |-
+      Every step that matters is evaluated in production. When a reviewer corrects the agent, or a check fails, that case is collected. Similar cases are grouped and improved together, and each change is tested against earlier cases before it goes live, so a fix in one place does not break another.
+
+  - slug: demo-connect-systems
+    sourceSlug: data-integration
+    kind: faq
+    group: Scope and deliver
+    title: How does Beam connect to our existing systems?
+    summary: Through integrations with the systems involved in the process.
+    body: |-
+      Through integrations: an existing connector where one is available, or one built for your system. The agent reads what it needs for the task in hand and writes the result back to your systems.
+
+      If a system has no interface or export, we say so early, before any work starts.
+
+  - slug: demo-first-process
+    sourceSlug: first-process-fit
+    kind: faq
+    group: Scope and deliver
+    title: What makes a good first process to start with?
+    summary: Frequent work with manual handoffs, several systems and exceptions rules cannot handle.
+    body: |-
+      A good first process happens often, involves manual handoffs or re-keying, crosses more than one system, and has exceptions that simple rules cannot handle.
+
+      It also needs a named owner on your side, access to the systems involved, realistic test data, and a measure everyone agrees on. We start narrow and expand once it works.
+
+  - slug: demo-process-owner-questions
+    sourceSlug: first-process-fit
+    kind: faq
+    group: Scope and deliver
+    title: What will you need from our process owner?
+    summary: A walkthrough of the real process, realistic examples, system access and an approval point.
+    body: |-
+      Time to walk us through the process as it really runs, including the exceptions; a set of realistic examples to test with; access to the systems involved, agreed with your IT team; and a decision on where a person approves the agent's work.
+
+      We also agree together how success will be measured.
+
+  - slug: demo-who-does-what
+    sourceSlug: partner-vs-beam
+    kind: faq
+    group: Know Beam
+    title: Who does what between our team, our partner and Beam?
+    summary: Your partner leads the relationship and delivery; Beam builds and runs the agents; your team owns the process.
+    body: |-
+      Your partner leads the relationship, the change in how your team works, and the delivery around the agent. Beam provides the platform, builds and runs the agents, and evaluates them in production.
+
+      Your team owns the process, approves the steps that matter and decides when to expand.
+
+  - slug: demo-security-review-support
+    sourceSlug: security-review-pack
+    kind: faq
+    group: Security and compliance
+    title: How does Beam support our security review?
+    summary: Beam issues its policies for your deployment and answers deployment questions directly.
+    body: |-
+      Your security team receives Beam's policies for the deployment you are considering, issued by Beam for your organisation. Some documents are shared once a non-disclosure agreement is in place.
+
+      Questions about where data is processed, and requests for audit evidence, are answered by Beam directly, so that each answer matches your deployment.
+
+  - slug: demo-measuring-success
+    sourceSlug: measuring-success
+    kind: faq
+    group: Scope and deliver
+    title: How will we measure whether it works?
+    summary: We capture today's baseline and agree the outcome and evaluation before go-live.
+    body: |-
+      Before the agent goes live we capture how the process performs today, choose the outcome that matters, such as cycle time, throughput, exceptions resolved or quality, note where people approve, and agree how the agent will be evaluated.
+
+      The result decides whether to expand. We do not promise a standard percentage; the measure is yours.
+
+  - slug: demo-erp-alongside
+    sourceSlug: why-not-sap
+    kind: faq
+    group: Sell with Beam
+    title: Does Beam replace our ERP?
+    summary: No. Your ERP stays the system of record; Beam closes the exceptions around it.
+    body: |-
+      No. Your ERP stays the system of record. Beam works across it and the systems around it, such as email, shared drives and country portals, to close the exceptions the ERP cannot handle alone, and writes the result back.
+
+      Where a single ERP module already does the job well, we will say so.
+
+useCases:
+  - slug: demo-invoice-exceptions
+    sourceSlug: invoice-exception-handling
+    kind: use-case
+    group: Finance
+    title: Clearing invoice exceptions
+    summary: Invoices that fail the match are cleared with the evidence attached, and a person approves each correction.
+    body: |-
+      Exceptions in accounts payable are a strong first process: they happen often, the rules are already written down, and the backlog is visible at every month-end close. We start with one entity and one ERP.
+    vertical: financial-services
+    department: finance
+    systems:
+      - SAP
+      - Outlook
+    trigger: An invoice fails the match against its purchase order and goods receipt.
+    before: Exceptions land in a shared mailbox and are triaged by hand, and the backlog shows at month-end close.
+    after: The agent reads the invoice, finds the purchase order and receipt in the ERP, classifies the exception, drafts the correction and sends it to an approver with the evidence attached.
+    humanInLoop: An approver signs off every correction above your materiality threshold. The agent never posts to the ledger on its own.
+
+  - slug: demo-supplier-communication
+    sourceSlug: supplier-communication
+    kind: use-case
+    group: Procurement
+    title: Answering supplier questions
+    summary: Routine supplier questions are answered from the systems that already hold the answer.
+    body: |-
+      Procurement inboxes carry a long tail of questions whose answers already sit in the ERP, such as delivery dates, payment status and document requests. The work is repetitive and easy to evaluate.
+    vertical: financial-services
+    department: procurement
+    systems:
+      - SAP
+      - Outlook
+    trigger: A supplier emails the procurement mailbox asking for a status or a document.
+    before: Buyers stop planned work to look up the same answers and reply by hand.
+    after: The agent classifies the request, finds the answer in the system of record, drafts a reply in your tone, and passes anything about price, contract terms or a dispute to a buyer.
+    humanInLoop: Anything involving commercial terms, a dispute or a new supplier goes to a buyer. The agent answers only from the system of record.
