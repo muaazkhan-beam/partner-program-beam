@@ -27,6 +27,12 @@ export type PartnerSession = {
   steps: Array<{ title: string; detail: string }>
   enabledSurfaces: string[]
   supportOwner: string
+  /** The partner's own email domains: who may forward to the Beam inbox. */
+  allowedEmailDomains: string[]
+  /** Output styles offered here: the brand mode, plus any Beam cleared. */
+  allowedOutputStyles: Array<"beam-standard" | "co-branded" | "partner-fronted">
+  /** The demo workspace: demo content, sample files and seeded clients. */
+  isDemo: boolean
   email: string
   role: "staff" | "partner_admin" | "partner_seller"
   isStaff: boolean

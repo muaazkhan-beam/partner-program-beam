@@ -1,5 +1,7 @@
 import catalogJson from "../../convex/generated/catalog.json"
+import demoJson from "./demo.generated.json"
 import type {
+  CatalogComplianceDocument,
   CatalogContent,
   CatalogUseCase,
   CatalogWorkspace,
@@ -10,7 +12,14 @@ import type {
 
 const catalog = catalogJson as PartnerCatalog
 
-export type { CatalogWorkspace, CatalogContent }
+/** Written for the demo, not reviewed by Beam; see catalog/demo/demo.yaml. */
+const demo = demoJson as {
+  workspaces: string[]
+  faq: CatalogContent[]
+  useCases: CatalogUseCase[]
+}
+
+export type { CatalogWorkspace, CatalogContent, CatalogComplianceDocument }
 
 export function listWorkspaces() {
   return catalog.workspaces
@@ -56,6 +65,17 @@ function allItems() {
   ]
 }
 
+/** True for the demo workspace, the only place demo content may be sent from. */
+export function isDemoWorkspace(slug: string) {
+  const workspace = getWorkspaceBySlug(slug)
+  return Boolean(workspace?.demo && demo.workspaces.includes(workspace.slug))
+}
+
+function demoItems(slug: string) {
+  if (!isDemoWorkspace(slug)) return []
+  return [...demo.faq, ...demo.useCases.map(withUseCaseDetail)]
+}
+
 export function listWorkspaceItems(slug: string, kind: ContentKind) {
   const workspace = getWorkspaceBySlug(slug)
   if (!workspace) return []
@@ -69,13 +89,14 @@ export function listWorkspaceItems(slug: string, kind: ContentKind) {
           : kind === "use-case"
             ? (workspace.useCaseSlugs ?? [])
             : workspace.playbookSlugs
-  return allItems().filter(
+  const real = allItems().filter(
     (item) =>
       item.kind === kind &&
       granted.includes(item.slug) &&
       item.claimState !== "staff-draft" &&
       item.contentClass !== "staff-draft"
   )
+  return [...real, ...demoItems(slug).filter((item) => item.kind === kind)]
 }
 
 export function getWorkspaceItem(
@@ -87,4 +108,21 @@ export function getWorkspaceItem(
     listWorkspaceItems(slug, kind).find((item) => item.slug === itemSlug) ??
     null
   )
+}
+
+/** The compliance documents granted to a workspace, in catalog order. */
+export function listWorkspaceCompliance(slug: string): CatalogComplianceDocument[] {
+  const workspace = getWorkspaceBySlug(slug)
+  if (!workspace) return []
+  const granted = new Set(workspace.complianceSlugs ?? [])
+  return catalog.compliance.filter((item) => granted.has(item.slug))
+}
+
+/**
+ * The "Security and compliance pack" record lists eight policies by hand; where
+ * a workspace holds the library, every page sends a partner there instead, so
+ * the pack never reads as a stale document beside its own button.
+ */
+export function isLibraryPack(slug: string, item: { slug: string }) {
+  return item.slug === "security-compliance-pack" && listWorkspaceCompliance(slug).length > 0
 }

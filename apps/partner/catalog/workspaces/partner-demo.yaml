@@ -4,19 +4,30 @@ displayName: Partner Demo
 primaryHostname: demo.partner.beam.ai
 canonicalPath: /w/partner-demo
 brandMode: beam-standard
+# The demo workspace: demo content (catalog/demo) may be sent from here and
+# nowhere else, and the partner's own style is offered here for review.
+demo: true
+allowedOutputStyles:
+  - beam-standard
+  - co-branded
+  - partner-fronted
 brandHeader: Beam Partner
 homeTitle: Future of AI-Native Companies
-homeHeadline: Take one client process from discovery to production
-homeDescription: Qualify a client outcome, map one process, show a governed shadow workflow, and agree success criteria. The partner owns the client relationship; Beam owns the platform and agent factory.
+homeHeadline: Take one client process from first conversation to handover
+homeDescription: You own the client relationship. Beam owns the platform and the agents.
 supportOwner: partner-success@beam.ai
 allowedEmailDomains:
   - partner.example
 enabledSurfaces:
   - home
+  - pack
+  - journey
+  - scope
   - use-cases
   - agents
   - tools
   - materials
+  - compliance
   - faq
   - certifications
   - requests
@@ -50,10 +61,8 @@ steps:
     detail: Define the first production outcome, evaluation plan, and expansion path with Beam.
 toolSlugs:
   - partner-cli
-  - partner-faq
   - competitive-battlecards
   - call-prep
-  - materials-library
   - iris
   - operating-diagnostic
   - discovery
@@ -69,7 +78,10 @@ materialSlugs:
   - joint-motion-one-pager
   - proof-pack-placeholder
   - beam-partner-executive-overview
-  - beam-discovery-sales-deck
+  - who-we-are
+  - ideal-client-profile
+  - partner-discovery-kit
+  - security-compliance-pack
 faqSlugs:
   - why-not-sap
   - vs-epm
@@ -91,9 +103,71 @@ faqSlugs:
   - support-and-escalation
   - accuracy
   - leadership-pack
+  # Granted so the demo can show a restricted answer going to Beam.
+  - deployment-ksa-kuwait
 playbookSlugs:
   - one-workflow-shadow
 useCaseSlugs:
   - invoice-exception-handling
   - supplier-communication
   - cv-screening
+complianceSlugs:
+  - acceptable-usage-policy
+  - access-control-policy
+  - anonymization-and-pseudonymization-policy
+  - anti-malware-policy
+  - asset-management-and-media-handling-procedure
+  - asset-management-policy-procedure
+  - backup-policy-procedure
+  - business-continuity-and-disaster-recovery-policy-procedure
+  - byod-bring-your-own-device-policy
+  - change-management-procedure
+  - clear-desk-screen-policy
+  - code-of-conduct-policy
+  - communication-procedure
+  - continual-improvement-procedure
+  - cookie-policy
+  - cryptography-policy
+  - data-and-record-retention-and-deletion-policy
+  - data-and-record-retention-policy
+  - data-breach-management-procedure
+  - data-privacy-policy
+  - data-subject-requests-manual
+  - dpia-guidance-note
+  - gdpr-manual
+  - guidelines-on-uses-and-disclosure-of-protected-health-information-phi
+  - hipaa-breach-notification-policy
+  - hipaa-internal-privacy-policy
+  - hipaa-plan
+  - hr-disciplinary-procedure
+  - human-resource-security-policy
+  - information-classification-policy
+  - information-security-incident-management-policy-and-procedure
+  - information-security-is-policy
+  - information-security-policy
+  - information-security-roles-and-responsibilities
+  - information-transfer-policies-and-procedure
+  - legal-and-regulatory-compliance-policy
+  - limited-data-set-policy-data-minimization-policy
+  - logging-and-monitoring-policy
+  - management-review-meeting-procedure
+  - media-handling-and-disposal-procedure
+  - mobile-devices-and-teleworking-policy
+  - network-security-policy
+  - non-conformity-and-corrective-action-procedure
+  - password-policy
+  - patch-vulnerability-management-policy
+  - personal-data-protection-policy
+  - phi-de-identification-policy-and-procedure
+  - physical-and-environmental-security-policy
+  - physical-security-policy
+  - procedures-to-control-the-installation-of-software-on-operational-systems
+  - risk-management-procedure
+  - ropa-record-of-processing-activities-guidance-note
+  - secure-development-and-maintenance-policy
+  - software-development-lifecycle-procedure
+  - supplier-management-policy
+  - system-acquisition-development-and-maintenance-policy
+  - system-os-database-hardening-policy-procedure
+  - threat-intelligence-policy
+  - whistle-blower-policy

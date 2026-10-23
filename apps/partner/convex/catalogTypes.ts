@@ -16,6 +16,8 @@ export type CatalogContent = {
   summary: string
   body: string
   group?: string
+  /** One item per group leads it: full card, picture, introduction. */
+  highlight?: boolean
   format?: string
   shareUrl?: string
   embedUrl?: string
@@ -29,6 +31,10 @@ export type CatalogContent = {
   restrictedReason?: string
   requestBeamLabel?: string
   reviewer?: string
+  /** ISO date, e.g. 2026-09-01. */
+  reviewedOn?: string
+  /** ISO date. When this claim must be reviewed again. */
+  revalidateOn?: string
 }
 
 /**
@@ -54,6 +60,42 @@ export type UseCaseDetail = {
 
 export type CatalogUseCase = CatalogContent & UseCaseDetail
 
+export type ComplianceDomain =
+  | "information-security"
+  | "access-and-identity"
+  | "data-privacy"
+  | "hipaa-and-phi"
+  | "continuity-and-backup"
+  | "secure-development"
+  | "operations-and-suppliers"
+  | "people-and-conduct"
+export type ComplianceAvailability = "on-request" | "under-nda" | "confirm-version"
+
+/**
+ * One policy or procedure in Beam's security and compliance library, recorded
+ * only as printed on the document. Files are never stored in the portal;
+ * Beam issues the reviewed copy per client and deployment.
+ */
+export type CatalogComplianceDocument = {
+  slug: string
+  kind: "compliance"
+  title: string
+  domain: ComplianceDomain
+  version: string
+  /** ISO date derived from the printed one; "" when not printed. */
+  releaseDate: string
+  /** The date exactly as printed on the document; "" when not printed. */
+  printedDate: string
+  pages: number
+  classification: string
+  availability: ComplianceAvailability
+  ndaRequired: boolean
+  summary: string
+  requestLabel: string
+  reviewer: string
+  sourceFile: string
+}
+
 export type CatalogWorkspace = {
   slug: string
   name: string
@@ -67,6 +109,13 @@ export type CatalogWorkspace = {
   homeDescription: string
   supportOwner: string
   allowedEmailDomains: string[]
+  /**
+   * Static catalog only: the demo workspace. Demo content may be sent from
+   * here and nowhere else. Convex never reads it.
+   */
+  demo?: boolean
+  /** Static catalog only: output styles offered beyond the brand mode. */
+  allowedOutputStyles?: BrandMode[]
   enabledSurfaces: string[]
   tracks: Array<{
     id: string
@@ -82,6 +131,7 @@ export type CatalogWorkspace = {
   faqSlugs: string[]
   playbookSlugs: string[]
   useCaseSlugs?: string[]
+  complianceSlugs?: string[]
 }
 
 export type PartnerCatalog = {
@@ -91,4 +141,5 @@ export type PartnerCatalog = {
   faq: CatalogContent[]
   playbooks: CatalogContent[]
   useCases: CatalogUseCase[]
+  compliance: CatalogComplianceDocument[]
 }

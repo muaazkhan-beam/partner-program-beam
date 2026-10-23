@@ -14,11 +14,11 @@ reference and mapping only. All work happens in this repo.
 | The Beam Partner app — v1 shell by Jonas | [`apps/partner`](https://github.com/beam-ai-team/beam-library/tree/main/apps/partner) | [`apps/partner/`](../../apps/partner/) |
 | Product contract — **the spec for Phase 1** | [`specs/apps/partner-portal.md`](https://github.com/beam-ai-team/beam-library/blob/main/specs/apps/partner-portal.md) | [`docs/specs/partner-portal.md`](../specs/partner-portal.md) |
 | Enablement MVP — separate, status *proposed* | [`specs/apps/partner-enablement-mvp.md`](https://github.com/beam-ai-team/beam-library/blob/main/specs/apps/partner-enablement-mvp.md) | [`docs/specs/partner-enablement-mvp.md`](../specs/partner-enablement-mvp.md) |
-| Partner portal skill — operating playbook | [`skills/general/partner-portal/SKILL.md`](https://github.com/beam-ai-team/beam-library/blob/main/skills/general/partner-portal/SKILL.md) | [`partner-portal-skill.md`](partner-portal-skill.md) |
-| Partner call synthesis — PwC ME, BID, Roland Berger | `skills/general/partner-portal/references/partner-pain.md` | [`partner-pain.md`](partner-pain.md) |
-| Partner-safe tool map | `skills/general/partner-portal/references/tool-map.md` | [`tool-map.md`](tool-map.md) |
-| First FAQ seed, drafted from live objections | `skills/general/partner-portal/references/faq-seed.md` | [`faq-seed.md`](faq-seed.md) |
-| What already exists in Core, Library and GTM Core | `skills/general/partner-portal/references/current-state.md` | [`current-state.md`](current-state.md) |
+| Partner portal skill — operating playbook | [`skills/general/partner-portal/SKILL.md`](https://github.com/beam-ai-team/beam-library/blob/main/skills/general/partner-portal/SKILL.md) | Not copied: read it in beam-library (private) |
+| Partner call synthesis — PwC ME, BID, Roland Berger | `skills/general/partner-portal/references/partner-pain.md` | Not copied: names clients and contacts |
+| Partner-safe tool map | `skills/general/partner-portal/references/tool-map.md` | Not copied: read it in beam-library (private) |
+| First FAQ seed, drafted from live objections | `skills/general/partner-portal/references/faq-seed.md` | Not copied: read it in beam-library (private) |
+| What already exists in Core, Library and GTM Core | `skills/general/partner-portal/references/current-state.md` | Not copied: names customers |
 
 Upstream state when copied: `effed19`, 2026-09-04. Partner app last touched by PR #154
 (*certifications and richer portal surfaces*) and #156 (*docs: organize and clean up
@@ -54,8 +54,7 @@ Capacity Check: Partner Program Dashboard, 2 September 2026, led by Jack.
 
 | What | Link |
 | --- | --- |
-| Recording | <https://fathom.video/calls/808042865> |
-| Share link | <https://fathom.video/share/QYxrL-zf_JezxgmDUVVHjGeRW4QnXhsk> |
+| Recording | In Fathom (internal) |
 
 Both require a Fathom login and cannot be fetched programmatically. The summary is in
 [`../scope/phase-1-scope.md`](../scope/phase-1-scope.md) and the original brief.

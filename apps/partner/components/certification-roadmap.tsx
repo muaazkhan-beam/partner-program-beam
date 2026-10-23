@@ -1,144 +1,152 @@
 "use client"
 
+import type { CSSProperties } from "react"
 import Link from "next/link"
-import {
-  RiBookOpenLine,
-  RiCheckboxCircleLine,
-  RiFileTextLine,
-  RiMedalLine,
-  RiShieldUserLine,
-  RiToolsLine,
-} from "@remixicon/react"
+import { RiCheckboxCircleLine, RiLockLine } from "@remixicon/react"
 
-import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
 import { useWorkspace } from "@/components/workspace-context"
-import { certifications } from "@/lib/certifications"
+import {
+  certifications,
+  firstOutcomeClause,
+  prerequisiteLine,
+} from "@/lib/certifications"
+import { cn } from "@/lib/utils"
 import { workspacePath } from "@/lib/workspace-resolver"
 
-const credentialIcons = {
-  "beam-foundations": RiBookOpenLine,
-  "discovery-lead": RiFileTextLine,
-  builder: RiToolsLine,
-  "solution-architect": RiShieldUserLine,
-} as const
+// Nothing is tracked yet: cohort access and assessment results are not wired,
+// so the path honestly starts at zero for everyone.
+const completed = 0
 
 export function CertificationRoadmap() {
   const workspace = useWorkspace()
+  const total = certifications.length
 
   return (
     <div className="space-y-8">
-      <section className="partner-cert-hero relative isolate overflow-hidden rounded-3xl border border-white/10 p-6 text-white shadow-2xl sm:p-8 lg:p-10">
-        <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.07)_1px,transparent_1px)] [background-size:44px_44px] [mask-image:linear-gradient(to_bottom,black,transparent_82%)]" />
-        <div className="relative grid gap-8 lg:grid-cols-[1.3fr_.7fr] lg:items-end">
-          <div className="max-w-2xl space-y-5">
-            <div className="flex size-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10 backdrop-blur">
-              <RiMedalLine className="size-6" />
-            </div>
-            <div className="space-y-3">
-              <p className="font-mono text-[11px] tracking-[0.22em] text-white/55 uppercase">
-                {workspace.displayName} · Capability path
-              </p>
-              <h2 className="text-3xl font-medium tracking-[-0.035em] text-balance sm:text-5xl">
-                Learn it. Prove it. Take it to a client.
-              </h2>
-              <p className="max-w-xl text-sm leading-7 text-white/65 sm:text-base">
-                Credentials belong to people. Your firm&apos;s tier follows from
-                certified roles, delivered agents, and customer outcomes.
-              </p>
-            </div>
+      <section className="grid gap-5 rounded-xl bg-muted/40 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
+        <div>
+          <div className="flex items-baseline justify-between gap-4">
+            <h3 className="text-sm font-medium">Your path</h3>
+            <span className="text-xs text-muted-foreground">
+              {completed} of {total}
+            </span>
           </div>
-          <div className="rounded-2xl border border-white/12 bg-black/20 p-5 backdrop-blur">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-white/60">Your pathway</span>
-              <span className="font-medium">0 of 4</span>
-            </div>
-            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/12">
-              <div className="h-full w-[6%] rounded-full bg-white" />
-            </div>
-            <p className="mt-4 text-xs leading-5 text-white/50">
-              Cohort access and assessment results will appear here.
-            </p>
+          <div
+            aria-label="Your path"
+            aria-valuemax={total}
+            aria-valuemin={0}
+            aria-valuenow={completed}
+            className="mt-3 grid gap-1"
+            role="progressbar"
+            style={{ gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` }}
+          >
+            {certifications.map((certification, index) => (
+              <span
+                key={certification.slug}
+                className={cn(
+                  "h-1 rounded-full",
+                  index < completed ? "bg-primary" : "bg-border"
+                )}
+              />
+            ))}
           </div>
+          <p className="mt-3 text-xs leading-5 text-muted-foreground">
+            Progress appears here once Beam opens your cohort.
+          </p>
         </div>
+        <p className="text-sm leading-6 text-muted-foreground lg:max-w-sm lg:justify-self-end">
+          Credentials belong to people; your firm&apos;s tier follows from
+          certified roles and delivered agents.
+        </p>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2">
+      <ol aria-label="Certification path" className="grid gap-4 lg:grid-cols-4">
         {certifications.map((certification, index) => {
-          const Icon =
-            credentialIcons[
-              certification.slug as keyof typeof credentialIcons
-            ]
+          const open = Boolean(certification.active)
+          const status = open
+            ? "Open to you now"
+            : (prerequisiteLine(certification) ?? certification.status)
+          const StatusIcon = open ? RiCheckboxCircleLine : RiLockLine
+          const clause = firstOutcomeClause(certification)
+
           return (
-            <article
+            <li
               key={certification.slug}
-              className="group relative overflow-hidden rounded-2xl border bg-card p-5 transition-shadow hover:shadow-lg sm:p-6"
+              className="group/step relative grid rise-in grid-cols-[2rem_minmax(0,1fr)] gap-x-3 lg:grid-cols-1 lg:grid-rows-[auto_1fr] lg:gap-y-3"
+              style={{ "--i": index } as CSSProperties}
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex size-11 items-center justify-center rounded-xl bg-primary/8 text-primary">
-                  <Icon className="size-5" />
-                </div>
-                <span className="font-mono text-xs text-muted-foreground">
-                  0{index + 1}
-                </span>
-              </div>
-              <div className="mt-6 space-y-3">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">
-                    {certification.eyebrow}
-                  </p>
-                  <h3 className="mt-1 text-xl font-medium tracking-tight">
-                    {certification.name}
-                  </h3>
-                </div>
+              <span
+                aria-hidden="true"
+                className="absolute top-8 bottom-[-1rem] left-4 w-px bg-border group-last/step:hidden lg:top-4 lg:right-[-1rem] lg:bottom-auto lg:left-8 lg:h-px lg:w-auto"
+              />
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "relative z-10 flex size-8 items-center justify-center rounded-full text-sm font-medium",
+                  open
+                    ? "bg-primary text-primary-foreground"
+                    : "border bg-background text-muted-foreground"
+                )}
+              >
+                {index + 1}
+              </span>
+              <article
+                className={cn(
+                  "flex h-full flex-col gap-3 rounded-xl border bg-card p-5",
+                  open && "border-primary/40"
+                )}
+              >
+                <h3 className="text-base font-medium">
+                  <span className="sr-only">Step {index + 1}: </span>
+                  {certification.name}
+                </h3>
                 <p className="text-sm leading-6 text-muted-foreground">
                   {certification.description}
                 </p>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <Badge variant="outline">{certification.duration}</Badge>
-                  <Badge variant="outline">{certification.assessment}</Badge>
-                </div>
-              </div>
-              <div className="mt-6 flex items-center justify-between gap-4 border-t pt-4">
-                <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                  {certification.active ? (
-                    <RiCheckboxCircleLine className="size-4 text-primary" />
-                  ) : (
-                    <span className="size-1.5 rounded-full bg-muted-foreground/50" />
-                  )}
-                  {certification.status}
-                </span>
-                <Link
-                  className={buttonVariants({
-                    size: "sm",
-                    variant: "outline",
-                  })}
-                  href={workspacePath(
-                    workspace.slug,
-                    `/certifications/${certification.slug}`
+                {clause ? (
+                  <p className="text-sm leading-6">
+                    <span className="font-medium">After this you can:</span>{" "}
+                    {clause}
+                  </p>
+                ) : null}
+                <p className="text-xs text-muted-foreground">
+                  {certification.duration} · {certification.assessment}
+                </p>
+                <p
+                  className={cn(
+                    "flex items-center gap-1.5 text-xs",
+                    open ? "text-foreground" : "text-muted-foreground"
                   )}
                 >
-                  View certification
-                </Link>
-              </div>
-            </article>
+                  <StatusIcon
+                    aria-hidden="true"
+                    className={cn("size-4", open && "text-primary")}
+                  />
+                  {status}
+                </p>
+                <div className="mt-auto pt-1">
+                  <Link
+                    className={buttonVariants({ size: "sm", variant: "outline" })}
+                    href={workspacePath(
+                      workspace.slug,
+                      `/certifications/${certification.slug}`
+                    )}
+                  >
+                    View certification
+                  </Link>
+                </div>
+              </article>
+            </li>
           )
         })}
-      </section>
+      </ol>
 
-      <section className="grid gap-4 rounded-2xl border bg-muted/30 p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-6">
-        <div>
-          <p className="font-medium">The outcome is activation, not a badge.</p>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            Target: first partner-sourced opportunity within 90 days of
-            certification, supported by weekly office hours for the first eight
-            weeks.
-          </p>
-        </div>
-        <Badge variant="outline" className="w-fit bg-background">
-          90-day target
-        </Badge>
-      </section>
+      <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+        The outcome is activation, not a badge: a first partner-sourced
+        opportunity within 90 days of certification, with weekly office hours
+        for the first eight weeks.
+      </p>
     </div>
   )
 }

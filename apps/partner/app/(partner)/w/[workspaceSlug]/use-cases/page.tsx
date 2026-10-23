@@ -9,7 +9,7 @@ export default function UseCasesPage() {
     <PageContainer className="space-y-8">
       <PageHeading
         title="Use cases"
-        description="What Beam runs in production today, by department. Each one names the step that keeps a human approver. Numbers appear only where a named deployment backs them."
+        description="What Beam runs in production today, by department. Each names the step a person approves. A result is quoted only where a named deployment backs it."
       />
       <ContentGrid
         kind="use-case"

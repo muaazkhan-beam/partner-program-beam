@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
+import { PackButton } from "@/components/pack-button"
 import { useWorkspace } from "@/components/workspace-context"
 import {
   Breadcrumb,
@@ -14,17 +15,42 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import type { ContentKind } from "@/convex/catalogTypes"
+import { getWorkspaceItem } from "@/lib/catalog/static"
+import { getCertification } from "@/lib/certifications"
 import { workspacePath } from "@/lib/workspace-resolver"
 
 const titles: Record<string, string> = {
   home: "Home",
+  journey: "Partner journey",
   tools: "Tools",
   materials: "Materials",
+  compliance: "Security & compliance",
+  scope: "Scope",
+  pack: "Client pack",
   faq: "FAQ",
   certifications: "Certifications",
   agents: "Agents",
-  requests: "Requests",
+  requests: "Ask the Beam team",
+  "use-cases": "Use cases",
+  playbooks: "Playbooks",
   admin: "Admin",
+}
+
+const detailKind: Record<string, ContentKind> = {
+  materials: "material",
+  faq: "faq",
+  tools: "tool",
+  playbooks: "playbook",
+  "use-cases": "use-case",
+}
+
+/** The item's title in the breadcrumb, never its URL slug. */
+function detailTitle(workspaceSlug: string, surface: string | undefined, detail: string) {
+  const slug = decodeURIComponent(detail)
+  if (surface === "certifications") return getCertification(slug)?.name ?? slug
+  const kind = surface ? detailKind[surface] : undefined
+  return (kind && getWorkspaceItem(workspaceSlug, kind, slug)?.title) || slug
 }
 
 export function SiteHeader() {
@@ -36,7 +62,7 @@ export function SiteHeader() {
   const title = titles[surface ?? "home"] ?? "Beam Partner"
 
   return (
-    <header className="sticky top-0 z-40 flex h-(--header-height) shrink-0 items-center border-b bg-background/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 flex h-(--header-height) shrink-0 items-center border-b bg-background">
       <div className="flex w-full items-center gap-2 px-4 sm:px-5 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator
@@ -60,7 +86,7 @@ export function SiteHeader() {
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbPage className="font-medium">
-                  {decodeURIComponent(detail)}
+                  {detailTitle(workspace.slug, surface, detail)}
                 </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
@@ -68,6 +94,9 @@ export function SiteHeader() {
         ) : (
           <h1 className="text-sm font-medium sm:text-base">{title}</h1>
         )}
+        <div className="ml-auto flex items-center gap-2">
+          <PackButton />
+        </div>
       </div>
     </header>
   )

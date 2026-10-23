@@ -1,4 +1,6 @@
-export const DEFAULT_AUTH_RETURN_PATH = "/home"
+// The apex has no /home; its signed-in fallback is /admin. Tenant login
+// screens supply their workspace home as a narrower fallback below.
+export const DEFAULT_AUTH_RETURN_PATH = "/admin"
 
 const INTERNAL_ORIGIN = "https://beam-partner-auth.invalid"
 const ENCODED_PATH_SEPARATOR = /%(?:2f|5c)/i
@@ -31,6 +33,16 @@ export function getSafeAuthReturnPath(
   } catch {
     return fallback
   }
+}
+
+export function getAuthenticatedLoginReturnPath(
+  value: unknown,
+  workspaceSlug?: string | null,
+) {
+  const fallback = workspaceSlug
+    ? `/w/${workspaceSlug}/home`
+    : DEFAULT_AUTH_RETURN_PATH
+  return getSafeAuthReturnPath(value, fallback)
 }
 
 export function getLoginPath(returnPath: unknown) {

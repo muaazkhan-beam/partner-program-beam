@@ -12,15 +12,56 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useWorkspace } from "@/components/workspace-context"
+import { listWorkspaceCompliance, listWorkspaceItems } from "@/lib/catalog/static"
 import { getCertification } from "@/lib/certifications"
+import { fitRequestText } from "@/lib/fit-check"
+import { packRequestText, parsePackItems } from "@/lib/pack"
+import { readPackState } from "@/lib/pack-store"
+import { briefText, noMatchText } from "@/lib/scope"
+import { readProcessById } from "@/lib/scope-store"
+import {
+  describeRequestSubject,
+  isRequestSupportType,
+  type RequestSubject,
+} from "@/lib/request-links"
 
 const stages = ["qualify", "diagnostic", "shadow", "success-criteria"] as const
+const stageLabel: Record<(typeof stages)[number], string> = {
+  qualify: "Qualifying the client",
+  diagnostic: "Running the diagnostic",
+  shadow: "Shadow demo",
+  "success-criteria": "Agreeing success",
+}
+const supportLabel: Record<string, string> = {
+  "shadow-demo": "A shadow demo",
+  "deployment-review": "A deployment review",
+  "faq-escalation": "An answer Beam has not published",
+  other: "Something else",
+}
 const supportTypes = [
   "shadow-demo",
   "deployment-review",
   "faq-escalation",
   "other",
 ] as const
+
+/** One question per line, as the partner pasted them; a cut notice stays as it is. */
+function askedLines(asked: string) {
+  return asked
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => (line.startsWith("[") ? line : `- ${line}`))
+    .join("\n")
+}
+
+function askedCount(asked: string) {
+  return asked.split(/\n+/).filter((line) => line.trim() && !line.trim().startsWith("[")).length
+}
+
+function askedHeading(asked: string) {
+  return askedCount(asked) > 1 ? "The questions:" : "The question:"
+}
 
 export default function RequestsPage() {
   if (authBypass) {
@@ -41,7 +82,7 @@ function PreviewRequestsPage() {
   return (
     <RequestsForm
       onCreate={async () =>
-        "Preview bypass does not create requests. In a live workspace this returns a request ID, owner, and status."
+        "Demo mode: nothing was sent. In a live workspace you get a request number, an owner and a status."
       }
     />
   )
@@ -102,6 +143,8 @@ function RequestsForm({
   onCreate: (input: RequestInput) => Promise<string>
   requests?: ReactNode
 }) {
+  const workspace = useWorkspace()
+  const [subject, setSubject] = useState<RequestSubject | null>(null)
   const [accountName, setAccountName] = useState("")
   const [candidateProcess, setCandidateProcess] = useState("")
   const [stage, setStage] = useState<(typeof stages)[number]>("qualify")
@@ -112,24 +155,77 @@ function RequestsForm({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const certificationSlug = new URLSearchParams(window.location.search).get(
-      "certification"
-    )
-    const certification = getCertification(certificationSlug ?? "")
-    if (!certification) return
+    const params = new URLSearchParams(window.location.search)
+    const certification = getCertification(params.get("certification") ?? "")
+    const about = describeRequestSubject(workspace.slug, params.get("about"))
+    const support = params.get("support")
+    const asked = params.get("q")?.trim() ?? ""
+    if (!certification && !about && !isRequestSupportType(support) && !asked) return
 
     const prefill = window.setTimeout(() => {
-      setCandidateProcess(`Partner certification — ${certification.name}`)
-      setSupportType("other")
-      setProblemStatement(
-        certification.active
-          ? `Please add me to the next ${certification.name} certification cohort.`
-          : `Please review my readiness for the ${certification.name} certification.`
-      )
+      if (certification) {
+        setCandidateProcess(`Partner certification — ${certification.name}`)
+        setSupportType("other")
+        setProblemStatement(
+          certification.active
+            ? `Please add me to the next ${certification.name} certification cohort.`
+            : `Please review my readiness for the ${certification.name} certification.`
+        )
+        return
+      }
+      if (about) {
+        setSubject(about)
+        if (about.kind === "use-case") setCandidateProcess(about.label)
+        if (about.kind === "compliance") {
+          // The pack itself stays in this browser; only slugs travel in the URL.
+          const slugs = new Set(parsePackItems(params.get("items")))
+          const stored = readPackState(workspace.slug)
+          const documents = listWorkspaceCompliance(workspace.slug).filter((document) =>
+            slugs.has(document.slug)
+          )
+          if (stored.clients.length) setAccountName(stored.clients.join(", "))
+          setCandidateProcess("Security and compliance pack")
+          setStage("qualify")
+          setProblemStatement(packRequestText({ clients: stored.clients, documents }))
+        } else if (about.kind === "scope" && about.id === "no-match") {
+          const heard = window.sessionStorage.getItem("beam-scope-heard") ?? ""
+          setCandidateProcess(heard.trim() || "A process with no live use case")
+          setStage("qualify")
+          setProblemStatement(noMatchText(heard))
+        } else if (about.kind === "scope" && about.id) {
+          // The brief is rebuilt from this browser's store; the URL carries only an id.
+          const process = readProcessById(workspace.slug, about.id)
+          const useCase = listWorkspaceItems(workspace.slug, "use-case").find(
+            (item) => item.slug === process?.useCaseSlug
+          )
+          if (process && useCase) {
+            if (process.client) setAccountName(process.client)
+            setCandidateProcess(useCase.title)
+            setStage("qualify")
+            setProblemStatement(briefText(process, useCase as never))
+          }
+        } else if (about.kind === "fit" && about.id) {
+          setProblemStatement(fitRequestText(about.id))
+        } else {
+          const topic = about.label.replace(/[.?!]+$/, "")
+          if (asked) setCandidateProcess(`Question: ${topic}`)
+          setProblemStatement(
+            asked
+              ? `${askedHeading(asked)}\n${askedLines(asked)}\n\nAbout: ${topic}.\n\n`
+              : `Stuck on: ${topic}.\n\n`
+          )
+        }
+      } else if (asked) {
+        setCandidateProcess(
+          askedCount(asked) > 1 ? "Questions with no published answer" : "A question with no published answer"
+        )
+        setProblemStatement(`${askedHeading(asked)}\n${askedLines(asked)}\n\n`)
+      }
+      if (isRequestSupportType(support)) setSupportType(support)
     }, 0)
 
     return () => window.clearTimeout(prefill)
-  }, [])
+  }, [workspace.slug, workspace.displayName, workspace.brandMode])
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -159,12 +255,18 @@ function RequestsForm({
   return (
     <PageContainer className="space-y-8">
       <PageHeading
-        title="Start a client opportunity"
-        description="A small request into Beam, not a CRM. Do not upload client data."
+        title="Ask the Beam team"
+        description="Beam's help on a deal: a client question, a shadow demo, a deployment review. Do not upload client data."
       />
       <Card>
         <CardHeader>
-          <h2 className="text-lg font-medium">Request Beam support</h2>
+          <h2 className="text-lg font-medium">What do you need?</h2>
+          {subject ? (
+            <p className="text-sm text-muted-foreground">
+              About:{" "}
+              <span className="font-medium text-foreground">{subject.label}</span>
+            </p>
+          ) : null}
         </CardHeader>
         <CardContent>
           <form className="grid gap-4" onSubmit={onSubmit}>
@@ -199,7 +301,7 @@ function RequestsForm({
                 >
                   {stages.map((value) => (
                     <option key={value} value={value}>
-                      {value}
+                      {stageLabel[value]}
                     </option>
                   ))}
                 </select>
@@ -218,7 +320,7 @@ function RequestsForm({
                 >
                   {supportTypes.map((value) => (
                     <option key={value} value={value}>
-                      {value}
+                      {supportLabel[value]}
                     </option>
                   ))}
                 </select>
@@ -234,7 +336,7 @@ function RequestsForm({
                 onChange={(event) => setProblemStatement(event.target.value)}
               />
             </div>
-            <Button type="submit">Create request</Button>
+            <Button type="submit">Send to Beam</Button>
             {result ? (
               <p className="text-sm text-muted-foreground">{result}</p>
             ) : null}

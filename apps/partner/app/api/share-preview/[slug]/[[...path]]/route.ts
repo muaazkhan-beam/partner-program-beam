@@ -19,7 +19,7 @@ const previewCsp = [
 
 function errorPage(message: string, status: number) {
   return new Response(
-    `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#050913;color:#fff;font:16px/1.5 system-ui,sans-serif}.card{max-width:32rem;padding:2rem;text-align:center}.card p{color:#aeb8ca}.card a{color:#fff}</style></head><body><div class="card"><h1>Preview unavailable</h1><p>${message}</p><p>Use “Open in Beam Shares” below the preview.</p></div></body></html>`,
+    `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#fafafa;color:#171717;font:16px/1.5 system-ui,sans-serif}.card{max-width:32rem;padding:2rem;text-align:center}.card h1{font-size:1.25rem;font-weight:500}.card p{color:#737373}</style></head><body><div class="card"><h1>Preview unavailable</h1><p>${message}</p><p>Use Open below the preview to view it.</p></div></body></html>`,
     {
       status,
       headers: {

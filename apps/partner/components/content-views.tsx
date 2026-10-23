@@ -1,30 +1,54 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, type CSSProperties } from "react"
 import {
   RiArrowDownSLine,
   RiArrowRightLine,
   RiBookOpenLine,
   RiCheckLine,
   RiClipboardLine,
+  RiCornerDownRightLine,
   RiExternalLinkLine,
   RiFileList3Line,
+  RiFileTextLine,
+  RiFolderLine,
   RiPresentationLine,
   RiQuestionLine,
   RiRobot2Line,
-  RiSearchLine,
+  RiSendPlaneLine,
+  RiShieldCheckLine,
   RiTerminalBoxLine,
   RiToolsLine,
 } from "@remixicon/react"
 
+import { AddToPack } from "@/components/add-to-pack"
+import { ItemClaimBadge, useClaimState } from "@/components/claim-state"
+import { SendBadge } from "@/components/send-badge"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { FaqAsk } from "@/components/faq-ask"
+import { FileDrop, type DroppedFile } from "@/components/file-drop"
+import { rankAnswers, type AskCandidate } from "@/lib/faq-answer"
+import { holdReason } from "@/lib/pack"
+import { type ClaimStateKey } from "@/lib/claim-state"
+import { foldClientVersions, rowsInOrder, type VersionedRow } from "@/lib/client-versions"
+import { groupByLifecycle, phaseOf } from "@/lib/lifecycle"
+import { journeyPhases } from "@/lib/partner-journey"
+import { cn } from "@/lib/utils"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { WhereBeamFitsDetail } from "@/components/where-beam-fits"
 import { useWorkspace } from "@/components/workspace-context"
 import { authBypass } from "@/components/providers"
 import type { ContentKind, UseCaseDetail } from "@/convex/catalogTypes"
-import { getWorkspaceItem, listWorkspaceItems } from "@/lib/catalog/static"
+import {
+  getWorkspaceItem,
+  isLibraryPack,
+  listWorkspaceCompliance,
+  listWorkspaceItems,
+} from "@/lib/catalog/static"
+import { requestHref, supportForKind } from "@/lib/request-links"
+import { IntakeError, readIntake, sourceKind, type Intake } from "@/lib/desk/intake"
+import { EmailParseError, parseEml } from "@/lib/intake/eml"
 import { workspacePath } from "@/lib/workspace-resolver"
 import { api } from "@partner/convex/_generated/api"
 import { useQuery } from "convex/react"
@@ -45,6 +69,7 @@ type ContentCard = {
   summary: string
   body: string
   group?: string
+  highlight?: boolean
   claimState: string
   audience: string
   forwardable: boolean
@@ -55,6 +80,8 @@ type ContentCard = {
   href?: string
   status?: "pending"
   useCase?: UseCaseDetail
+  /** Set on a client version: the answer or use case it was written from. */
+  sourceSlug?: string
 }
 
 
@@ -64,63 +91,148 @@ const COMPLEXITY_LABEL: Record<string, string> = {
   complex: "Complex",
 }
 
+/** One filter row for every list: chips with their counts, and what is showing. */
+function FilterChips<K extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  readout,
+}: {
+  label: string
+  options: ReadonlyArray<{ key: K; label: string; count: number }>
+  value: K
+  onChange: (key: K) => void
+  readout: string
+}) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap items-center gap-2">
+      {options.map((option) => {
+        const selected = value === option.key
+        return (
+          <button
+            key={option.key}
+            type="button"
+            aria-pressed={selected}
+            onClick={() => onChange(option.key)}
+            className={cn(
+              "pressable inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+              selected
+                ? "border-foreground bg-foreground text-background"
+                : "bg-background text-foreground hover:bg-muted"
+            )}
+          >
+            {option.label}{" "}
+            <span className={selected ? "text-background/70" : "text-muted-foreground"}>
+              {option.count}
+            </span>
+          </button>
+        )
+      })}
+      <span className="ml-auto text-xs text-muted-foreground" aria-live="polite">
+        {readout}
+      </span>
+    </div>
+  )
+}
+
+/** The client-voice version of the row above it, with its own state and pack button. */
+function ClientVersionLine({ item }: { item: ContentCard }) {
+  const workspace = useWorkspace()
+  return (
+    <div className="relative z-10 flex flex-wrap items-center gap-x-3 gap-y-2 px-4 pb-3 pl-12 sm:pl-16">
+      <RiCornerDownRightLine className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <p className="min-w-0 flex-1 basis-48 text-sm">
+        <span className="text-muted-foreground">Client version: </span>
+        <Link
+          className="font-medium underline-offset-4 hover:underline"
+          href={workspacePath(workspace.slug, `/${contentSurface(item.kind)}/${item.slug}`)}
+        >
+          {item.title}
+        </Link>
+      </p>
+      <ItemClaimBadge item={item} />
+      <AddToPack kind={item.kind} slug={item.slug} label={item.title} item={item} />
+    </div>
+  )
+}
+
 /**
  * Use cases are structured records, not documents, so they get their own
- * renderer rather than the share-preview one. The systems and the
- * human-approval step are what a partner is actually scanning for.
+ * renderer rather than the share-preview one: by department, one row each,
+ * with the systems it touches and whether a result is cited. A client version
+ * sits under the use case it was written from, never as a second entry.
  */
 function UseCaseCatalog({ items }: { items: ContentCard[] }) {
   const workspace = useWorkspace()
-  const grouped = new Map<string, ContentCard[]>()
-  for (const item of items) {
-    const key = item.group ?? "Other"
-    grouped.set(key, [...(grouped.get(key) ?? []), item])
+  const grouped = new Map<string, VersionedRow<ContentCard>[]>()
+  for (const row of foldClientVersions(items)) {
+    const key = row.item.group ?? "Other"
+    grouped.set(key, [...(grouped.get(key) ?? []), row])
   }
 
   return (
-    <div className="space-y-10">
-      {[...grouped.entries()].map(([department, groupItems]) => (
-        <section key={department} className="space-y-4">
-          <h2 className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-            {department}
-          </h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            {groupItems.map((item) => {
+    <div className="space-y-8">
+      {[...grouped.entries()].map(([department, rows]) => (
+        <section key={department} className="space-y-3">
+          <div className="flex items-baseline justify-between gap-3 border-b pb-2">
+            <h2 className="text-sm font-medium">{department}</h2>
+            <span className="text-xs text-muted-foreground">
+              {rows.length} {rows.length === 1 ? "use case" : "use cases"}
+            </span>
+          </div>
+          <ul className="divide-y rounded-xl border bg-card">
+            {rows.map(({ item, clientVersions }, index) => {
               const detail = item.useCase
+              const meta = [
+                detail?.complexity
+                  ? (COMPLEXITY_LABEL[detail.complexity] ?? detail.complexity)
+                  : null,
+                detail?.systems?.length ? detail.systems.join(", ") : null,
+                detail?.outcome
+                  ? `${detail.outcome.metric}: ${detail.outcome.value}`
+                  : "No cited result yet",
+              ]
+                .filter(Boolean)
+                .join(" · ")
               return (
-                <Link
+                <li
                   key={item.slug}
-                  href={workspacePath(workspace.slug, `/use-cases/${item.slug}`)}
-                  className="group flex flex-col gap-3 rounded-2xl border bg-card p-5 transition-colors hover:border-primary/40"
+                  className="rise-in relative transition-colors focus-within:bg-muted/40 hover:bg-muted/40"
+                  style={{ "--i": index } as CSSProperties}
                 >
-                  <div className="flex flex-wrap items-center gap-2">
-                    {detail?.complexity ? (
-                      <Badge variant="outline">
-                        {COMPLEXITY_LABEL[detail.complexity] ?? detail.complexity}
-                      </Badge>
-                    ) : null}
-                    {detail?.timeToProduction ? (
-                      <Badge variant="outline">{detail.timeToProduction}</Badge>
-                    ) : null}
-                    <Badge variant="outline">
-                      {item.forwardable ? "Client-forwardable" : "Partner-internal"}
-                    </Badge>
+                  <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-6">
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                        <RiFileList3Line className="size-4" aria-hidden="true" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-medium">
+                          <Link
+                            href={workspacePath(workspace.slug, `/use-cases/${item.slug}`)}
+                            className="after:absolute after:inset-0 focus-visible:outline-none"
+                          >
+                            {item.title}
+                          </Link>
+                        </h3>
+                        <p className="mt-0.5 text-sm leading-6 text-muted-foreground">
+                          {item.summary}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">{meta}</p>
+                      </div>
+                    </div>
+                    <div className="relative z-10 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 pl-12 sm:justify-end sm:pl-0">
+                      <ItemClaimBadge item={item} />
+                      <AddToPack kind="use-case" slug={item.slug} label={item.title} item={item} />
+                    </div>
                   </div>
-                  <h3 className="text-lg font-medium tracking-tight">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.summary}</p>
-                  {detail?.systems?.length ? (
-                    <p className="font-mono text-[11px] text-muted-foreground">
-                      {detail.systems.join(" · ")}
-                    </p>
-                  ) : null}
-                  <span className="mt-auto inline-flex items-center gap-1.5 text-sm font-medium text-primary">
-                    {detail?.outcome ? detail.outcome.value : "Outcome pending"}
-                    <RiArrowRightLine className="size-4" />
-                  </span>
-                </Link>
+                  {clientVersions.map((version) => (
+                    <ClientVersionLine key={version.slug} item={version} />
+                  ))}
+                </li>
               )
             })}
-          </div>
+          </ul>
         </section>
       ))}
     </div>
@@ -148,10 +260,7 @@ function UseCaseDetailView({
   return (
     <article className="max-w-3xl space-y-5">
       <div className="flex flex-wrap gap-2">
-        <Badge variant="outline">{tagLabel(item.audience)}</Badge>
-        <Badge variant="outline">
-          {item.status === "pending" ? "Pending" : tagLabel(item.claimState)}
-        </Badge>
+        <SendBadge item={item} />
         {detail.complexity ? (
           <Badge variant="outline">
             {COMPLEXITY_LABEL[detail.complexity] ?? detail.complexity}
@@ -171,7 +280,12 @@ function UseCaseDetailView({
           <span className="font-mono text-[13px]">{detail.systems.join(" · ")}</span>
         </UseCaseRow>
         {detail.timeToProduction ? (
-          <UseCaseRow label="To production">{detail.timeToProduction}</UseCaseRow>
+          <UseCaseRow label="Typical time to production">
+            {detail.timeToProduction}
+            <span className="block text-xs text-muted-foreground">
+              Beam&apos;s estimate for planning, not a client result.
+            </span>
+          </UseCaseRow>
         ) : null}
         <UseCaseRow label="Outcome">
           {detail.outcome ? (
@@ -198,10 +312,28 @@ function UseCaseDetailView({
         </p>
         <p className="mt-1.5 text-sm leading-6">{detail.humanInLoop}</p>
       </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <AddToPack kind="use-case" slug={item.slug} label={item.title} item={item} />
+        <UseCaseScopeAction slug={item.slug} />
+      </div>
     </article>
   )
 }
 
+function UseCaseScopeAction({ slug }: { slug: string }) {
+  const workspace = useWorkspace()
+  return (
+    <Link
+      className="flex max-w-xl flex-1 items-center justify-between gap-3 rounded-lg border p-3 text-sm transition-colors hover:bg-muted/40"
+      href={workspacePath(workspace.slug, `/scope?seed=${encodeURIComponent(slug)}`)}
+    >
+      <span>Scope this for a client</span>
+      <RiArrowRightLine className="size-4 shrink-0 text-muted-foreground" />
+    </Link>
+  )
+}
+
+/** Who an item is written for, in words a partner uses. */
 function tagLabel(value: string) {
   return value ? `${value[0]?.toUpperCase()}${value.slice(1)}` : value
 }
@@ -237,6 +369,150 @@ function BypassContentGrid({
   const workspace = useWorkspace()
   const items = listWorkspaceItems(workspace.slug, kind) as ContentCard[]
   return <ContentGridBody kind={kind} empty={empty} items={items} />
+}
+
+/**
+ * One question box, not two.
+ *
+ * The ask panel and the list each had their own input, so a partner could type
+ * into the lower one and get filtering when they expected an answer. A partner
+ * wants one thing, to ask a question, so a single query now drives both: the
+ * answer above, the ranked list below.
+ */
+function FaqSurfaceBody({ items }: { items: ContentCard[] | undefined }) {
+  const [query, setQuery] = useState("")
+  if (items === undefined) {
+    return <p className="text-sm text-muted-foreground">Loading…</p>
+  }
+  return (
+    <div className="space-y-6">
+      <FaqAsk
+        items={items as AskCandidate[]}
+        query={query}
+        onQueryChange={setQuery}
+      />
+      <FaqRows items={items} query={query} />
+    </div>
+  )
+}
+
+function LiveFaqSurface() {
+  const workspace = useWorkspace()
+  const items = useQuery(api.partner.listContent, {
+    workspaceId: workspace.workspaceId as never,
+    kind: "faq",
+  })
+  return <FaqSurfaceBody items={items as ContentCard[] | undefined} />
+}
+
+function BypassFaqSurface() {
+  const workspace = useWorkspace()
+  const items = listWorkspaceItems(workspace.slug, "faq") as ContentCard[]
+  return <FaqSurfaceBody items={items} />
+}
+
+/**
+ * The same ask box, with one more way in: drop the client's email or their
+ * questionnaire. An email's text goes into the box as if pasted; a
+ * questionnaire's questions go in numbered, and the sheet offers the file
+ * back, filled. Nothing is uploaded.
+ */
+function HomeAskBody({ items }: { items: ContentCard[] | undefined }) {
+  const workspace = useWorkspace()
+  const [query, setQuery] = useState("")
+  const [questionnaire, setQuestionnaire] = useState<Intake | null>(null)
+  const [dropError, setDropError] = useState("")
+  if (items === undefined) return null
+
+  function takeFile(file: DroppedFile) {
+    setDropError("")
+    try {
+      const kind = sourceKind(file.name)
+      if (kind === "email") {
+        setQuestionnaire(null)
+        setQuery(parseEml(file.text).body)
+      } else if (kind === "questionnaire") {
+        const intake = readIntake({ kind: "questionnaire", csv: file.text, fileName: file.name })
+        setQuestionnaire(intake)
+        setQuery(intake.questions.map((question, index) => `${index + 1}. ${question.text}`).join("\n"))
+      } else {
+        setQuestionnaire(null)
+        setQuery(file.text)
+      }
+    } catch (error) {
+      if (error instanceof IntakeError || error instanceof EmailParseError) setDropError(error.message)
+      else throw error
+    }
+  }
+
+  return (
+    <FaqAsk
+      items={items as AskCandidate[]}
+      query={query}
+      onQueryChange={(value) => {
+        setQuery(value)
+        // Typing over a dropped questionnaire means it is no longer that file.
+        if (questionnaire) setQuestionnaire(null)
+      }}
+      variant="home"
+      questionnaire={questionnaire}
+      extra={
+        <div className="space-y-2">
+          <FileDrop
+            compact
+            hint="Or drop the client's email (.eml) or questionnaire (.csv)"
+            samples={
+              workspace.isDemo
+                ? [
+                    { label: "Use the sample email", name: "orvane-vendor-review.eml" },
+                    { label: "Use the sample questionnaire", name: "calderhay-questionnaire.csv" },
+                  ]
+                : []
+            }
+            onFile={takeFile}
+          />
+          {dropError ? (
+            <p role="alert" className="text-xs text-warning-text">
+              {dropError}
+            </p>
+          ) : null}
+        </div>
+      }
+    />
+  )
+}
+
+function LiveHomeAsk() {
+  const workspace = useWorkspace()
+  const items = useQuery(api.partner.listContent, {
+    workspaceId: workspace.workspaceId as never,
+    kind: "faq",
+  })
+  return <HomeAskBody items={items as ContentCard[] | undefined} />
+}
+
+function BypassHomeAsk() {
+  const workspace = useWorkspace()
+  return (
+    <HomeAskBody
+      items={listWorkspaceItems(workspace.slug, "faq") as ContentCard[]}
+    />
+  )
+}
+
+/**
+ * The ask on Home: a partner should be able to say what they need rather than
+ * learn where it lives. Same guarded content as the FAQ.
+ */
+export function HomeAsk() {
+  if (authBypass) return <BypassHomeAsk />
+  return <LiveHomeAsk />
+}
+
+/** Same data path as the list, so the answer can never surface what the list hides. */
+export function FaqSurface() {
+  if (authBypass) return <BypassFaqSurface />
+  return <LiveFaqSurface />
 }
 
 export function ContentGrid({
@@ -296,7 +572,154 @@ function MaterialsGridBody({
   if (items.length === 0) {
     return <p className="text-sm text-muted-foreground">{empty}</p>
   }
-  return <PreviewCatalog kind="material" items={items} surface="materials" />
+  return <MaterialGroups items={items} />
+}
+
+/**
+ * Materials in one consistent list, the shape of the compliance library: a
+ * filter row on top, then rows in lifecycle order, each with its format, its
+ * claim state and the one thing a partner can do with it. The first usable
+ * item of each phase is marked "Start here" in words, not a badge.
+ */
+type MaterialFilter = "all" | "can-go" | "not-published" | "for-you"
+
+const MATERIAL_FILTERS: Array<{ key: MaterialFilter; label: string }> = [
+  { key: "all", label: "All" },
+  { key: "can-go", label: "Can go to a client" },
+  { key: "not-published", label: "Not published yet" },
+  { key: "for-you", label: "For you only" },
+]
+
+function filterOf(state: ClaimStateKey): MaterialFilter {
+  if (state === "can-go" || state === "demo") return "can-go"
+  if (state === "not-published") return "not-published"
+  return "for-you"
+}
+
+function MaterialIcon({ item }: { item: ContentCard }) {
+  const className = "size-4"
+  if (item.slug === "security-compliance-pack") return <RiShieldCheckLine className={className} />
+  if (item.format === "deck") return <RiPresentationLine className={className} />
+  if (item.format === "pack") return <RiFolderLine className={className} />
+  if (item.kind === "playbook" || item.format === "playbook")
+    return <RiBookOpenLine className={className} />
+  return <RiFileTextLine className={className} />
+}
+
+function MaterialGroups({ items }: { items: ContentCard[] }) {
+  const workspace = useWorkspace()
+  const stateOf = useClaimState()
+  const [filter, setFilter] = useState<MaterialFilter>("all")
+
+  // The old pack record lists 8 policies by hand; the library holds all of
+  // them as printed, so the row leads there instead of to a stale copy.
+  const libraryCount = listWorkspaceCompliance(workspace.slug).length
+  const isLibrary = (item: ContentCard) => isLibraryPack(workspace.slug, item)
+  const href = (item: ContentCard) =>
+    isLibrary(item)
+      ? workspacePath(workspace.slug, "/compliance")
+      : workspacePath(workspace.slug, `/${contentSurface(item.kind)}/${item.slug}`)
+  const summaryOf = (item: ContentCard) =>
+    isLibrary(item)
+      ? `All ${libraryCount} policies, as printed. Start from the client's questions.`
+      : item.summary
+  const published = (item: ContentCard) => item.status !== "pending" || isLibrary(item)
+  // The library's documents reach the client through Beam, so it answers
+  // "what can I send" even though the pack record itself is pending.
+  const bucket = (item: ContentCard): MaterialFilter =>
+    isLibrary(item) ? "can-go" : filterOf(stateOf(item))
+  const countOf = (key: MaterialFilter) =>
+    key === "all" ? items.length : items.filter((item) => bucket(item) === key).length
+
+  const visible = filter === "all" ? items : items.filter((item) => bucket(item) === filter)
+  const groups = groupByLifecycle(visible, { slug: "more", name: "More material" })
+  const formatLabel = (item: ContentCard) =>
+    tagLabel(item.format ?? (item.kind === "playbook" ? "playbook" : "material"))
+
+  return (
+    <div className="space-y-8">
+      <FilterChips
+        label="Show materials"
+        options={MATERIAL_FILTERS.map((entry) => ({ ...entry, count: countOf(entry.key) }))}
+        value={filter}
+        onChange={setFilter}
+        readout={`${visible.length} of ${items.length} materials`}
+      />
+
+      {groups.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Nothing is marked {MATERIAL_FILTERS.find((entry) => entry.key === filter)?.label.toLowerCase()} yet.
+        </p>
+      ) : null}
+
+      {groups.map(({ slug: group, name, items: groupItems }) => {
+        // "Start here" belongs on something a partner can use today.
+        const lead =
+          groupItems.find((item) => item.highlight && published(item)) ??
+          groupItems.find(published) ??
+          groupItems.find((item) => item.highlight) ??
+          groupItems[0]
+        const ordered = lead ? [lead, ...groupItems.filter((item) => item !== lead)] : groupItems
+        return (
+          <section key={group} className="space-y-3">
+            <div className="flex items-baseline justify-between gap-3 border-b pb-2">
+              <h2 className="text-sm font-medium">{name}</h2>
+              <span className="text-xs text-muted-foreground">
+                {groupItems.length} {groupItems.length === 1 ? "item" : "items"}
+              </span>
+            </div>
+            <ul className="divide-y rounded-xl border bg-card">
+              {ordered.map((item, index) => (
+                <li
+                  key={item.slug}
+                  className="rise-in relative flex flex-col gap-3 p-4 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:gap-6"
+                  style={{ "--i": index } as CSSProperties}
+                >
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      <MaterialIcon item={item} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium">
+                        <Link
+                          href={href(item)}
+                          className="after:absolute after:inset-0 focus-visible:outline-none"
+                        >
+                          {item.title}
+                        </Link>
+                      </p>
+                      <p className="mt-0.5 line-clamp-2 text-sm leading-6 text-muted-foreground">
+                        {summaryOf(item)}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {isLibrary(item) ? "Library" : formatLabel(item)}
+                        {item === lead && published(item) ? " · Start here" : null}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="relative z-10 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 pl-12 sm:justify-end sm:pl-0">
+                    {isLibrary(item) ? (
+                      <span
+                        className="inline-flex items-center gap-1 text-sm font-medium text-primary"
+                        aria-hidden="true"
+                      >
+                        Open the library <RiArrowRightLine className="size-4" />
+                      </span>
+                    ) : (
+                      <>
+                        <ItemClaimBadge item={item} />
+                        <AddToPack kind={item.kind} slug={item.slug} label={item.title} item={item} />
+                      </>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      })}
+    </div>
+  )
 }
 
 function ContentGridBody({
@@ -319,7 +742,7 @@ function ContentGridBody({
     return <ToolCatalog items={items} />
   }
   if (kind === "faq") {
-    return <FaqRows items={items} />
+    return <FaqRows items={items} query="" />
   }
   if (kind === "use-case") {
     return <UseCaseCatalog items={items} />
@@ -327,255 +750,383 @@ function ContentGridBody({
   return <PreviewCatalog kind={kind} items={items} />
 }
 
-const featuredToolSlugs = ["partner-cli", "partner-faq", "operating-diagnostic"]
+/**
+ * A tool is one of three things, and its group says which: a page the partner
+ * opens here, a Beam product that needs a Beam login, or a skill the Beam team
+ * runs on the client's process. One verb per group, so no button has to
+ * explain itself. The lifecycle is a line on the row, not the structure; it
+ * lives on the journey.
+ */
+type ToolKind = "portal" | "beam-product" | "beam-runs"
+
+function toolKind(item: ContentCard): ToolKind {
+  const href = item.href ?? ""
+  if (href.startsWith("https://core.beam.ai/")) return "beam-runs"
+  if (href.startsWith("/requests")) return "beam-runs"
+  if (href.startsWith("https://")) return "beam-product"
+  return "portal"
+}
+
+const TOOL_GROUPS: Array<{ kind: ToolKind; name: string; lead: string }> = [
+  { kind: "portal", name: "In this portal", lead: "Pages and prompts you use yourself." },
+  {
+    kind: "beam-product",
+    name: "Beam products",
+    lead: "Beam's own apps. They need a Beam login; ask Beam if you do not have one.",
+  },
+  {
+    kind: "beam-runs",
+    name: "Beam runs it for you",
+    lead: "Skills the Beam team runs on your client's process. Ask with the client's name and what you already have.",
+  },
+]
+
+/** The product a link leaves for, named the way Beam names it. */
+const OPEN_LABEL: Record<string, string> = {
+  "iris.beam.ai": "Open in Iris",
+  "discovery.beam.ai": "Open in Discovery",
+  "app.beam.ai": "Open the Beam Platform",
+  "core.beam.ai": "Open in Beam Core",
+}
+
+function openLabel(href: string) {
+  const host = new URL(href).hostname
+  return OPEN_LABEL[host] ?? `Open ${host}`
+}
+
+/** What a portal row opens, since "Open" alone does not say. */
+function portalWhat(item: ContentCard) {
+  if (item.href?.startsWith("/faq/")) return "FAQ answer"
+  if (item.href?.startsWith("/materials/")) return "Playbook"
+  if (!item.href) return "Start prompts"
+  return "Page"
+}
+
+function phaseFor(item: ContentCard) {
+  const slug = phaseOf(item)
+  return journeyPhases.find((phase) => phase.slug === slug) ?? null
+}
 
 function ToolIcon({ item }: { item: ContentCard }) {
-  const className = "size-5"
-  if (item.slug === "partner-cli")
-    return <RiTerminalBoxLine className={className} />
-  if (item.slug === "partner-faq")
-    return <RiQuestionLine className={className} />
-  if (item.slug === "beam-platform")
-    return <RiRobot2Line className={className} />
-  if (item.group === "Prove")
-    return <RiPresentationLine className={className} />
-  if (item.group === "Scope") return <RiFileList3Line className={className} />
+  const className = "size-4"
+  if (item.slug === "partner-cli") return <RiTerminalBoxLine className={className} />
+  if (item.slug === "beam-platform") return <RiRobot2Line className={className} />
+  if (item.href === "/faq") return <RiQuestionLine className={className} />
+  if (item.href?.startsWith("/materials")) return <RiBookOpenLine className={className} />
+  if (toolKind(item) === "beam-product") return <RiPresentationLine className={className} />
+  if (toolKind(item) === "beam-runs") return <RiFileList3Line className={className} />
   return <RiToolsLine className={className} />
 }
 
-function ToolCatalog({ items }: { items: ContentCard[] }) {
+function ToolRow({ item, index }: { item: ContentCard; index: number }) {
   const workspace = useWorkspace()
-  const featured = featuredToolSlugs
-    .map((slug) => items.find((item) => item.slug === slug))
-    .filter((item): item is ContentCard => Boolean(item))
-  const featuredSlugs = new Set(featured.map((item) => item.slug))
-  const remaining = items.filter((item) => !featuredSlugs.has(item.slug))
-  const grouped = new Map<string, ContentCard[]>()
-  for (const item of remaining) {
-    const key = item.group ?? "Library"
-    grouped.set(key, [...(grouped.get(key) ?? []), item])
-  }
+  const kind = toolKind(item)
+  const phase = phaseFor(item)
+  const destination = toolDestination(workspace.slug, item)
+  const external = item.href?.startsWith("https://") ?? false
+  const askHref = requestHref(workspace.slug, {
+    about: `tool:${item.slug}`,
+    support: item.slug === "platform-demo" ? "shadow-demo" : "other",
+  })
+  const phaseLine = phase ? (
+    <>
+      Used in:{" "}
+      <Link
+        className="relative z-10 underline-offset-4 hover:text-foreground hover:underline"
+        href={workspacePath(workspace.slug, `/journey?phase=${phase.slug}`)}
+      >
+        {phase.name}
+      </Link>
+    </>
+  ) : (
+    "Any phase"
+  )
 
   return (
-    <div className="space-y-10">
-      <section className="grid gap-4 lg:grid-cols-3">
-        {featured.map((item, index) => {
-          const external = item.href?.startsWith("https://")
-          return (
-            <article
-              key={item.slug}
-              className="partner-feature-card group relative isolate flex min-h-80 overflow-hidden rounded-3xl border border-white/10 p-6 text-white shadow-xl"
-              data-tone={
-                index === 0 ? "cli" : index === 1 ? "knowledge" : "scope"
-              }
+    <li
+      className="rise-in relative flex flex-col gap-3 p-4 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:gap-6"
+      style={{ "--i": index } as CSSProperties}
+    >
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <ToolIcon item={item} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium">
+            <Link
+              href={kind === "portal" ? destination : workspacePath(workspace.slug, `/tools/${item.slug}`)}
+              className="after:absolute after:inset-0 focus-visible:outline-none"
             >
-              <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(255,255,255,.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.07)_1px,transparent_1px)] [background-size:36px_36px] [mask-image:linear-gradient(to_bottom,black,transparent_75%)]" />
-              <div className="relative mt-auto w-full space-y-5">
-                <div className="flex size-11 items-center justify-center rounded-2xl border border-white/15 bg-white/10 backdrop-blur">
-                  <ToolIcon item={item} />
-                </div>
-                <div className="space-y-2">
-                  <p className="font-mono text-[10px] tracking-[0.2em] text-white/50 uppercase">
-                    {item.group ?? "Partner tool"}
-                  </p>
-                  <h2 className="text-2xl font-medium tracking-tight">
-                    {item.title}
-                  </h2>
-                  <p className="text-sm leading-6 text-white/65">
-                    {item.summary}
-                  </p>
-                </div>
-                <Link
-                  className="flex items-center justify-between rounded-xl bg-white px-4 py-3 text-sm font-medium text-black transition-colors hover:bg-white/90"
-                  href={toolDestination(workspace.slug, item)}
-                  target={external ? "_blank" : undefined}
-                  rel={external ? "noreferrer" : undefined}
-                >
-                  {item.href ? "Open tool" : "View details"}
-                  {external ? (
-                    <RiExternalLinkLine className="size-4" />
-                  ) : (
-                    <RiArrowRightLine className="size-4" />
-                  )}
-                </Link>
-              </div>
-            </article>
-          )
-        })}
-      </section>
+              {item.title}
+            </Link>
+          </p>
+          <p className="mt-0.5 text-sm leading-6 text-muted-foreground">{item.summary}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {kind === "portal" ? `${portalWhat(item)} · ` : null}
+            {phaseLine}
+            {external ? " · Beam login" : null}
+          </p>
+        </div>
+      </div>
+      <div className="relative z-10 flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 pl-12 sm:justify-end sm:pl-0">
+        {kind === "portal" ? (
+          <span className="inline-flex items-center gap-1 text-sm font-medium text-primary" aria-hidden="true">
+            Open <RiArrowRightLine className="size-4" />
+          </span>
+        ) : null}
+        {kind === "beam-product" && item.href ? (
+          <Link
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+            href={item.href}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {openLabel(item.href)} <RiExternalLinkLine aria-hidden="true" />
+          </Link>
+        ) : null}
+        {kind === "beam-runs" ? (
+          <>
+            {external && item.href ? (
+              <Link
+                className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                href={item.href}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {openLabel(item.href)} <RiExternalLinkLine className="size-3.5" aria-hidden="true" />
+              </Link>
+            ) : null}
+            <Link className={buttonVariants({ size: "sm" })} href={askHref}>
+              <RiSendPlaneLine aria-hidden="true" /> Ask Beam
+            </Link>
+          </>
+        ) : null}
+      </div>
+    </li>
+  )
+}
 
-      {[...grouped.entries()].map(([group, groupItems]) => (
-        <section key={group} className="space-y-4">
-          <div className="flex items-center gap-3">
-            <h2 className="text-lg font-medium">{group}</h2>
-            <span className="text-xs text-muted-foreground">
-              {groupItems.length} tools
-            </span>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {groupItems.map((item) => {
-              const external = item.href?.startsWith("https://")
-              return (
-                <article
-                  key={item.slug}
-                  className="group rounded-2xl border bg-card p-5 transition-all hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex size-10 items-center justify-center rounded-xl bg-primary/8 text-primary">
-                      <ToolIcon item={item} />
-                    </div>
-                    <Badge variant="outline">{tagLabel(item.audience)}</Badge>
-                  </div>
-                  <h3 className="mt-5 font-medium">{item.title}</h3>
-                  <p className="mt-2 min-h-12 text-sm leading-6 text-muted-foreground">
-                    {item.summary}
-                  </p>
-                  <Link
-                    className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                    href={toolDestination(workspace.slug, item)}
-                    target={external ? "_blank" : undefined}
-                    rel={external ? "noreferrer" : undefined}
-                  >
-                    {item.href ? "Open tool" : "View details"}
-                    {external ? (
-                      <RiExternalLinkLine className="size-4" />
-                    ) : (
-                      <RiArrowRightLine className="size-4" />
-                    )}
-                  </Link>
-                </article>
-              )
-            })}
-          </div>
-        </section>
-      ))}
+function ToolCatalog({ items }: { items: ContentCard[] }) {
+  return (
+    <div className="space-y-10">
+      {TOOL_GROUPS.map((group) => {
+        const groupItems = items.filter((item) => toolKind(item) === group.kind)
+        if (groupItems.length === 0) return null
+        return (
+          <section key={group.kind} className="space-y-3">
+            <div className="flex items-baseline justify-between gap-3 border-b pb-2">
+              <div>
+                <h2 className="text-sm font-medium">{group.name}</h2>
+                <p className="mt-0.5 text-sm text-muted-foreground">{group.lead}</p>
+              </div>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {groupItems.length} {groupItems.length === 1 ? "tool" : "tools"}
+              </span>
+            </div>
+            <ul className="divide-y rounded-xl border bg-card">
+              {groupItems.map((item, index) => (
+                <ToolRow key={item.slug} item={item} index={index} />
+              ))}
+            </ul>
+          </section>
+        )
+      })}
     </div>
   )
 }
 
-function FaqRows({ items }: { items: ContentCard[] }) {
+type FaqFilter = "all" | "client" | "internal" | "beam"
+
+const FAQ_FILTERS: Array<{ key: FaqFilter; label: string }> = [
+  { key: "all", label: "All" },
+  { key: "client", label: "Can go to a client" },
+  { key: "internal", label: "For you only" },
+  { key: "beam", label: "Waiting on Beam" },
+]
+
+/**
+ * Every answer once, in the shape of the other lists: a filter row, then rows
+ * by lifecycle phase. A client version sits under the answer it was written
+ * from, and counts toward "Can go to a client" for that row.
+ */
+function FaqRows({
+  items,
+  query,
+}: {
+  items: ContentCard[]
+  /** Owned by the ask box above: one input drives both the answer and the list. */
+  query: string
+}) {
   const workspace = useWorkspace()
-  const [query, setQuery] = useState("")
-  const [filter, setFilter] = useState<
-    "all" | "partner" | "technical" | "pending" | "restricted"
-  >("all")
-  const normalizedQuery = query.trim().toLowerCase()
-  const visibleItems = items.filter((item) => {
-    const matchesQuery =
-      !normalizedQuery ||
-      `${item.title} ${item.summary} ${item.body}`
-        .toLowerCase()
-        .includes(normalizedQuery)
-    const matchesFilter =
-      filter === "all" ||
-      (filter === "partner" && item.audience === "partner-internal") ||
-      (filter === "technical" && item.audience === "technical") ||
-      (filter === "pending" && item.status === "pending") ||
-      (filter === "restricted" && item.claimState === "restricted")
-    return matchesQuery && matchesFilter
-  })
-  const filters = [
-    ["all", "All"],
-    ["partner", "Partner"],
-    ["technical", "Technical"],
-    ["pending", "Pending"],
-    ["restricted", "Restricted"],
-  ] as const
+  const [filter, setFilter] = useState<FaqFilter>("all")
+  const rows = foldClientVersions(items)
+  // The list ranks by the same terms the ask box answers from, so the two can
+  // never disagree (an answer above, "no matching questions" below).
+  const matched = query.trim()
+    ? rowsInOrder(
+        rows,
+        rankAnswers(query, items as AskCandidate[]).map((candidate) => candidate.slug)
+      )
+    : rows
+  const bucket = (item: ContentCard): FaqFilter => {
+    const reason = holdReason(item, workspace.brandMode, { demoWorkspace: workspace.isDemo })
+    if (reason === null) return "client"
+    if (reason === "pending" || reason === "restricted") return "beam"
+    return "internal"
+  }
+  const inFilter = (row: VersionedRow<ContentCard>, key: FaqFilter) =>
+    key === "all" ||
+    bucket(row.item) === key ||
+    (key === "client" && row.clientVersions.some((version) => bucket(version) === "client"))
+  const visible = matched.filter((row) => inFilter(row, filter))
+  const rowOf = new Map(visible.map((row) => [row.item.slug, row] as const))
+  const sections = query.trim()
+    ? [{ slug: "matches", name: "", rows: visible }]
+    : groupByLifecycle(
+        visible.map((row) => row.item),
+        { slug: "partnership", name: "About the partnership" }
+      ).map((group) => ({
+        slug: group.slug,
+        name: group.name,
+        rows: group.items.flatMap((item) => rowOf.get(item.slug) ?? []),
+      }))
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
-      <div className="rounded-2xl border bg-muted/25 p-3 sm:p-4">
-        <div className="relative">
-          <RiSearchLine className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="h-11 bg-background pl-10"
-            placeholder="Search questions and answers…"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
+    <div className="space-y-6">
+      <FilterChips
+        label="Filter answers"
+        options={FAQ_FILTERS.map((entry) => ({
+          ...entry,
+          count: matched.filter((row) => inFilter(row, entry.key)).length,
+        }))}
+        value={filter}
+        onChange={setFilter}
+        readout={`${visible.length} ${visible.length === 1 ? "answer" : "answers"}`}
+      />
+
+      {sections
+        .filter((section) => section.rows.length > 0)
+        .map((section) => (
+          <section key={section.slug} className="space-y-3">
+            {section.name ? (
+              <div className="flex items-baseline justify-between gap-3 border-b pb-2">
+                <h2 className="text-sm font-medium">{section.name}</h2>
+                <span className="text-xs text-muted-foreground">
+                  {section.rows.length} {section.rows.length === 1 ? "question" : "questions"}
+                </span>
+              </div>
+            ) : null}
+            <ul className="divide-y rounded-xl border bg-card">
+              {section.rows.map((row, index) => (
+                <FaqRow key={row.item.slug} row={row} index={index} />
+              ))}
+            </ul>
+          </section>
+        ))}
+
+      {visible.length === 0 ? (
+        <div className="rounded-xl border border-dashed p-10 text-center">
+          <p className="font-medium">
+            {query.trim() ? "No other answers mention that" : "No answers here"}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {filter === "all" ? "Try fewer words, or ask the Beam team." : "Try another filter."}
+          </p>
         </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {filters.map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={
-                filter === value
-                  ? "rounded-full bg-foreground px-3 py-1.5 text-xs font-medium text-background"
-                  : "rounded-full border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-              }
-              onClick={() => setFilter(value)}
-            >
-              {label}
-            </button>
-          ))}
-          <span className="ml-auto self-center px-1 text-xs text-muted-foreground">
-            {visibleItems.length}{" "}
-            {visibleItems.length === 1 ? "answer" : "answers"}
+      ) : null}
+    </div>
+  )
+}
+
+function FaqRow({ row, index }: { row: VersionedRow<ContentCard>; index: number }) {
+  const { item, clientVersions } = row
+  const workspace = useWorkspace()
+  const [open, setOpen] = useState(false)
+  // The answer is rendered the first time the row opens and kept after, so it
+  // can fold shut as smoothly as it opened.
+  const [rendered, setRendered] = useState(false)
+  const panelId = `faq-panel-${item.slug}`
+  const unpublished = item.status === "pending" || item.claimState === "restricted"
+  const toggle = () => {
+    setRendered(true)
+    setOpen((value) => !value)
+  }
+  return (
+    <li className="rise-in" style={{ "--i": index } as CSSProperties}>
+      <div className="flex flex-col gap-3 p-4 transition-colors hover:bg-muted/40 sm:flex-row sm:items-start sm:gap-6">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <RiQuestionLine className="size-4" aria-hidden="true" />
+          </span>
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls={panelId}
+            onClick={toggle}
+            className="min-w-0 flex-1 rounded-md text-left focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+          >
+            <span className="block text-sm font-medium">{item.title}</span>
+            <span className="mt-0.5 block text-sm leading-6 text-muted-foreground">
+              {item.summary}
+            </span>
+          </button>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 pl-12 sm:pl-0">
+          <ItemClaimBadge item={item} />
+          <AddToPack kind="faq" slug={item.slug} label={item.title} item={item} />
+          {/* A second place to click for the pointer; the question is the button. */}
+          <span
+            aria-hidden="true"
+            onClick={toggle}
+            className="hidden size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground sm:flex"
+          >
+            <RiArrowDownSLine
+              className={cn(
+                "size-4 transition-transform duration-200 ease-out-quint",
+                open && "rotate-180"
+              )}
+            />
           </span>
         </div>
       </div>
-
-      <div className="space-y-3">
-        {visibleItems.map((item) => (
-          <details
-            key={item.slug}
-            className="group overflow-hidden rounded-2xl border bg-card open:shadow-sm"
-          >
-            <summary className="flex cursor-pointer list-none items-start gap-4 p-5 marker:content-none sm:p-6">
-              <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                <RiQuestionLine className="size-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <h2 className="max-w-2xl font-medium leading-6">
-                    {item.title}
-                  </h2>
-                  <div className="flex items-center gap-2">
-                    {item.status === "pending" ? (
-                      <Badge variant="outline">Pending</Badge>
-                    ) : null}
-                    {item.claimState === "restricted" ? (
-                      <Badge variant="outline">Restricted</Badge>
-                    ) : null}
-                    <Badge variant="outline">{tagLabel(item.audience)}</Badge>
-                  </div>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {item.summary}
-                </p>
-              </div>
-              <RiArrowDownSLine className="mt-1 size-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
-            </summary>
-            <div className="border-t px-5 py-5 sm:pr-16 sm:pl-[5.25rem]">
-              <p className="whitespace-pre-wrap text-sm leading-7 text-foreground/85">
+      {rendered ? (
+        <div id={panelId} className="expand-grid" data-enter="" data-open={open} inert={!open}>
+          <div>
+            <div className="border-t px-4 py-4 sm:pl-16">
+              <p className="max-w-3xl text-sm leading-7 whitespace-pre-wrap text-foreground/85">
                 {item.status === "pending"
-                  ? (item.requestBeamLabel ??
-                    "This answer is pending Beam review.")
+                  ? (item.requestBeamLabel ?? "Beam has not published this answer yet.")
                   : item.claimState === "restricted"
-                    ? (item.requestBeamLabel ??
-                      "Request Beam for an approved answer.")
+                    ? (item.requestBeamLabel ?? "Ask Beam for an approved answer.")
                     : item.body}
               </p>
-              <Link
-                className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                href={workspacePath(workspace.slug, `/faq/${item.slug}`)}
-              >
-                Open full answer <RiArrowRightLine className="size-4" />
-              </Link>
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+                {unpublished ? (
+                  <Link
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                    href={requestHref(workspace.slug, {
+                      about: `faq:${item.slug}`,
+                      support: "faq-escalation",
+                    })}
+                  >
+                    Ask the Beam team <RiArrowRightLine className="size-4" aria-hidden="true" />
+                  </Link>
+                ) : null}
+                <Link
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                  href={workspacePath(workspace.slug, `/faq/${item.slug}`)}
+                >
+                  Open full answer <RiArrowRightLine className="size-4" aria-hidden="true" />
+                </Link>
+              </div>
             </div>
-          </details>
-        ))}
-        {visibleItems.length === 0 ? (
-          <div className="rounded-2xl border border-dashed p-10 text-center">
-            <p className="font-medium">No matching questions</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Try another search or reset the filter.
-            </p>
           </div>
-        ) : null}
-      </div>
-    </div>
+        </div>
+      ) : null}
+      {clientVersions.map((version) => (
+        <ClientVersionLine key={version.slug} item={version} />
+      ))}
+    </li>
   )
 }
 
@@ -637,13 +1188,7 @@ function PreviewCatalog({
           </div>
           <div className="space-y-4 p-5">
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">{tagLabel(item.audience)}</Badge>
-              <Badge variant="outline">
-                {item.forwardable ? "Forwardable" : "Internal"}
-              </Badge>
-              {item.status === "pending" ? (
-                <Badge variant="outline">Pending</Badge>
-              ) : null}
+              <SendBadge item={item} />
             </div>
             <div>
               <h2 className="font-medium">{item.title}</h2>
@@ -768,7 +1313,10 @@ function ContentDetailBody({
     )
   }
   if (item.slug === "partner-cli") {
-    return <PartnerCliDetail item={item} />
+    return <PartnerCliDetail />
+  }
+  if (kind === "material" && item.slug === "where-beam-fits") {
+    return <WhereBeamFitsDetail item={item} />
   }
   if (kind === "material" || kind === "playbook") {
     return <SharePreviewDetail item={item} kind={kind} />
@@ -779,17 +1327,23 @@ function ContentDetailBody({
   return (
     <article className="max-w-3xl space-y-4">
       <div className="flex flex-wrap gap-2">
-        <Badge variant="outline">{tagLabel(item.audience)}</Badge>
-        <Badge variant="outline">
-          {item.status === "pending" ? "Pending" : tagLabel(item.claimState)}
-        </Badge>
+        <SendBadge item={item} />
         {item.format ? (
           <Badge variant="outline">{tagLabel(item.format)}</Badge>
         ) : null}
       </div>
       <h2 className="text-3xl font-medium tracking-tight">{item.title}</h2>
       <p className="text-muted-foreground">{item.summary}</p>
-      <div className="whitespace-pre-wrap text-sm leading-7">{item.body}</div>
+      <div className="whitespace-pre-wrap text-sm leading-7">
+        {item.claimState === "restricted"
+          ? "Only Beam can answer this for a client."
+          : item.status === "pending"
+            ? "Beam has not published this answer yet."
+            : item.body}
+      </div>
+      {kind === "faq" ? (
+        <AddToPack kind={kind} slug={item.slug} label={item.title} item={item} />
+      ) : null}
       {item.href ? (
         <Link
           className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
@@ -797,18 +1351,31 @@ function ContentDetailBody({
           target={item.href.startsWith("https://") ? "_blank" : undefined}
           rel={item.href.startsWith("https://") ? "noreferrer" : undefined}
         >
-          Open tool
           {item.href.startsWith("https://") ? (
-            <RiExternalLinkLine className="size-4" />
+            <>
+              {openLabel(item.href)} <RiExternalLinkLine className="size-4" aria-hidden="true" />
+            </>
           ) : (
-            <RiArrowRightLine className="size-4" />
+            <>
+              Open <RiArrowRightLine className="size-4" aria-hidden="true" />
+            </>
           )}
         </Link>
       ) : null}
+      {item.href?.startsWith("https://") ? (
+        <p className="text-xs text-muted-foreground">Beam login</p>
+      ) : null}
       {item.claimState === "restricted" || item.requestBeamLabel ? (
-        <p className="rounded-lg border p-3 text-sm">
-          {item.requestBeamLabel ?? "Request Beam"}
-        </p>
+        <Link
+          className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm transition-colors hover:bg-muted/40"
+          href={requestHref(workspace.slug, {
+            about: `${item.kind}:${item.slug}`,
+            support: supportForKind(item.kind),
+          })}
+        >
+          <span>{item.requestBeamLabel ?? "Ask the Beam team"}</span>
+          <RiArrowRightLine className="size-4 shrink-0 text-muted-foreground" />
+        </Link>
       ) : null}
     </article>
   )
@@ -835,7 +1402,7 @@ const partnerStartProfiles = [
   },
 ] as const
 
-function PartnerCliDetail({ item }: { item: ContentCard }) {
+function PartnerCliDetail() {
   const workspace = useWorkspace()
   const [copied, setCopied] = useState<string | null>(null)
 
@@ -852,55 +1419,36 @@ function PartnerCliDetail({ item }: { item: ContentCard }) {
   return (
     <div className="space-y-8">
       <div className="max-w-3xl space-y-4">
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="outline">Partner-safe</Badge>
-          <Badge variant="outline">{tagLabel(item.audience)}</Badge>
-        </div>
         <h2 className="text-3xl font-medium tracking-tight sm:text-4xl">
           Start with Beam Partner.
         </h2>
         <p className="max-w-2xl text-base leading-7 text-muted-foreground">
           Choose where you want to work. Each start profile carries the same
-          reviewed workspace boundaries into your agent.
+          partner-safe, reviewed workspace boundaries into your agent.
         </p>
       </div>
       <section className="grid gap-4 lg:grid-cols-3">
-        {partnerStartProfiles.map((profile) => (
+        {partnerStartProfiles.map((profile, index) => (
           <article
             key={profile.name}
-            className="partner-feature-card relative isolate flex min-h-80 overflow-hidden rounded-3xl border border-white/10 p-6 text-white shadow-xl"
-            data-tone={profile.tone}
+            className="rise-in flex flex-col gap-4 rounded-xl border bg-card p-5"
+            style={{ "--i": index } as CSSProperties}
           >
-            <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(255,255,255,.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.07)_1px,transparent_1px)] [background-size:36px_36px] [mask-image:linear-gradient(to_bottom,black,transparent_75%)]" />
-            <div className="relative mt-auto w-full space-y-5">
-              <div className="flex size-11 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
-                <RiTerminalBoxLine className="size-5" />
-              </div>
-              <div>
-                <p className="font-mono text-[10px] tracking-[0.2em] text-white/50 uppercase">
-                  Start profile
-                </p>
-                <h3 className="mt-2 text-2xl font-medium tracking-tight">
-                  {profile.name}
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-white/65">
-                  {profile.description}
-                </p>
-              </div>
-              <Button
-                className="w-full bg-white text-black hover:bg-white/90"
-                onClick={() => copyPrompt(profile.name)}
-              >
-                {copied === profile.name ? (
-                  <RiCheckLine />
-                ) : (
-                  <RiClipboardLine />
-                )}
-                {copied === profile.name
-                  ? "Prompt copied"
-                  : "Copy start prompt"}
-              </Button>
+            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/8 text-primary">
+              <RiTerminalBoxLine className="size-5" aria-hidden="true" />
             </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-medium tracking-tight">{profile.name}</h3>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">{profile.description}</p>
+            </div>
+            <Button
+              variant="outline"
+              className="pressable w-full"
+              onClick={() => copyPrompt(profile.name)}
+            >
+              {copied === profile.name ? <RiCheckLine /> : <RiClipboardLine />}
+              {copied === profile.name ? "Prompt copied" : "Copy start prompt"}
+            </Button>
           </article>
         ))}
       </section>
@@ -920,20 +1468,31 @@ function SharePreviewDetail({
   item: ContentCard
   kind: "material" | "playbook"
 }) {
+  const workspace = useWorkspace()
   const hasPublishedShare = item.shareUrl?.startsWith(
     "https://shares.beam.ai/s/"
   )
+  // A pending material has no file to open yet, so the request is the only
+  // action on the page; keep it beside the title rather than under the frame.
+  const requestLink =
+    item.status === "pending" || item.requestBeamLabel ? (
+      <Link
+        className="flex max-w-xl items-center justify-between gap-3 rounded-lg border p-3 text-sm transition-colors hover:bg-muted/40"
+        href={requestHref(workspace.slug, {
+          about: `${item.kind}:${item.slug}`,
+          support: supportForKind(item.kind),
+        })}
+      >
+        <span>{item.requestBeamLabel ?? "Ask the Beam team"}</span>
+        <RiArrowRightLine className="size-4 shrink-0 text-muted-foreground" />
+      </Link>
+    ) : null
 
   return (
     <div className="space-y-6">
       <div className="max-w-3xl space-y-4">
         <div className="flex flex-wrap gap-2">
-          <Badge variant="outline">{tagLabel(item.audience)}</Badge>
-          {kind === "material" && item.status === "pending" ? (
-            <Badge variant="outline">Pending</Badge>
-          ) : (
-            <Badge variant="outline">{tagLabel(item.claimState)}</Badge>
-          )}
+          <SendBadge item={item} />
           <Badge variant="outline">
             {tagLabel(
               item.format ?? (kind === "playbook" ? "playbook" : "material")
@@ -946,6 +1505,8 @@ function SharePreviewDetail({
         <p className="text-base leading-7 text-muted-foreground">
           {item.summary}
         </p>
+        <AddToPack kind={item.kind} slug={item.slug} label={item.title} item={item} />
+        {hasPublishedShare ? null : requestLink}
       </div>
       <section className="overflow-hidden rounded-3xl border bg-muted/25 p-3 shadow-sm sm:p-5">
         <div className="partner-share-frame mx-auto aspect-[16/9] max-w-5xl overflow-auto rounded-2xl border bg-background shadow-xl">
@@ -953,7 +1514,7 @@ function SharePreviewDetail({
             <iframe
               className="h-full min-h-[32rem] w-full bg-background"
               src={`/api/share-preview/${encodeURIComponent(item.slug)}`}
-              title={`${item.title} Beam Share`}
+              title={`${item.title} preview`}
               loading="lazy"
               sandbox="allow-scripts allow-popups"
             />
@@ -962,11 +1523,9 @@ function SharePreviewDetail({
               <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/95 px-5 py-3 backdrop-blur">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="size-2 rounded-full bg-emerald-500" />
-                  Beam Share preview
+                  Preview
                 </div>
-                <Badge variant="outline">
-                  {item.forwardable ? "Forwardable" : "Partner internal"}
-                </Badge>
+                <SendBadge item={item} />
               </div>
               <div className="mx-auto max-w-3xl px-6 py-10 sm:px-10 sm:py-14">
                 <p className="font-mono text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
@@ -991,18 +1550,23 @@ function SharePreviewDetail({
         </div>
       </section>
       {item.shareUrl ? (
-        <Button
-          variant="outline"
-          render={<a href={item.shareUrl} target="_blank" rel="noreferrer" />}
-        >
-          <RiExternalLinkLine />
-          Open in Beam Shares
-        </Button>
+        // One action, named for what it does. A share is a web page, not a file the portal can download; the
+        // PDF a client receives comes from the client pack.
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            render={<a href={item.shareUrl} target="_blank" rel="noreferrer" />}
+          >
+            <RiExternalLinkLine aria-hidden="true" />
+            Open
+          </Button>
+        </div>
       ) : null}
+      {hasPublishedShare ? requestLink : null}
       <p className="text-xs leading-5 text-muted-foreground">
         {hasPublishedShare
-          ? "Embedded from the reviewed Beam Share attached to this workspace."
-          : "This preview uses the same presentation shell intended for Beam Shares. When a reviewed Share URL is attached, this frame renders that published page directly."}
+          ? "Reviewed and approved for this workspace."
+          : "Preview only. The reviewed copy is attached once Beam publishes it."}
       </p>
     </div>
   )

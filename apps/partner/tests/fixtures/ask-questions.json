@@ -1,0 +1,988 @@
+{
+ "residency": [
+  "our regulator wants data onshore",
+  "can it run air-gapped",
+  "is any data processed outside Germany",
+  "hosting in KSA?",
+  "Where is the data hosted?",
+  "Where is the data stored?",
+  "Where is client data stored?",
+  "Where are your servers?",
+  "Where are your servers located?",
+  "Which data centres do you use?",
+  "Which cloud region will our data sit in?",
+  "Can you host in Frankfurt?",
+  "Do you have an EU region?",
+  "Is the data stored in Europe?",
+  "Does any data leave the EU?",
+  "Do you transfer data outside the EEA?",
+  "Can we keep everything on our own servers?",
+  "Can Beam be deployed on premise?",
+  "Can Beam be installed on-premises?",
+  "Do you support on prem deployment?",
+  "on premis install possible?",
+  "Is there an onprem option?",
+  "Can it run in our VPC?",
+  "Can Beam be deployed in the customer's AWS account?",
+  "Can we self-host Beam?",
+  "Is there a self-hosted version?",
+  "Can it run in a private cloud?",
+  "Can we deploy into our own Azure subscription?",
+  "Is a dedicated single-tenant instance available?",
+  "Is our data co-mingled with other customers?",
+  "Can data stay within Saudi borders?",
+  "Does Beam comply with the Saudi PDPL?",
+  "Is Beam NCA ECC compliant?",
+  "Is Beam SAMA compliant for a bank?",
+  "Can we use Beam for a government ministry in Kuwait?",
+  "Is Beam approved for government use?",
+  "Can we promise government readiness?",
+  "Can we deploy for a public sector client in the Gulf?",
+  "Does the LLM run in-region?",
+  "Where do the models run?",
+  "Which country are the LLM calls processed in?",
+  "Do prompts go to OpenAI in the US?",
+  "Are you subject to the US CLOUD Act?",
+  "Can data be kept in the UK?",
+  "Do you have UK data residency?",
+  "Swiss client needs data in Switzerland, possible?",
+  "Is there a German data center?",
+  "Is there a German datacenter?",
+  "Is data stored in Germany?",
+  "Can our data stay in Deutschland?",
+  "Data residancy for a Saudi client?",
+  "data recidency KSA",
+  "Can we garantee data sovereignity?",
+  "Can it run offline?",
+  "Can it run disconnected from the internet?",
+  "air gapped deployment?",
+  "Can the agents run behind our firewall?",
+  "Can we run it inside our network?",
+  "Do you support private networking or Private Link?",
+  "Can traffic stay off the public internet?",
+  "Is data processed in the Kingdom?",
+  "Will the data cross borders?",
+  "Cross-border data transfer?",
+  "Is there a local instance in Abu Dhabi?",
+  "Can we deploy in Bahrain?",
+  "Where would an Omani client's data be stored?",
+  "Where will a Saudi bank's data live?",
+  "Our client is a Saudi bank; can we say data stays local?",
+  "Is Beam hosted on AWS or Azure?",
+  "Which hyperscaler region do you use?",
+  "Can we choose the hosting location?",
+  "Can the client pick the region?",
+  "Do you have a me-central-1 deployment?",
+  "Can we tell the client the data never leaves Saudi?",
+  "What's the hosting setup for MENA clients?",
+  "Can Beam run on Oracle Cloud in Jeddah?",
+  "Is client data stored in the US?",
+  "Is data stored in America?",
+  "Do you keep data in the United States?",
+  "Where does Beam keep client data?",
+  "Where is data kept at rest?",
+  "Where's the data?",
+  "Is the data local?",
+  "our client needs everything onshore",
+  "regulator requires in-kingdom hosting",
+  "Does the platform support data localisation laws?",
+  "Can you meet localization requirements in KSA?",
+  "What about Kuwaiti data laws?",
+  "Is there sovereign cloud support?",
+  "Can we host in the client's data centre?",
+  "Can Beam run in Kubernetes on-site?",
+  "Can Beam deploy to OpenShift in the client's datacenter?",
+  "Hosting options?",
+  "Deployment options?",
+  "What are the deployment models?",
+  "Can we deploy anywhere?",
+  "Where is Beam hosted?",
+  "Where does the processing happen?",
+  "Does data leave the client's environment?",
+  "Can the data stay in the client's environment?",
+  "Is everything processed in Europe?",
+  "Do you use EU-only subprocessors?",
+  "Will client data be hosted in Saudi Arabia?",
+  "Can you deploy in-region for a Saudi client?",
+  "Can we sell Beam to the Saudi government?",
+  "Is the platform available in the Middle East?",
+  "Can you support Vision 2030 projects with local hosting?",
+  "Is there data residency in Qatar?",
+  "Does Beam meet Saudi data residency rules?"
+ ],
+ "commercial": [
+  [
+   "What margin do we get?",
+   "margin"
+  ],
+  [
+   "What's the partner margin?",
+   "margin"
+  ],
+  [
+   "What is our cut on a deal?",
+   "margin"
+  ],
+  [
+   "How much commission do we earn?",
+   "margin"
+  ],
+  [
+   "Referral fee for a sourced deal?",
+   "margin"
+  ],
+  [
+   "What discount can we offer the client?",
+   "discount"
+  ],
+  [
+   "Can we give a 20% discount to close?",
+   "discount"
+  ],
+  [
+   "Is there a pilot discount?",
+   "discount"
+  ],
+  [
+   "Can we offer a free pilot?",
+   "discount"
+  ],
+  [
+   "How much does Beam cost?",
+   "pricing"
+  ],
+  [
+   "What does Beam cost per year?",
+   "pricing"
+  ],
+  [
+   "What's the list price?",
+   "pricing"
+  ],
+  [
+   "How is Beam priced?",
+   "pricing"
+  ],
+  [
+   "Price per agent?",
+   "pricing"
+  ],
+  [
+   "How much is the platform fee?",
+   "pricing"
+  ],
+  [
+   "What's the pricing model, per seat or per outcome?",
+   "pricing"
+  ],
+  [
+   "How should we price the first workflow?",
+   "pricing"
+  ],
+  [
+   "Can I quote a price to the client today?",
+   "pricing"
+  ],
+  [
+   "What's the typical contract value?",
+   "pricing"
+  ],
+  [
+   "Is our territory exclusive?",
+   "exclusivity"
+  ],
+  [
+   "Do we get exclusivity in the GCC?",
+   "exclusivity"
+  ],
+  [
+   "Can another partner sell to our client?",
+   "exclusivity"
+  ],
+  [
+   "Are we the only Beam partner in Germany?",
+   "exclusivity"
+  ],
+  [
+   "Do we have exclusive rights to the banking vertical?",
+   "exclusivity"
+  ],
+  [
+   "Is there channel conflict protection?",
+   "exclusivity"
+  ],
+  [
+   "We audit this client; can we also implement Beam?",
+   "independence"
+  ],
+  [
+   "Is there an independence conflict if we sell Beam to an audit client?",
+   "independence"
+  ],
+  [
+   "Can PwC resell Beam to an attest client?",
+   "independence"
+  ],
+  [
+   "Does this breach auditor independence rules?",
+   "independence"
+  ],
+  [
+   "We are the statutory auditor of the client, is that a problem?",
+   "independence"
+  ],
+  [
+   "Can we white-label Beam to an audit client?",
+   "independence"
+  ],
+  [
+   "Conflict of interest with our audit clients?",
+   "independence"
+  ],
+  [
+   "Our risk team is asking about independence",
+   "independence"
+  ],
+  [
+   "SEC independence rules for an audit client",
+   "independence"
+  ],
+  [
+   "Can our assurance practice use Beam on an audit engagement?",
+   "independence"
+  ],
+  [
+   "How do we make money?",
+   "money"
+  ],
+  [
+   "How do we make money with Beam?",
+   "money"
+  ],
+  [
+   "What's in it for us commercially?",
+   "money"
+  ],
+  [
+   "Revenue share?",
+   "money"
+  ],
+  [
+   "What commercial models are there?",
+   "money"
+  ]
+ ],
+ "security": [
+  [
+   "Describe your vulnerability management program",
+   [
+    "patch-vulnerability-management-policy"
+   ],
+   ""
+  ],
+  [
+   "Do you perform background checks on employees?",
+   [
+    "human-resource-security-policy"
+   ],
+   ""
+  ],
+  [
+   "Is MFA enforced for admin access?",
+   [
+    "access-control-policy",
+    "password-policy"
+   ],
+   ""
+  ],
+  [
+   "What is your RPO/RTO?",
+   [
+    "business-continuity-and-disaster-recovery-policy-procedure",
+    "backup-policy-procedure"
+   ],
+   ""
+  ],
+  [
+   "What are your RTO and RPO targets?",
+   [
+    "business-continuity-and-disaster-recovery-policy-procedure",
+    "backup-policy-procedure"
+   ],
+   ""
+  ],
+  [
+   "Do you encrypt data at rest and in transit?",
+   [
+    "cryptography-policy"
+   ],
+   ""
+  ],
+  [
+   "What encryption algorithms and key lengths do you use?",
+   [
+    "cryptography-policy"
+   ],
+   ""
+  ],
+  [
+   "Do you support customer-managed encryption keys (BYOK)?",
+   [
+    "cryptography-policy"
+   ],
+   "not-held:byok"
+  ],
+  [
+   "Do you conduct annual penetration tests by an independent third party?",
+   [
+    "patch-vulnerability-management-policy"
+   ],
+   "beam-only?"
+  ],
+  [
+   "Provide your latest penetration test summary.",
+   [],
+   "beam-only"
+  ],
+  [
+   "Do you have a SOC 2 Type II report?",
+   [],
+   "beam-only"
+  ],
+  [
+   "Are you ISO 27001 certified?",
+   [],
+   "beam-only"
+  ],
+  [
+   "Do you have a documented information security policy approved by management?",
+   [
+    "information-security-policy",
+    "information-security-is-policy"
+   ],
+   ""
+  ],
+  [
+   "How often is the security policy reviewed?",
+   [
+    "information-security-policy",
+    "information-security-is-policy",
+    "management-review-meeting-procedure"
+   ],
+   ""
+  ],
+  [
+   "Do you have a dedicated CISO?",
+   [
+    "information-security-roles-and-responsibilities"
+   ],
+   "not-held:ciso"
+  ],
+  [
+   "Describe your incident response plan and notification timelines.",
+   [
+    "information-security-incident-management-policy-and-procedure",
+    "data-breach-management-procedure"
+   ],
+   ""
+  ],
+  [
+   "Within how many hours will you notify us of a breach?",
+   [
+    "data-breach-management-procedure",
+    "information-security-incident-management-policy-and-procedure"
+   ],
+   ""
+  ],
+  [
+   "Do you maintain an asset inventory?",
+   [
+    "asset-management-policy-procedure",
+    "asset-management-and-media-handling-procedure"
+   ],
+   ""
+  ],
+  [
+   "Do you have a data classification scheme?",
+   [
+    "information-classification-policy"
+   ],
+   ""
+  ],
+  [
+   "Do you log and monitor access to customer data?",
+   [
+    "logging-and-monitoring-policy",
+    "access-control-policy"
+   ],
+   ""
+  ],
+  [
+   "How long are audit logs retained?",
+   [
+    "logging-and-monitoring-policy",
+    "data-and-record-retention-policy"
+   ],
+   ""
+  ],
+  [
+   "Do you perform security awareness training for staff?",
+   [
+    "human-resource-security-policy"
+   ],
+   ""
+  ],
+  [
+   "Do employees sign confidentiality agreements?",
+   [
+    "human-resource-security-policy",
+    "code-of-conduct-policy"
+   ],
+   ""
+  ],
+  [
+   "Describe your secure SDLC.",
+   [
+    "software-development-lifecycle-procedure",
+    "secure-development-and-maintenance-policy"
+   ],
+   ""
+  ],
+  [
+   "Do you perform code reviews and static analysis?",
+   [
+    "software-development-lifecycle-procedure",
+    "secure-development-and-maintenance-policy"
+   ],
+   ""
+  ],
+  [
+   "How quickly are critical vulnerabilities patched?",
+   [
+    "patch-vulnerability-management-policy"
+   ],
+   ""
+  ],
+  [
+   "Do you use subprocessors? Provide a list.",
+   [
+    "supplier-management-policy"
+   ],
+   "not-held:list"
+  ],
+  [
+   "How do you assess the security of your third-party vendors?",
+   [
+    "supplier-management-policy"
+   ],
+   ""
+  ],
+  [
+   "Is customer data logically segregated from other tenants?",
+   [],
+   "not-held:tenancy"
+  ],
+  [
+   "How is customer data deleted at contract termination?",
+   [
+    "data-and-record-retention-and-deletion-policy",
+    "media-handling-and-disposal-procedure"
+   ],
+   ""
+  ],
+  [
+   "Do you have a business continuity plan, and is it tested annually?",
+   [
+    "business-continuity-and-disaster-recovery-policy-procedure"
+   ],
+   ""
+  ],
+  [
+   "Are backups encrypted and tested?",
+   [
+    "backup-policy-procedure"
+   ],
+   ""
+  ],
+  [
+   "Do you have cyber insurance?",
+   [],
+   "beam-only"
+  ],
+  [
+   "Are user access rights reviewed quarterly?",
+   [
+    "access-control-policy"
+   ],
+   ""
+  ],
+  [
+   "Do you enforce least privilege?",
+   [
+    "access-control-policy"
+   ],
+   ""
+  ],
+  [
+   "Is SSO supported via SAML?",
+   [
+    "access-control-policy"
+   ],
+   "not-held:product-sso"
+  ],
+  [
+   "Do you support SCIM provisioning?",
+   [],
+   "not-held:scim"
+  ],
+  [
+   "Describe your physical security controls at data centers.",
+   [
+    "physical-and-environmental-security-policy",
+    "physical-security-policy"
+   ],
+   ""
+  ],
+  [
+   "Do you have anti-malware on endpoints?",
+   [
+    "anti-malware-policy"
+   ],
+   ""
+  ],
+  [
+   "Is there a BYOD policy?",
+   [
+    "byod-bring-your-own-device-policy"
+   ],
+   ""
+  ],
+  [
+   "Are you GDPR compliant?",
+   [
+    "gdpr-manual",
+    "data-privacy-policy",
+    "personal-data-protection-policy"
+   ],
+   ""
+  ],
+  [
+   "Will you sign a DPA?",
+   [],
+   "beam-only"
+  ],
+  [
+   "Do you have a DPO?",
+   [],
+   "not-held:dpo"
+  ],
+  [
+   "How do you handle data subject access requests?",
+   [
+    "data-subject-requests-manual"
+   ],
+   ""
+  ],
+  [
+   "Do you use customer data to train your AI models?",
+   [],
+   "not-held:ai-training"
+  ],
+  [
+   "Are you HIPAA compliant? Will you sign a BAA?",
+   [
+    "hipaa-plan",
+    "hipaa-internal-privacy-policy"
+   ],
+   ""
+  ],
+  [
+   "Do you have a whistleblower policy?",
+   [
+    "whistle-blower-policy"
+   ],
+   ""
+  ],
+  [
+   "Do you have a change management process?",
+   [
+    "change-management-procedure"
+   ],
+   ""
+  ],
+  [
+   "Is there segregation of duties between development and production?",
+   [
+    "secure-development-and-maintenance-policy",
+    "change-management-procedure",
+    "access-control-policy"
+   ],
+   ""
+  ],
+  [
+   "Are production systems hardened according to CIS benchmarks?",
+   [
+    "system-os-database-hardening-policy-procedure"
+   ],
+   ""
+  ],
+  [
+   "Do you have a threat intelligence capability?",
+   [
+    "threat-intelligence-policy"
+   ],
+   ""
+  ],
+  [
+   "Do you have a WAF and DDoS protection?",
+   [
+    "network-security-policy"
+   ],
+   "not-held:waf"
+  ],
+  [
+   "What is your uptime SLA?",
+   [],
+   "not-held:sla"
+  ],
+  [
+   "Do you have a documented risk management process?",
+   [
+    "risk-management-procedure"
+   ],
+   ""
+  ],
+  [
+   "How do you manage privileged accounts?",
+   [
+    "access-control-policy"
+   ],
+   ""
+  ],
+  [
+   "Do you perform DPIAs?",
+   [
+    "dpia-guidance-note"
+   ],
+   ""
+  ],
+  [
+   "Do you maintain a record of processing activities?",
+   [
+    "ropa-record-of-processing-activities-guidance-note"
+   ],
+   ""
+  ],
+  [
+   "Describe your password policy.",
+   [
+    "password-policy"
+   ],
+   ""
+  ],
+  [
+   "Is data encrypted with TLS 1.2 or higher?",
+   [
+    "cryptography-policy"
+   ],
+   ""
+  ],
+  [
+   "What is your data retention period?",
+   [
+    "data-and-record-retention-policy",
+    "data-and-record-retention-and-deletion-policy"
+   ],
+   ""
+  ],
+  [
+   "How do you secure remote work and laptops?",
+   [
+    "mobile-devices-and-teleworking-policy"
+   ],
+   ""
+  ]
+ ],
+ "everyday": [
+  [
+   "Why not SAP?",
+   [
+    "why-not-sap"
+   ]
+  ],
+  [
+   "Why would a client pick Beam over SAP?",
+   [
+    "why-not-sap"
+   ]
+  ],
+  [
+   "How is Beam different from Oracle?",
+   [
+    "why-not-sap"
+   ]
+  ],
+  [
+   "Why not just use ServiceNow?",
+   [
+    "why-not-sap"
+   ]
+  ],
+  [
+   "Workday already has AI, why Beam?",
+   [
+    "why-not-sap"
+   ]
+  ],
+  [
+   "The client says SAP Joule does this already",
+   [
+    "why-not-sap"
+   ]
+  ],
+  [
+   "How are you different from Anaplan?",
+   [
+    "vs-epm"
+   ]
+  ],
+  [
+   "How does this compare to OneStream?",
+   [
+    "vs-epm"
+   ]
+  ],
+  [
+   "What does the first engagement look like?",
+   [
+    "first-engagement"
+   ]
+  ],
+  [
+   "How do we start with a new client?",
+   [
+    "first-engagement",
+    "first-process-fit"
+   ]
+  ],
+  [
+   "What's a good first project?",
+   [
+    "first-process-fit",
+    "first-engagement"
+   ]
+  ],
+  [
+   "What makes a strong first workflow?",
+   [
+    "first-process-fit"
+   ]
+  ],
+  [
+   "How do we pick the first workflow?",
+   [
+    "first-process-fit"
+   ]
+  ],
+  [
+   "How accurate are the agents?",
+   [
+    "accuracy"
+   ]
+  ],
+  [
+   "How do you keep accuracy from decaying?",
+   [
+    "accuracy"
+   ]
+  ],
+  [
+   "What happens when the agent makes a mistake?",
+   [
+    "accuracy",
+    "human-approval"
+   ]
+  ],
+  [
+   "Does accuracy drift over time?",
+   [
+    "accuracy"
+   ]
+  ],
+  [
+   "Where does a human approve?",
+   [
+    "human-approval"
+   ]
+  ],
+  [
+   "Can a human review before the agent acts?",
+   [
+    "human-approval"
+   ]
+  ],
+  [
+   "Is there a human in the loop?",
+   [
+    "human-approval"
+   ]
+  ],
+  [
+   "Who approves what the agent does?",
+   [
+    "human-approval"
+   ]
+  ],
+  [
+   "When should we walk away from a deal?",
+   [
+    "when-to-walk-away"
+   ]
+  ],
+  [
+   "When should we not pursue an opportunity?",
+   [
+    "when-to-walk-away"
+   ]
+  ],
+  [
+   "When should I walk away?",
+   [
+    "when-to-walk-away"
+   ]
+  ],
+  [
+   "What are the red flags in a prospect?",
+   [
+    "when-to-walk-away"
+   ]
+  ],
+  [
+   "How do we measure success?",
+   [
+    "measuring-success"
+   ]
+  ],
+  [
+   "What KPIs should we agree with the client?",
+   [
+    "measuring-success"
+   ]
+  ],
+  [
+   "How do we define success for a pilot?",
+   [
+    "measuring-success"
+   ]
+  ],
+  [
+   "How do we prove ROI?",
+   [
+    "measuring-success"
+   ]
+  ],
+  [
+   "Can we see a working agent?",
+   [
+    "working-agent"
+   ]
+  ],
+  [
+   "Do you have a live demo?",
+   [
+    "working-agent",
+    "access-and-sandbox"
+   ]
+  ],
+  [
+   "Why Beam instead of building it ourselves?",
+   [
+    "partner-vs-beam"
+   ]
+  ],
+  [
+   "Why not build our own agents?",
+   [
+    "partner-vs-beam"
+   ]
+  ],
+  [
+   "Do we expose the Beam brand?",
+   [
+    "brand-shapes"
+   ]
+  ],
+  [
+   "Can we white-label Beam?",
+   [
+    "brand-shapes"
+   ]
+  ],
+  [
+   "Can we put our own logo on it?",
+   [
+    "brand-shapes"
+   ]
+  ],
+  [
+   "What should I send my leadership?",
+   [
+    "leadership-pack"
+   ]
+  ],
+  [
+   "What should I send my leadership tomorrow?",
+   [
+    "leadership-pack"
+   ]
+  ],
+  [
+   "Every GM already bought an AI tool, why is this different?",
+   [
+    "not-another-ai-tool"
+   ]
+  ],
+  [
+   "How is this not another AI tool?",
+   [
+    "not-another-ai-tool"
+   ]
+  ],
+  [
+   "How do you integrate with the client's systems?",
+   [
+    "data-integration"
+   ]
+  ],
+  [
+   "Do you need an API to connect?",
+   [
+    "data-integration"
+   ]
+  ],
+  [
+   "Where does client data go?",
+   [
+    "data-integration"
+   ]
+  ],
+  [
+   "Who supports the client after go-live?",
+   [
+    "support-and-escalation"
+   ]
+  ],
+  [
+   "How do we register a deal?",
+   [
+    "deal-registration"
+   ]
+  ],
+  [
+   "How do partners get sandbox access?",
+   [
+    "access-and-sandbox"
+   ]
+  ]
+ ]
+}

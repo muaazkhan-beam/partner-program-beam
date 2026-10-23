@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 const PARTNER_LOGIN_NAMES: Record<string, string> = {
   "pwc-me": "PwC × Beam",
   "roland-berger": "Roland Berger × Beam",
+  cisco: "Cisco",
+  netapp: "NetApp",
 }
 
 export function LoginScreen({

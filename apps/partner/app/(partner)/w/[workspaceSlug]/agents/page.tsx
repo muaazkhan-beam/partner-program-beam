@@ -7,7 +7,7 @@ export default function AgentsPage() {
     <PageContainer className="space-y-8">
       <PageHeading
         title="Agents"
-        description="Your future Beam-powered consulting team, from first meeting to delivery."
+        description="Beam's agents for partner work. Pick one to see what it needs from you and what it returns; Beam runs it for your client."
       />
       <AgentMissionControl />
     </PageContainer>

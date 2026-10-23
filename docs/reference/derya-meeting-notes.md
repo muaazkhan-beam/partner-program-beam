@@ -2,7 +2,7 @@
 
 Meeting: **Beam Partner Prog**, 11 September 2026, 12:03–12:23 UTC (19 min).
 Present: Derya Firat, Muaaz Khan, Asad Raza.
-Recording: <https://fathom.video/share/V-gR1oW6zbPkbEFLvT7ZyuzYzmpKwwvP>
+Recording: in Fathom (internal).
 
 > **Note on the transcript.** Fathom's speaker attribution is scrambled in this recording —
 > many of Derya's answers are labelled as Muaaz. The notes below assign statements by

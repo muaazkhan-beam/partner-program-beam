@@ -8,7 +8,7 @@ import {
 import Link from "next/link";
 import {
   RiAiAgentLine,
-  RiArrowRightUpLine,
+  RiArrowRightLine,
   RiCloseLine,
   RiPulseLine,
   RiSidebarUnfoldLine,
@@ -16,8 +16,23 @@ import {
 } from "@remixicon/react";
 
 import { useWorkspace } from "@/components/workspace-context";
-import { partnerAgents } from "@/lib/partner-agents";
+import {
+  AGENT_STATUS_LABEL,
+  agentRequest,
+  partnerAgents,
+} from "@/lib/partner-agents";
+import { journeyPhases } from "@/lib/partner-journey";
+import { requestHref } from "@/lib/request-links";
 import { workspacePath } from "@/lib/workspace-resolver";
+
+const phaseNames = new Map(
+  journeyPhases.map((phase) => [phase.slug, phase.name]),
+);
+
+/** Order in the inspector's cascade; see the `rise-in` utility. */
+function stagger(index: number) {
+  return { "--i": index } as CSSProperties;
+}
 
 export function AgentMissionControl() {
   const workspace = useWorkspace();
@@ -25,6 +40,7 @@ export function AgentMissionControl() {
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const selected =
     partnerAgents.find((agent) => agent.id === selectedId) ?? partnerAgents[0]!;
+  const selectedRuns = selected.status === "active";
 
   function moveLiquid(event: PointerEvent<HTMLButtonElement>) {
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -65,7 +81,7 @@ export function AgentMissionControl() {
         <div className="amcl-map">
           {!inspectorOpen ? (
             <button
-              className="amcl-open-inspector"
+              className="amcl-open-inspector pressable"
               onClick={() => setInspectorOpen(true)}
               type="button"
               aria-label="Open agent details"
@@ -110,7 +126,7 @@ export function AgentMissionControl() {
               >
                 <button
                   aria-pressed={selected.id === agent.id}
-                  className="amcl-agent"
+                  className="amcl-agent pressable"
                   onClick={() => {
                     setSelectedId(agent.id);
                     setInspectorOpen(true);
@@ -139,9 +155,7 @@ export function AgentMissionControl() {
                   </span>
                   <span
                     className="amcl-agent-status"
-                    aria-label={
-                      agent.status === "active" ? "Active" : "Coming soon"
-                    }
+                    aria-label={AGENT_STATUS_LABEL[agent.status]}
                   >
                     {agent.status === "active" ? (
                       <RiPulseLine />
@@ -153,7 +167,7 @@ export function AgentMissionControl() {
                     <strong>{agent.name}</strong>
                     <small>{agent.role}</small>
                     <em data-status={agent.status}>
-                      {agent.status === "active" ? "Active" : "Coming soon"}
+                      {AGENT_STATUS_LABEL[agent.status]}
                     </em>
                   </span>
                 </button>
@@ -172,69 +186,93 @@ export function AgentMissionControl() {
               <span>Agent details</span>
               <button
                 aria-label="Close agent details"
+                className="pressable"
                 onClick={() => setInspectorOpen(false)}
                 type="button"
               >
                 <RiCloseLine />
               </button>
             </div>
-            <div className="amcl-inspector-title">
-              <span className="amcl-avatar-inline">
-                <RiAiAgentLine />
-              </span>
-              <div>
-                <h3>{selected.name}</h3>
-                <p>{selected.role}</p>
+            {/* Keyed by agent so a new selection cascades in; the live
+                region above stays put so the change is announced. */}
+            <div className="amcl-inspector-body" key={selected.id}>
+              <div className="amcl-inspector-title rise-in" style={stagger(0)}>
+                <span className="amcl-avatar-inline">
+                  <RiAiAgentLine />
+                </span>
+                <div>
+                  <h3>{selected.name}</h3>
+                  <p>{selected.role}</p>
+                </div>
+              </div>
+              <p
+                className="amcl-inspector-status rise-in"
+                data-status={selected.status}
+                style={stagger(1)}
+              >
+                {selectedRuns ? <RiPulseLine /> : <RiTimeLine />}
+                {AGENT_STATUS_LABEL[selected.status]}
+              </p>
+              <section
+                className="amcl-inspector-section rise-in"
+                style={stagger(2)}
+              >
+                <span>Purpose</span>
+                <p>{selected.summary}</p>
+              </section>
+              <section
+                className="amcl-inspector-section rise-in"
+                style={stagger(3)}
+              >
+                <span>What it needs from you</span>
+                <ul className="amcl-detail-list">
+                  {selected.inputs.map((input) => (
+                    <li key={input}>{input}</li>
+                  ))}
+                </ul>
+              </section>
+              <section
+                className="amcl-inspector-section rise-in"
+                style={stagger(4)}
+              >
+                <span>What you get back</span>
+                <ul className="amcl-detail-list">
+                  {selected.outputs.map((output) => (
+                    <li key={output}>{output}</li>
+                  ))}
+                </ul>
+              </section>
+              <p className="amcl-inspector-phase rise-in" style={stagger(5)}>
+                Used in:{" "}
+                <Link
+                  href={workspacePath(
+                    workspace.slug,
+                    `/journey?phase=${selected.phase}`,
+                  )}
+                >
+                  {phaseNames.get(selected.phase) ?? selected.phase}
+                </Link>
+              </p>
+              <div className="amcl-inspector-actions rise-in" style={stagger(6)}>
+                <Link
+                  className="amcl-inspector-action pressable"
+                  href={requestHref(workspace.slug, agentRequest(selected))}
+                >
+                  {selectedRuns
+                    ? "Ask Beam to run it for a client"
+                    : "Ask Beam about this agent"}
+                </Link>
+                {selected.tool ? (
+                  <Link
+                    className="amcl-inspector-link pressable"
+                    href={workspacePath(workspace.slug, selected.tool.href)}
+                  >
+                    {selected.tool.label}
+                    <RiArrowRightLine />
+                  </Link>
+                ) : null}
               </div>
             </div>
-            <section className="amcl-inspector-section">
-              <span>Current work</span>
-              <strong>{selected.now}</strong>
-              <div className="amcl-detail-list">
-                <div className="amcl-detail-row">
-                  <span>Status</span>
-                  <span>
-                    {selected.status === "active" ? "Active" : "Coming soon"}
-                  </span>
-                </div>
-                <div className="amcl-detail-row">
-                  <span>Stage</span>
-                  <span>{selected.stage}</span>
-                </div>
-                <div className="amcl-detail-row">
-                  <span>Type</span>
-                  <span>
-                    {selected.status === "active"
-                      ? "Portal workflow"
-                      : "Planned agent"}
-                  </span>
-                </div>
-              </div>
-            </section>
-            <section className="amcl-inspector-section">
-              <span>Purpose</span>
-              <p>{selected.summary}</p>
-            </section>
-            <section className="amcl-inspector-section">
-              <span>Inputs and outputs</span>
-              <div className="amcl-detail-list">
-                <div className="amcl-detail-row">
-                  <span>Inputs</span>
-                  <span>{selected.inputs.join(", ")}</span>
-                </div>
-                <div className="amcl-detail-row">
-                  <span>Outputs</span>
-                  <span>{selected.outputs.join(", ")}</span>
-                </div>
-              </div>
-            </section>
-            <Link
-              className="amcl-inspector-action"
-              href={workspacePath(workspace.slug, selected.href)}
-            >
-              {selected.action}
-              <RiArrowRightUpLine />
-            </Link>
           </aside>
         ) : null}
       </div>

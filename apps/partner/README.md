@@ -4,7 +4,7 @@ Sibling application to Beam Core. Consulting and channel partners use it;
 `@beam.ai` staff keep Core. Do not add partner domains to Core
 `STAFF_EMAIL_DOMAIN`.
 
-Canonical product contract: [`../../specs/apps/partner-portal.md`](../../specs/apps/partner-portal.md).
+Canonical product contract: [`../../docs/specs/partner-portal.md`](../../docs/specs/partner-portal.md) (a copy; the source is `specs/apps/partner-portal.md` in beam-library).
 
 ## Topology
 
@@ -204,3 +204,16 @@ once when created. Tests call `seedFromCatalog` / `seedPreview`.
 pnpm test
 pnpm test:e2e
 ```
+
+## Security & compliance index
+
+`catalog/compliance.yaml` lists Beam's policies and procedures by what is printed on each
+document (title, version, date, page count, classification). The files themselves never enter
+the repo. Beam staff regenerate the index from the policy folder kept outside the repo:
+
+```bash
+COMPLIANCE_SRC="$HOME/Documents/Beam AI/Beam-Compliance-Policies" node scripts/index-compliance.mjs
+```
+
+Hand-edited fields (`domain`, `availability`, `ndaRequired`, `summary`) survive a re-run. The
+compile step validates the index; `pnpm test` checks every workspace grant resolves.

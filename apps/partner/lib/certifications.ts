@@ -197,3 +197,23 @@ export const certifications: Certification[] = [
 export function getCertification(slug: string) {
   return certifications.find((certification) => certification.slug === slug)
 }
+
+/** "After Beam Foundations and Discovery Lead", or null when nothing gates it. */
+export function prerequisiteLine(certification: Certification) {
+  const named = certification.prerequisite.trim()
+  if (!named || /^no prerequisite$/i.test(named)) return null
+  return `After ${named.replace(/\s*\+\s*/g, " and ")}`
+}
+
+/**
+ * The first outcome as a clause that completes "After this you can: …".
+ * Only a leading capital of an ordinary word is lowered; acronyms stay.
+ */
+export function firstOutcomeClause(certification: Certification) {
+  const outcome = certification.outcomes[0]?.trim()
+  if (!outcome) return null
+  const [first = "", second = ""] = outcome
+  return /[A-Z]/.test(first) && /[a-z]/.test(second)
+    ? first.toLowerCase() + outcome.slice(1)
+    : outcome
+}

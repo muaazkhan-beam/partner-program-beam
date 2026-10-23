@@ -161,6 +161,99 @@ test("neither tenant can read the other's materials, requests, or memberships", 
   )
 })
 
+test("inactive Discovery deck stays hidden across workspaces until its catalog record is retired", async () => {
+  const t = await seeded()
+  const workspaceSlugs = [
+    "partner-demo",
+    "pwc-me",
+    "roboyo",
+    "roland-berger",
+    "grant-thornton-sa",
+    "cisco",
+    "netapp",
+  ]
+  const workspaces = await Promise.all(
+    workspaceSlugs.map((slug) =>
+      t.query(api.partner.resolveWorkspace, { slug }),
+    ),
+  )
+  assert.ok(workspaces.every(Boolean))
+
+  const staleContentId = await t.run(async (ctx) => {
+    const contentId = await ctx.db.insert("contentItems", {
+      kind: "material",
+      slug: "beam-discovery-sales-deck",
+      title: "Beam Discovery | Process Discovery Sales Deck",
+      summary: "Unavailable Share",
+      body: "Unavailable",
+      contentClass: "shared-partner-safe",
+      audience: "client-forwardable",
+      forwardable: true,
+      allowedBrandModes: ["beam-standard", "co-branded"],
+      claimState: "approved",
+      shareUrl: "https://shares.beam.ai/s/6IyI_AIcNUxrSw75",
+      createdAt: now,
+    })
+    for (const workspace of workspaces) {
+      if (!workspace) continue
+      await ctx.db.insert("contentGrants", {
+        contentId,
+        workspaceId: workspace._id,
+        createdAt: now,
+      })
+    }
+    return contentId
+  })
+
+  for (const workspace of workspaces) {
+    assert.ok(workspace)
+    const staff = await memberAs(t, "reviewer@beam.ai", workspace.slug, "staff")
+    const materials = await staff.query(api.partner.listContent, {
+      workspaceId: workspace._id,
+      kind: "material",
+    })
+    assert.ok(!materials.some((item) => item.slug === "beam-discovery-sales-deck"))
+    assert.equal(
+      await staff.query(api.partner.getContent, {
+        workspaceId: workspace._id,
+        kind: "material",
+        slug: "beam-discovery-sales-deck",
+      }),
+      null,
+    )
+  }
+
+  const staff = await memberAs(t, "reviewer@beam.ai", "roland-berger", "staff")
+  const catalogForStaff = await staff.query(api.partner.listAllContentForStaff, {})
+  assert.ok(!catalogForStaff.some((item) => item.slug === "beam-discovery-sales-deck"))
+  const workspaceContentForStaff = await staff.query(api.partner.listContentForStaff, {
+    workspaceId: workspaces[3]!._id,
+  })
+  assert.ok(
+    !workspaceContentForStaff.some(
+      (entry) => entry.content.slug === "beam-discovery-sales-deck",
+    ),
+  )
+  await assert.rejects(
+    staff.mutation(api.partner.attachContent, {
+      workspaceId: workspaces[0]!._id,
+      contentId: staleContentId,
+    }),
+    /Workspace or content not found/,
+  )
+
+  await t.mutation(internal.seed.seedFromCatalog, { now: now + 1 })
+  const retired = await t.run(async (ctx) =>
+    ctx.db
+      .query("contentItems")
+      .withIndex("by_kind_and_slug", (q) =>
+        q.eq("kind", "material").eq("slug", "beam-discovery-sales-deck"),
+      )
+      .unique(),
+  )
+  assert.equal(retired, null)
+})
+
 test("an invited user only sees their workspace and unknown email fails closed", async () => {
   const t = await seeded()
   const pwcWorkspace = await t.query(api.partner.resolveWorkspace, {
@@ -367,10 +460,10 @@ test("restricted deployment FAQ returns request-Beam instead of an unreviewed cl
   assert.doesNotMatch(faq?.body ?? "", /on-prem/i)
 })
 
-test("preview seed loads the demo and reviewed partner workspaces without staff auth", async () => {
+test("preview seed loads the demo and catalogued partner workspaces without staff auth", async () => {
   const t = convexTest(schema, convexModules)
   const result = await t.mutation(internal.seed.seedPreview, {})
-  assert.equal(result.workspaceCount, 4)
+  assert.equal(result.workspaceCount, 7)
   assert.ok(result.contentCount > 0)
   const demo = await t.query(api.partner.resolveWorkspace, {
     slug: "partner-demo",
@@ -382,10 +475,116 @@ test("preview seed loads the demo and reviewed partner workspaces without staff 
   const rolandBerger = await t.query(api.partner.resolveWorkspace, {
     slug: "roland-berger",
   })
+  const grantThornton = await t.query(api.partner.resolveWorkspace, {
+    slug: "grant-thornton-sa",
+  })
+  const cisco = await t.query(api.partner.resolveWorkspace, { slug: "cisco" })
+  const netapp = await t.query(api.partner.resolveWorkspace, { slug: "netapp" })
   assert.equal(demo?.slug, "partner-demo")
   assert.equal(pwc?.slug, "pwc-me")
   assert.equal(roboyo?.slug, "roboyo")
   assert.equal(rolandBerger?.slug, "roland-berger")
+  assert.equal(grantThornton?.slug, "grant-thornton-sa")
+  assert.deepEqual(grantThornton?.allowedEmailDomains, ["sa.gt.com"])
+  assert.equal(cisco?.slug, "cisco")
+  assert.equal(netapp?.slug, "netapp")
+  assert.deepEqual(cisco?.allowedEmailDomains, ["cisco.com"])
+  assert.deepEqual(netapp?.allowedEmailDomains, ["netapp.com"])
+  for (const workspace of [cisco, netapp]) {
+    assert.ok(workspace)
+    assert.equal(workspace.brandMode, "beam-standard")
+    assert.equal(workspace.brandHeader, "Beam Partner")
+    assert.deepEqual(workspace.enabledSurfaces, [
+      "home",
+      "tools",
+      "materials",
+      "faq",
+      "requests",
+    ])
+  }
+  const ciscoStaff = await memberAs(t, "reviewer@beam.ai", "cisco", "staff")
+  const netappStaff = await memberAs(t, "reviewer@beam.ai", "netapp", "staff")
+  const ciscoMaterials = await ciscoStaff.query(api.partner.listContent, {
+    workspaceId: cisco!._id,
+    kind: "material",
+  })
+  const netappMaterials = await netappStaff.query(api.partner.listContent, {
+    workspaceId: netapp!._id,
+    kind: "material",
+  })
+  for (const materials of [ciscoMaterials, netappMaterials]) {
+    assert.ok(materials.length > 0)
+    assert.ok(
+      materials.every((material) => material.contentClass === "shared-partner-safe"),
+    )
+    assert.ok(
+      materials.every((material) => material.slug !== "shared-services-packaging"),
+    )
+    assert.ok(
+      materials.every((material) => material.slug !== "beam-discovery-sales-deck"),
+    )
+  }
+  const ciscoTools = await ciscoStaff.query(api.partner.listContent, {
+    workspaceId: cisco!._id,
+    kind: "tool",
+  })
+  const netappTools = await netappStaff.query(api.partner.listContent, {
+    workspaceId: netapp!._id,
+    kind: "tool",
+  })
+  for (const items of [ciscoTools, netappTools]) {
+    assert.ok(
+      items.every((item) => item.contentClass === "shared-partner-safe"),
+    )
+    assert.ok(items.every((item) => !item.href?.startsWith("https://core.beam.ai/")))
+    assert.ok(
+      items.every(
+        (item) =>
+          ![
+            "partner-cli",
+            "partner-faq",
+            "call-prep",
+            "operating-diagnostic",
+            "proof-pack",
+            "one-workflow-playbook",
+            "beam-interfaces",
+            "success-criteria",
+          ].includes(item.slug),
+      ),
+    )
+  }
+  const ciscoFaq = await ciscoStaff.query(api.partner.listContent, {
+    workspaceId: cisco!._id,
+    kind: "faq",
+  })
+  const netappFaq = await netappStaff.query(api.partner.listContent, {
+    workspaceId: netapp!._id,
+    kind: "faq",
+  })
+  for (const items of [ciscoFaq, netappFaq]) {
+    assert.ok(
+      items.every(
+        (item) =>
+          !["partner-vs-beam", "brand-shapes", "how-we-make-money"].includes(
+            item.slug,
+          ),
+      ),
+    )
+  }
+  assert.deepEqual(
+    await ciscoStaff.query(api.partner.listContent, {
+      workspaceId: cisco!._id,
+      kind: "playbook",
+    }),
+    [],
+  )
+  assert.deepEqual(
+    await netappStaff.query(api.partner.listContent, {
+      workspaceId: netapp!._id,
+      kind: "playbook",
+    }),
+    [],
+  )
 })
 
 test("use cases are granted per workspace and carry their guardrails", async () => {
@@ -440,4 +639,334 @@ test("use cases are granted per workspace and carry their guardrails", async () 
       )
     }
   }
+})
+test("brand mode gates content, and staff still see everything (bug 7)", async () => {
+  const t = await seeded()
+  const roboyo = await memberAs(t, "alex@roboyo.com", "roboyo")
+  const workspace = await t.query(api.partner.resolveWorkspace, {
+    slug: "roboyo",
+  })
+  assert.ok(workspace)
+
+  // Restrict a granted material to a brand mode this workspace does not use.
+  const target = await t.run(async (ctx) => {
+    const item = await ctx.db
+      .query("contentItems")
+      .withIndex("by_kind_and_slug", (q) =>
+        q.eq("kind", "material").eq("slug", "where-beam-fits"),
+      )
+      .unique()
+    assert.ok(item)
+    const other =
+      workspace.brandMode === "beam-standard" ? "partner-fronted" : "beam-standard"
+    await ctx.db.patch(item._id, { allowedBrandModes: [other] })
+    return item._id
+  })
+
+  const partnerView = await roboyo.query(api.partner.listContent, {
+    workspaceId: workspace._id,
+    kind: "material",
+  })
+  assert.ok(
+    !partnerView.some((item) => item.slug === "where-beam-fits"),
+    "a material not approved for this brand mode must not reach a partner",
+  )
+  assert.equal(
+    await roboyo.query(api.partner.getContent, {
+      workspaceId: workspace._id,
+      kind: "material",
+      slug: "where-beam-fits",
+    }),
+    null,
+  )
+
+  // Staff review it from any workspace.
+  const staff = await memberAs(t, "review@beam.ai", "roboyo", "staff")
+  const staffView = await staff.query(api.partner.listContent, {
+    workspaceId: workspace._id,
+    kind: "material",
+  })
+  assert.ok(staffView.some((item) => item.slug === "where-beam-fits"))
+  assert.ok(target)
+})
+
+test("restricted claims redact the summary as well as the body (bug 10)", async () => {
+  const t = await seeded()
+  const pwc = await memberAs(t, "paul@pwc.com", "pwc-me")
+  const workspace = await t.query(api.partner.resolveWorkspace, {
+    slug: "pwc-me",
+  })
+  assert.ok(workspace)
+
+  await t.run(async (ctx) => {
+    const item = await ctx.db
+      .query("contentItems")
+      .withIndex("by_kind_and_slug", (q) =>
+        q.eq("kind", "faq").eq("slug", "deployment-ksa-kuwait"),
+      )
+      .unique()
+    assert.ok(item)
+    await ctx.db.patch(item._id, {
+      summary: "Yes, Beam guarantees full data residency in KSA.",
+    })
+  })
+
+  const item = await pwc.query(api.partner.getContent, {
+    workspaceId: workspace._id,
+    kind: "faq",
+    slug: "deployment-ksa-kuwait",
+  })
+  assert.ok(item)
+  assert.ok(
+    !item.summary.includes("guarantees full data residency"),
+    "an unreviewed claim in the summary must not reach a partner",
+  )
+})
+
+test("staff can revoke access and detach content, and it is audited (bugs 2, 3, 6)", async () => {
+  const t = await seeded()
+  const staff = await memberAs(t, "ops@beam.ai", "roboyo", "staff")
+  const workspace = await t.query(api.partner.resolveWorkspace, {
+    slug: "roboyo",
+  })
+  assert.ok(workspace)
+
+  // Invite, then revoke before it is used.
+  const invitationId = await staff.mutation(api.partner.createInvitation, {
+    workspaceId: workspace._id,
+    email: "leaver@roboyo.com",
+    role: "partner_seller",
+  })
+  await staff.mutation(api.partner.revokeInvitation, { invitationId })
+  const remaining = await staff.query(api.partner.listInvitations, {
+    workspaceId: workspace._id,
+  })
+  assert.ok(!remaining.some((row) => row.email === "leaver@roboyo.com"))
+
+  // A member who leaves loses access.
+  const leaver = await memberAs(t, "gone@roboyo.com", "roboyo")
+  const membershipId = await t.run(async (ctx) => {
+    const user = await ctx.db
+      .query("partnerUsers")
+      .withIndex("by_email", (q) => q.eq("email", "gone@roboyo.com"))
+      .unique()
+    assert.ok(user)
+    const membership = await ctx.db
+      .query("memberships")
+      .withIndex("by_workspace_and_user", (q) =>
+        q.eq("workspaceId", workspace._id).eq("userId", user._id),
+      )
+      .unique()
+    assert.ok(membership)
+    return membership._id
+  })
+  await staff.mutation(api.partner.removeMembership, { membershipId })
+  await assert.rejects(
+    leaver.query(api.partner.listContent, {
+      workspaceId: workspace._id,
+      kind: "material",
+    }),
+    "a removed member must lose access immediately",
+  )
+
+  // Content can be taken back.
+  const contentId = await t.run(async (ctx) => {
+    const item = await ctx.db
+      .query("contentItems")
+      .withIndex("by_kind_and_slug", (q) =>
+        q.eq("kind", "faq").eq("slug", "why-not-sap"),
+      )
+      .unique()
+    assert.ok(item)
+    return item._id
+  })
+  await staff.mutation(api.partner.detachContent, {
+    workspaceId: workspace._id,
+    contentId,
+  })
+  const faq = await staff.query(api.partner.listContent, {
+    workspaceId: workspace._id,
+    kind: "faq",
+  })
+  assert.ok(!faq.some((item) => item.slug === "why-not-sap"))
+
+  // Every one of those is on the record.
+  const audit = await staff.query(api.partner.listAuditEvents, {})
+  const actions = new Set(audit.map((row) => row.action))
+  for (const action of [
+    "invitation.create",
+    "invitation.revoke",
+    "membership.remove",
+    "content.detach",
+  ]) {
+    assert.ok(actions.has(action), `${action} must be audited`)
+  }
+})
+
+test("configuring a workspace keeps the use-case catalog and an opted-in journey", async () => {
+  const t = await seeded()
+  const staff = await memberAs(t, "ops@beam.ai", "partner-demo")
+  const workspace = await t.query(api.partner.resolveWorkspace, {
+    slug: "partner-demo",
+  })
+  assert.ok(workspace)
+  assert.ok(workspace.enabledSurfaces.includes("use-cases"))
+  assert.ok(workspace.enabledSurfaces.includes("journey"))
+
+  await staff.mutation(api.partner.updateWorkspaceConfiguration, {
+    workspaceId: workspace._id,
+    displayName: workspace.displayName,
+    brandHeader: workspace.brandHeader,
+    brandMode: workspace.brandMode,
+    homeTitle: workspace.homeTitle,
+    homeHeadline: workspace.homeHeadline,
+    homeDescription: workspace.homeDescription,
+    supportOwner: workspace.supportOwner,
+    allowedEmailDomains: ["partner.example"],
+    enabledSurfaces: [...workspace.enabledSurfaces, "not-a-surface"],
+  })
+
+  const after = await t.query(api.partner.resolveWorkspace, {
+    slug: "partner-demo",
+  })
+  assert.ok(after)
+  assert.ok(after.enabledSurfaces.includes("use-cases"), "use-cases survives a save")
+  assert.ok(after.enabledSurfaces.includes("journey"), "journey survives a save")
+  assert.ok(!after.enabledSurfaces.includes("not-a-surface"), "unknown keys are dropped")
+})
+
+test("a workspace created by staff gets every default surface (bug 4)", async () => {
+  const t = await seeded()
+  const staff = await memberAs(t, "ops@beam.ai", "roboyo", "staff")
+  const workspaceId = await staff.mutation(api.partner.createWorkspace, {
+    slug: "new-partner",
+    name: "New Partner",
+    displayName: "New Partner",
+    brandMode: "co-branded",
+    brandHeader: "New Partner × Beam",
+    homeHeadline: "Land one process",
+    homeDescription: "Shared shell with approved content.",
+    supportOwner: "partner-success@beam.ai",
+    allowedEmailDomains: ["newpartner.com"],
+  })
+
+  const created = await t.run(async (ctx) => ctx.db.get(workspaceId))
+  assert.ok(created)
+  assert.ok(
+    created.enabledSurfaces.includes("agents"),
+    "admin-created workspaces must not miss a surface the seeded ones have",
+  )
+
+  // And surfaces can be changed afterwards (bug 5).
+  await staff.mutation(api.partner.updateWorkspaceConfiguration, {
+    workspaceId,
+    displayName: "New Partner",
+    brandMode: "co-branded",
+    brandHeader: "New Partner × Beam",
+    homeTitle: "Future of AI-Native Companies",
+    homeHeadline: "Land one process",
+    homeDescription: "Shared shell with approved content.",
+    supportOwner: "partner-success@beam.ai",
+    allowedEmailDomains: ["newpartner.com"],
+    enabledSurfaces: ["home", "tools", "faq"],
+  })
+  const updated = await t.run(async (ctx) => ctx.db.get(workspaceId))
+  assert.deepEqual(updated?.enabledSurfaces, ["home", "tools", "faq"])
+})
+
+test("re-seeding preserves staff decisions but still refreshes content (bug 1)", async () => {
+  const t = await seeded()
+  const staff = await memberAs(t, "ops@beam.ai", "roboyo", "staff")
+  const workspace = await t.query(api.partner.resolveWorkspace, {
+    slug: "roboyo",
+  })
+  assert.ok(workspace)
+
+  // Staff reconfigure the workspace and review a claim.
+  await staff.mutation(api.partner.updateWorkspaceConfiguration, {
+    workspaceId: workspace._id,
+    displayName: "Roboyo Middle East",
+    brandMode: "partner-fronted",
+    brandHeader: "Roboyo, powered by Beam",
+    homeTitle: "Future of AI-Native Companies",
+    homeHeadline: "Land one process",
+    homeDescription: "Configured by staff.",
+    supportOwner: "me@beam.ai",
+    allowedEmailDomains: ["roboyo.com"],
+    enabledSurfaces: ["home", "tools", "faq"],
+  })
+  const restricted = await t.run(async (ctx) => {
+    const item = await ctx.db
+      .query("contentItems")
+      .withIndex("by_kind_and_slug", (q) =>
+        q.eq("kind", "faq").eq("slug", "why-not-sap"),
+      )
+      .unique()
+    assert.ok(item)
+    return item._id
+  })
+  await staff.mutation(api.partner.approveClaim, {
+    contentId: restricted,
+    claimState: "restricted",
+    reviewer: "Legal",
+    reviewedAt: now,
+    revalidateAt: now + 1_000,
+  })
+
+  // Someone clicks "Seed reviewed catalog" again.
+  await t.mutation(internal.seed.seedFromCatalog, { now: now + 5_000 })
+
+  const after = await t.run(async (ctx) => ctx.db.get(workspace._id))
+  assert.ok(after)
+  assert.equal(after.displayName, "Roboyo Middle East", "config must survive")
+  assert.equal(after.brandMode, "partner-fronted")
+  assert.equal(after.supportOwner, "me@beam.ai")
+  assert.deepEqual(after.enabledSurfaces, ["home", "tools", "faq"])
+
+  const claim = await t.run(async (ctx) => ctx.db.get(restricted))
+  assert.equal(claim?.claimState, "restricted", "claim review must survive")
+  assert.equal(claim?.reviewer, "Legal")
+
+  // But the catalog is still the source of truth for structure and text.
+  assert.equal(after.canonicalPath, "/w/roboyo")
+  assert.ok(after.tracks.length > 0)
+  const untouched = await t.run(async (ctx) =>
+    ctx.db
+      .query("contentItems")
+      .withIndex("by_kind_and_slug", (q) =>
+        q.eq("kind", "faq").eq("slug", "how-we-make-money"),
+      )
+      .unique(),
+  )
+  assert.equal(untouched?.claimState, "approved")
+})
+
+test("a request notifies Slack instead of landing silently (bug 9)", async () => {
+  const t = await seeded()
+  const roboyo = await memberAs(t, "alex@roboyo.com", "roboyo")
+  const workspace = await t.query(api.partner.resolveWorkspace, {
+    slug: "roboyo",
+  })
+  assert.ok(workspace)
+
+  const created = await roboyo.mutation(api.partner.createRequest, {
+    workspaceId: workspace._id,
+    accountName: "Acme Logistics",
+    candidateProcess: "Invoice exception handling",
+    stage: "diagnostic",
+    supportType: "shadow-demo",
+    problemStatement: "Two thousand exceptions a month across three entities.",
+  })
+
+  const staff = await memberAs(t, "ops@beam.ai", "roboyo", "staff")
+  const outbox = await staff.query(api.partner.listSlackOutbox, {
+    workspaceId: workspace._id,
+  })
+  assert.equal(outbox.length, 1)
+  const message = outbox[0]
+  assert.equal(message.requestKey, created.requestKey)
+  assert.ok(message.channel.startsWith("#"))
+  assert.ok(message.text.includes(created.requestKey))
+  assert.ok(message.text.includes("Invoice exception handling"))
+  assert.ok(message.text.includes(created.owner), "the owner must be named")
 })

@@ -289,7 +289,5 @@ turns the portal into a CRM.
 | [`research/partner-programs-benchmark.md`](research/partner-programs-benchmark.md) | Ten partner programs compared, and which mechanics suit Beam |
 | [`research/lovable-partner-program.md`](research/lovable-partner-program.md) | The closest model to Beam's stage |
 | [`reference/derya-meeting-notes.md`](reference/derya-meeting-notes.md) | Requirements from the business |
-| [`reference/partner-pain.md`](reference/partner-pain.md) | Real PwC ME, BID and Roland Berger call synthesis |
-| [`reference/tool-map.md`](reference/tool-map.md) | Which tools are partner-safe, which stay staff-only |
-| [`reference/faq-seed.md`](reference/faq-seed.md) | First partner FAQ, drafted from live objections |
+| `skills/general/partner-portal/references/` in beam-library (private) | Partner call synthesis, tool map and FAQ seed; not copied here because they name clients and contacts |
 | [`reference/sources.md`](reference/sources.md) | Every external link, and who is who |

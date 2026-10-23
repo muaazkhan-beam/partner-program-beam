@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import {
+  getAuthenticatedLoginReturnPath,
   getLoginPath,
   getSafeAuthReturnPath,
   shouldRedirectPartnerLogin,
@@ -13,8 +14,23 @@ test("login redirects retain reviewed partner entry paths and reject external ta
     getSafeAuthReturnPath("/roland-berger?campaign=launch"),
     "/roland-berger?campaign=launch",
   )
-  assert.equal(getSafeAuthReturnPath("//evil.example"), "/home")
-  assert.equal(getSafeAuthReturnPath("/api/auth/callback/google"), "/home")
+  assert.equal(getSafeAuthReturnPath("//evil.example"), "/admin")
+  assert.equal(getSafeAuthReturnPath("/api/auth/callback/google"), "/admin")
+  assert.equal(getSafeAuthReturnPath(undefined), "/admin")
+  assert.equal(getLoginPath(undefined), "/login?from=%2Fadmin")
+  assert.equal(getAuthenticatedLoginReturnPath(undefined), "/admin")
+  assert.equal(
+    getAuthenticatedLoginReturnPath(undefined, "pwc-me"),
+    "/w/pwc-me/home",
+  )
+  assert.equal(
+    getAuthenticatedLoginReturnPath("//evil.example", "pwc-me"),
+    "/w/pwc-me/home",
+  )
+  assert.equal(
+    getAuthenticatedLoginReturnPath("/w/pwc-me/tools", "pwc-me"),
+    "/w/pwc-me/tools",
+  )
 })
 
 test("partner routes do not redirect during auth hydration or token refresh", () => {

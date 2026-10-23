@@ -22,6 +22,8 @@ export function slugFromPath(pathname: string) {
 export const PARTNER_ENTRY_ROUTES = {
   "/pwc": "pwc-me",
   "/roland-berger": "roland-berger",
+  "/cisco": "cisco",
+  "/netapp": "netapp",
 } as const
 
 export function slugFromPartnerEntryPath(pathname: string) {
